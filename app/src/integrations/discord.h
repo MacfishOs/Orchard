@@ -102,9 +102,11 @@ private:
     static void receiveEvent(void *context, const char *message, uint8_t connected);
     void clearPresence();
     void updateArtwork();
+    void connectArtistCatalog();
     void updateArtistArtwork();
     void requestYouTubeArtistArtwork(const QString &key, const QString &browseId);
     void finishArtistArtwork(const QString &key, const QString &imageUrl);
+    static QString publicImageUrl(const QString &value);
     [[nodiscard]] QString trackKey() const;
     void refresh(bool force);
     void save(const QString &key, const QVariant &value);

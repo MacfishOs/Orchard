@@ -51,6 +51,7 @@ app_sources = [
   'app/src/integrations/discord_sdk_presence.cpp',
   'app/src/integrations/discord_sdk_presence.h',
   'app/src/integrations/discord_artwork.cpp',
+  'app/src/integrations/discord_artist_artwork.cpp',
   'app/src/integrations/discord_artwork.h',
   'app/src/integrations/discord.h',
   'app/src/integrations/integrations.cpp',
