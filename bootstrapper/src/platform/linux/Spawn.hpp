@@ -19,6 +19,7 @@ struct SpawnSpec {
   std::filesystem::path workingDirectory;
   bool detach = false; // new session, stdio on /dev/null
   int stdinFd = -1;    // dup'ed onto the child's stdin when set
+  std::filesystem::path outputFile; // child's stdout and stderr when set
 };
 
 // posix_spawn wrapper; restores default SIGPIPE handling in the child.

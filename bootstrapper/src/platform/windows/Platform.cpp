@@ -203,7 +203,19 @@ Process spawn(const fs::path &program, const SpawnOptions &options) {
   startup.cb = sizeof startup;
   DWORD flags = CREATE_UNICODE_ENVIRONMENT;
   BOOL inherit = FALSE;
-  if (options.background) {
+  HANDLE output = INVALID_HANDLE_VALUE;
+  if (!options.outputFile.empty()) {
+    SECURITY_ATTRIBUTES inheritable{sizeof inheritable, nullptr, TRUE};
+    output = CreateFileW(options.outputFile.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                         &inheritable, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+  }
+  if (output != INVALID_HANDLE_VALUE) {
+    startup.dwFlags = STARTF_USESTDHANDLES;
+    startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    startup.hStdOutput = output;
+    startup.hStdError = output;
+    inherit = TRUE;
+  } else if (options.background) {
     flags |= DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
   } else if (GetStdHandle(STD_OUTPUT_HANDLE)) {
     // Delegated bootstrapper commands print JSON on our stdout.
@@ -214,10 +226,15 @@ Process spawn(const fs::path &program, const SpawnOptions &options) {
     inherit = TRUE;
   }
   PROCESS_INFORMATION info{};
-  if (!CreateProcessW(program.c_str(), commandLine.data(), nullptr, nullptr, inherit, flags,
-                      options.env ? block.data() : nullptr,
-                      options.workingDirectory.empty() ? nullptr : options.workingDirectory.c_str(), &startup, &info))
-    throw Error("cannot start " + narrow(program.wstring()) + ": " + lastErrorText());
+  const BOOL started = CreateProcessW(program.c_str(), commandLine.data(), nullptr, nullptr, inherit, flags,
+                                      options.env ? block.data() : nullptr,
+                                      options.workingDirectory.empty() ? nullptr : options.workingDirectory.c_str(),
+                                      &startup, &info);
+  const std::string reason = started ? std::string() : lastErrorText();
+  if (output != INVALID_HANDLE_VALUE)
+    CloseHandle(output);
+  if (!started)
+    throw Error("cannot start " + narrow(program.wstring()) + ": " + reason);
   CloseHandle(info.hThread);
   return Process{reinterpret_cast<std::intptr_t>(info.hProcess), static_cast<int>(info.dwProcessId)};
 }

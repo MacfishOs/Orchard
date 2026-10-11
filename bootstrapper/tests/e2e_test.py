@@ -36,6 +36,7 @@ OVERRIDES = {}
 FAKE_APP = """#!/bin/sh
 { echo "args=$*"; env | grep -E '^(ORCHARD_|LD_LIBRARY_PATH=|TEST_)'; } > "$ORCHARD_TEST_OUT.tmp"
 mv "$ORCHARD_TEST_OUT.tmp" "$ORCHARD_TEST_OUT"
+echo "fake app exiting" >&2
 exit %d
 """
 
@@ -283,8 +284,9 @@ def main():
     build_tree("1.2.0", "q2", bytes(qt2), data2 + b"crash", exit_code=7)
     publish("1.2.0")
     boot("--update")
-    boot(expect=7)
+    check("closed while starting (exit code 0x00000007)" in boot(expect=1).stderr, "startup crash reported")
     wait_for_app_run()
+    check("fake app exiting" in (ROOT / "logs/app.log").read_text(), "watched run output captured")
     boot()  # second failed start rolls back and starts 1.0.0 instead
     wait_for_app_run()
     s = state()

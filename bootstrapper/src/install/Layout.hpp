@@ -39,6 +39,8 @@ struct Layout {
   std::filesystem::path objectsDir() const { return root / "cache" / "objects"; }
   std::filesystem::path cancelFlag() const { return root / "cache" / "cancel"; }
   std::filesystem::path logFile() const { return root / "logs" / "bootstrapper.log"; }
+  // Output of the last watched app run.
+  std::filesystem::path appLogFile() const { return root / "logs" / "app.log"; }
   // Held while install.json is read-modify-written (milliseconds).
   std::filesystem::path stateLock() const { return root / ".state.lock"; }
   // Held for a whole download/stage/repair (minutes).

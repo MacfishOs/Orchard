@@ -45,7 +45,7 @@ struct Expander {
 } // namespace
 
 platform::Process launchVersion(const Layout &layout, const InstallState &state, const std::string &version,
-                                const std::vector<std::string> &args) {
+                                const std::vector<std::string> &args, const fs::path &output) {
   const auto info = state.version(version);
   if (!info)
     throw Error("version " + version + " is not installed");
@@ -70,6 +70,9 @@ platform::Process launchVersion(const Layout &layout, const InstallState &state,
   env[platform::environmentKey(env, "ORCHARD_INSTALL_ROOT")] = toUtf8(layout.root);
   env[platform::environmentKey(env, "ORCHARD_INSTALLED_VERSION")] = version;
   env[platform::environmentKey(env, "ORCHARD_UPDATE_CHANNEL")] = state.channel();
+  // Qt on Windows sends logging to OutputDebugString unless a console is attached.
+  if (!output.empty())
+    env[platform::environmentKey(env, "QT_FORCE_STDERR_LOGGING")] = "1";
 
   const fs::path program = layout.versionDir(version) / safeRelativePath(launch.executable);
   std::error_code error;
@@ -80,6 +83,11 @@ platform::Process launchVersion(const Layout &layout, const InstallState &state,
     options.args.push_back(expand(arg));
   options.args.insert(options.args.end(), args.begin(), args.end());
   options.env = std::move(env);
+  if (!output.empty()) {
+    std::error_code created;
+    fs::create_directories(output.parent_path(), created);
+    options.outputFile = output;
+  }
   log::info("launching " + version);
   return platform::spawn(program, options);
 }

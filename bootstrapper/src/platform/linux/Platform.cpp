@@ -148,6 +148,7 @@ Process spawn(const fs::path &program, const SpawnOptions &options) {
   spec.envp = options.env ? &envp : nullptr;
   spec.workingDirectory = options.workingDirectory;
   spec.detach = options.background;
+  spec.outputFile = options.outputFile;
   const pid_t pid = spawnProcess(spec);
   return Process{pid, pid};
 }

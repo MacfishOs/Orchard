@@ -77,6 +77,8 @@ struct SpawnOptions {
   fs::path workingDirectory;
   // Detach from the console/session and drop stdio; for background helpers.
   bool background = false;
+  // Truncated and receives the child's stdout and stderr when set.
+  fs::path outputFile;
 };
 
 Process spawn(const fs::path &program, const SpawnOptions &options);

@@ -47,6 +47,11 @@ pid_t spawnProcess(const SpawnSpec &spec) {
     for (int fd : {STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO})
       posix_spawn_file_actions_addopen(&actions, fd, "/dev/null", fd == STDIN_FILENO ? O_RDONLY : O_WRONLY, 0);
   }
+  if (!spec.outputFile.empty()) {
+    posix_spawn_file_actions_addopen(&actions, STDOUT_FILENO, spec.outputFile.c_str(),
+                                     O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    posix_spawn_file_actions_adddup2(&actions, STDOUT_FILENO, STDERR_FILENO);
+  }
   if (spec.stdinFd >= 0)
     posix_spawn_file_actions_adddup2(&actions, spec.stdinFd, STDIN_FILENO);
   if (!spec.workingDirectory.empty())

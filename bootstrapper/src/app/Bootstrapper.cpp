@@ -192,7 +192,9 @@ int Bootstrapper::startAndWatch(bool allowRollback) {
   if (!info->healthy)
     InstallState::modify(layout_, [&](InstallState &s) { s.setHealth(version, false, info->launchAttempts + 1); });
 
-  platform::Process process = launchVersion(layout_, *state, version, options_.appArgs);
+  // Watched runs keep their output so a startup crash leaves something to report.
+  platform::Process process =
+      launchVersion(layout_, *state, version, options_.appArgs, info->healthy ? fs::path() : layout_.appLogFile());
   scheduleBackgroundUpdate(*state);
   if (info->healthy) {
     platform::releaseProcess(process);
@@ -213,7 +215,11 @@ int Bootstrapper::startAndWatch(bool allowRollback) {
     rollback(layout_, version + " keeps crashing at startup");
     return startAndWatch(false);
   }
-  return *code;
+  char hex[16];
+  std::snprintf(hex, sizeof hex, "0x%08X", static_cast<unsigned>(*code));
+  throw Error("Orchard " + version + " closed while starting (exit code " + hex + ").\n\nDetails were saved in " +
+              toUtf8(layout_.appLogFile().parent_path().make_preferred()) +
+              ". Please attach app.log and bootstrapper.log when reporting this.");
 }
 
 void Bootstrapper::scheduleBackgroundUpdate(const InstallState &state) const {

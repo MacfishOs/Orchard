@@ -17,8 +17,9 @@ namespace orchard::boot {
 // Starts an installed version with the environment its manifest asked for:
 // {app}, {root} and {component:name} expand to directories in the install,
 // and ORCHARD_BOOTSTRAPPER / ORCHARD_INSTALL_ROOT / ORCHARD_INSTALLED_VERSION
-// tell the app how to reach the updater.
+// tell the app how to reach the updater. A non-empty `output` captures stdout,
+// stderr and Qt logging.
 platform::Process launchVersion(const Layout &layout, const InstallState &state, const std::string &version,
-                                const std::vector<std::string> &args);
+                                const std::vector<std::string> &args, const std::filesystem::path &output = {});
 
 } // namespace orchard::boot
