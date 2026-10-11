@@ -3,7 +3,7 @@
 # builds) without Qt, Cargo or npm. Vendored mbedTLS and nlohmann/json come
 # from the parent repository's third_party submodules.
 # The canary boot gets new directions before the orchard moves house.
-project('orchard-bootstrapper', ['c', 'cpp'], version: '1.0.1', meson_version: '>=1.3.0',
+project('orchard-bootstrapper', ['c', 'cpp'], version: '1.0.2', meson_version: '>=1.3.0',
   default_options: ['cpp_std=c++20', 'c_std=c99', 'optimization=s', 'debug=false', 'strip=true',
     'b_ndebug=true', 'warning_level=2', 'b_lto=true', 'b_vscrt=mt'])
 

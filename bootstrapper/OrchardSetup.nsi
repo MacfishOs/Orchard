@@ -14,11 +14,11 @@
 !endif
 
 !ifndef ORCHARD_VERSION
-  !define ORCHARD_VERSION "1.0.1"
+  !define ORCHARD_VERSION "1.0.2"
 !endif
 
 !ifndef ORCHARD_FILE_VERSION
-  !define ORCHARD_FILE_VERSION "1.0.1.0"
+  !define ORCHARD_FILE_VERSION "1.0.2.0"
 !endif
 
 !ifndef OUTPUT_FILE
