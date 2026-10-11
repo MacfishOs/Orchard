@@ -445,6 +445,7 @@ fun NowPlayingScreen(
                 onAutoplayEnabled = onAutoplayEnabled,
                 smartCrossfade = smartCrossfade,
                 onBestMixUpcoming = onBestMixUpcoming,
+                reserveSwitchSpace = musicVideo.playing || musicVideo.available || musicVideo.checking,
             )
         }
 

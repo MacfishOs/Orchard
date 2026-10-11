@@ -317,4 +317,4 @@ private const val SWITCH_SETTLE_MS = 4_000L
 private val VIDEO_HEADER_CENTER = 32.dp
 
 /** Clears the song player header: 4 dp padding around a 48 dp icon button. */
-private val SONG_SWITCH_TOP = 64.dp
+internal val SONG_SWITCH_TOP = 64.dp

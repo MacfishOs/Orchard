@@ -114,6 +114,7 @@ internal fun PhonePlayerBody(
     onAutoplayEnabled: ((Boolean) -> Unit)?,
     smartCrossfade: Boolean,
     onBestMixUpcoming: ((onProgress: (String) -> Unit, onComplete: () -> Unit) -> Unit)?,
+    reserveSwitchSpace: Boolean = false,
 ) {
     val queueOpen = panel == PlayerPanel.QUEUE
     val isDownloaded = downloadedTrackIds.contains(track.id)
@@ -143,6 +144,9 @@ internal fun PhonePlayerBody(
             onDownload = onDownloadTrack?.let { action -> { action(track) } },
             onRemoveDownload = onRemoveDownloadTrack?.let { action -> { action(track.id) } },
         )
+
+        // The Song/Video switch floats over this strip.
+        if (reserveSwitchSpace) Spacer(Modifier.height(SONG_SWITCH_SPACE))
 
         Box(
             modifier = Modifier
@@ -309,3 +313,6 @@ private fun Modifier.queueEdgeFade(): Modifier = this
             blendMode = BlendMode.DstIn,
         )
     }
+
+/** Space under the header for the floating Song/Video switch. */
+internal val SONG_SWITCH_SPACE = SONG_SWITCH_TOP - 56.dp + SongVideoSwitchHeight

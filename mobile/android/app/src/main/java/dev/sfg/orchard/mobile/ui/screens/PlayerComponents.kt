@@ -37,6 +37,8 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -67,8 +69,6 @@ import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.TabletAndroid
 import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material.icons.rounded.Usb
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -89,6 +89,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sfg.orchard.mobile.audio.AudioOutputType
@@ -365,28 +366,31 @@ fun PlayerBottomDestinations(
 
         // Queue Action Button with upcoming badge
         IconButton(onClick = onQueue, modifier = Modifier.size(44.dp)) {
-            BadgedBox(
-                badge = {
-                    if (upcomingCount > 0) {
-                        Badge(
-                            containerColor = Color.White.copy(alpha = 0.25f),
-                            contentColor = Color.White,
-                        ) {
-                            Text(
-                                text = if (upcomingCount > 99) "99+" else upcomingCount.toString(),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                    }
-                }
-            ) {
+            Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.List,
                     contentDescription = if (queueActive) "Hide queue" else "Queue",
                     tint = if (queueActive) Color.White else Color.White.copy(alpha = 0.75f),
                     modifier = Modifier.size(24.dp),
                 )
+                if (upcomingCount > 0) {
+                    // Sized to the text so "99+" keeps a pill shape instead of clipping.
+                    Text(
+                        text = if (upcomingCount > 99) "99+" else upcomingCount.toString(),
+                        color = Color.White,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 10.dp, y = (-6).dp)
+                            .defaultMinSize(minWidth = 16.dp)
+                            .background(Color(0xFF3A3A3C), CircleShape)
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                    )
+                }
             }
         }
     }
