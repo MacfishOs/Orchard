@@ -236,7 +236,7 @@ private fun SearchPanel(
         shape = SettingsStyle.PanelShape,
         border = BorderStroke(1.dp, SettingsStyle.PanelBorder),
         // Swallows taps on the panel's own padding so they do not dismiss through to the scrim.
-        modifier = modifier.fillMaxWidth().glassPane(SettingsStyle.PanelShape, GlassTone.OVERLAY).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+        modifier = modifier.fillMaxWidth().glassPane(SettingsStyle.PanelShape, GlassTone.PANEL).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
     ) {
         LazyColumn(contentPadding = PaddingValues(bottom = 6.dp)) {
             when (state) {
