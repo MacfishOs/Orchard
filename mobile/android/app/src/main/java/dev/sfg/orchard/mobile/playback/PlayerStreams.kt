@@ -220,7 +220,7 @@ internal class PlayerStreams(
 
     /** The Qobuz match for a MAX-quality audio item, or null to fall back to the catalog stream. */
     private fun qobuz(videoId: String, uri: android.net.Uri): ResolvedStream? {
-        if (graph.settings.settings.value.audioQuality != AudioQuality.MAX) return null
+        if (graph.audioQuality() != AudioQuality.MAX) return null
         if (MediaItemMapper.isVideoUri(uri) || MediaItemMapper.requiresAuthenticatedDirect(uri) ||
             MediaItemMapper.requiresAuthenticatedHls(uri)
         ) return null

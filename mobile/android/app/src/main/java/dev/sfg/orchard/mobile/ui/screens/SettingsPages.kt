@@ -39,6 +39,7 @@ import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Loop
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Science
+import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.History
@@ -69,7 +70,14 @@ internal fun AudioPage(
 ) {
     SectionLabel("Quality")
     SettingsPanel(index = 1) {
-        QualityRow(settings.audioQuality) { onSettings(settings.copy(audioQuality = it)) }
+        QualityRow(settings.audioQuality, { onSettings(settings.copy(audioQuality = it)) })
+        PanelDivider()
+        QualityRow(
+            settings.cellularAudioQuality,
+            { onSettings(settings.copy(cellularAudioQuality = it)) },
+            title = "Mobile data quality",
+            icon = Icons.Rounded.SignalCellularAlt,
+        )
         PanelDivider()
         ToggleRow(
             title = "Show audio bitrate",

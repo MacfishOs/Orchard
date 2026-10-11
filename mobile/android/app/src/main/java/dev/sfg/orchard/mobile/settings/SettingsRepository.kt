@@ -62,6 +62,8 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 downloadToSdCard = values[DOWNLOAD_TO_SD_CARD] ?: false,
                 audioQuality = runCatching { AudioQuality.valueOf(values[AUDIO_QUALITY].orEmpty()) }
                     .getOrDefault(AudioQuality.HIGH),
+                cellularAudioQuality = runCatching { AudioQuality.valueOf(values[CELLULAR_AUDIO_QUALITY].orEmpty()) }
+                    .getOrDefault(AudioQuality.HIGH),
                 useSystemColors = values[SYSTEM_COLORS] ?: false,
                 animatedBackground = values[ANIMATED_BACKGROUND] ?: false,
                 crossfadeEnabled = values[CROSSFADE_ENABLED] ?: false,
@@ -121,6 +123,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 it[DOWNLOAD_ANIMATED_ARTWORK] = value.downloadAnimatedArtwork
                 it[DOWNLOAD_TO_SD_CARD] = value.downloadToSdCard
                 it[AUDIO_QUALITY] = value.audioQuality.name
+                it[CELLULAR_AUDIO_QUALITY] = value.cellularAudioQuality.name
                 it[SYSTEM_COLORS] = value.useSystemColors
                 it[ANIMATED_BACKGROUND] = value.animatedBackground
                 it[CROSSFADE_ENABLED] = value.crossfadeEnabled
@@ -237,6 +240,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
         val DOWNLOAD_ANIMATED_ARTWORK = booleanPreferencesKey("download_animated_artwork")
         val DOWNLOAD_TO_SD_CARD = booleanPreferencesKey("download_to_sd_card")
         val AUDIO_QUALITY = stringPreferencesKey("audio_quality")
+        val CELLULAR_AUDIO_QUALITY = stringPreferencesKey("cellular_audio_quality")
         val VIDEO_MAX_HEIGHT = intPreferencesKey("video_max_height")
         val TRANSLATE_LYRICS = booleanPreferencesKey("translate_lyrics")
         val LYRIC_TRANSLATION_QUALITY = stringPreferencesKey("lyric_translation_quality")

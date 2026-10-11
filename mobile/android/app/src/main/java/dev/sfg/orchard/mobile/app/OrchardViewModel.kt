@@ -159,7 +159,14 @@ class OrchardViewModel(application: Application) : AndroidViewModel(application)
         graph.qobuz.disconnect()
         // MAX needs a subscription; fall back to High rather than leave a dead choice selected.
         val current = graph.settings.settings.value
-        if (current.audioQuality == AudioQuality.MAX) graph.settings.updateSettings(current.copy(audioQuality = AudioQuality.HIGH))
+        if (current.audioQuality == AudioQuality.MAX || current.cellularAudioQuality == AudioQuality.MAX) {
+            graph.settings.updateSettings(
+                current.copy(
+                    audioQuality = current.audioQuality.takeUnless { it == AudioQuality.MAX } ?: AudioQuality.HIGH,
+                    cellularAudioQuality = current.cellularAudioQuality.takeUnless { it == AudioQuality.MAX } ?: AudioQuality.HIGH,
+                ),
+            )
+        }
     }
     suspend fun qobuzAlbumQuality(detail: BrowseDetail) = graph.qobuzResolver.albumQuality(detail)
     fun setQobuzEnabled(enabled: Boolean) = graph.qobuz.setEnabled(enabled)

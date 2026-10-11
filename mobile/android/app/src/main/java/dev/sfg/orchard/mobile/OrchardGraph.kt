@@ -95,7 +95,7 @@ class OrchardGraph(context: Context) {
     val artistImages = ArtistImageRepository(http)
     /** Shared by playback and downloads, so both reuse one URL cache and one player. */
     val streams: YouTubeStreamResolver by lazy {
-        YouTubeStreamResolver(youtube, auth, { settings.settings.value.audioQuality }, { downloads })
+        YouTubeStreamResolver(youtube, auth, ::audioQuality, { downloads })
     }
     val catalog = CatalogRepository(youtube, auth)
     val playlistActions = PlaylistActions(youtube, auth)
@@ -141,20 +141,24 @@ class OrchardGraph(context: Context) {
     val qobuz = dev.sfg.orchard.mobile.qobuz.QobuzRepository(context, applicationScope)
     val qobuzResolver = dev.sfg.orchard.mobile.qobuz.QobuzResolver(qobuz, http, providerAsset)
 
+    /** The tier for the current network: cellular on metered connections, otherwise the Wi-Fi tier. */
+    fun audioQuality(s: dev.sfg.orchard.mobile.model.OrchardSettings = settings.settings.value): AudioQuality =
+        if (networkMonitor.isMetered.value) s.cellularAudioQuality else s.audioQuality
+
     /** Active Qobuz playback leaves adaptive mix and the equalizer off. */
     val maxActive: kotlinx.coroutines.flow.StateFlow<Boolean> by lazy {
-        kotlinx.coroutines.flow.combine(settings.settings, qobuz.status, connect.state) { s, _, _ ->
-            s.audioQuality == AudioQuality.MAX && qobuzResolver.isAvailable()
+        kotlinx.coroutines.flow.combine(settings.settings, qobuz.status, connect.state, networkMonitor.isMetered) { s, _, _, _ ->
+            audioQuality(s) == AudioQuality.MAX && qobuzResolver.isAvailable()
         }.stateIn(
             applicationScope,
             kotlinx.coroutines.flow.SharingStarted.Eagerly,
-            settings.settings.value.audioQuality == AudioQuality.MAX && qobuzResolver.isAvailable(),
+            audioQuality() == AudioQuality.MAX && qobuzResolver.isAvailable(),
         )
     }
 
     /** Names where MAX audio comes from; cached streams and bytes from another source must not be reused. */
     fun streamVariant(): String {
-        val quality = settings.settings.value.audioQuality
+        val quality = audioQuality()
         val qobuzEnabled = quality == AudioQuality.MAX && qobuzResolver.isAvailable()
         return audioCacheVariant(quality, qobuzEnabled, qobuz.status.value.quality.id)
     }

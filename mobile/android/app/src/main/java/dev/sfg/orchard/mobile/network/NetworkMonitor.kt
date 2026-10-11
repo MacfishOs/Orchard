@@ -46,7 +46,27 @@ class NetworkMonitor(context: Context) {
         return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
+    private val _isMetered = MutableStateFlow(connectivityManager?.isActiveNetworkMetered == true)
+
+    /** True while the default network is cellular or otherwise metered. */
+    val isMetered: StateFlow<Boolean> = _isMetered.asStateFlow()
+
     init {
+        try {
+            connectivityManager?.registerDefaultNetworkCallback(
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                        _isMetered.value = !networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+                    }
+
+                    override fun onLost(network: Network) {
+                        _isMetered.value = connectivityManager.isActiveNetworkMetered
+                    }
+                },
+            )
+        } catch (e: Exception) {
+            Log.w("NetworkMonitor", "Could not register default network callback", e)
+        }
         try {
             val request = NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)

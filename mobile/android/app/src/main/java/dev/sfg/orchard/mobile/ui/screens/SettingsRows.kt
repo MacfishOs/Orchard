@@ -303,15 +303,20 @@ internal fun SettingsPill(
 
 /** Audio quality as one segmented control with the active tier described above it. */
 @Composable
-internal fun QualityRow(stored: AudioQuality, onChange: (AudioQuality) -> Unit) {
+internal fun QualityRow(
+    stored: AudioQuality,
+    onChange: (AudioQuality) -> Unit,
+    title: String = "Wi-Fi quality",
+    icon: ImageVector = Icons.Rounded.Headphones,
+) {
     val linked = LocalQobuzLinked.current
     // Without a subscription MAX cannot play, so the row shows what actually streams.
     val value = if (stored == AudioQuality.MAX && !linked) AudioQuality.HIGH else stored
     Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            RowIcon(Icons.Rounded.Headphones)
+            RowIcon(icon)
             Column {
-                RowTitle("Audio quality")
+                RowTitle(title)
                 RowSubtitle(
                     value.description + if (!linked) ". Max needs a linked Qobuz account." else "",
                 )
