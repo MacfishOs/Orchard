@@ -26,6 +26,7 @@ class AppearanceSettings final : public QObject {
     Q_PROPERTY(bool immersiveBackground READ immersiveBackground WRITE setImmersiveBackground NOTIFY changed)
     Q_PROPERTY(bool showBitrate READ showBitrate WRITE setShowBitrate NOTIFY changed)
     Q_PROPERTY(bool welcomeSeen READ welcomeSeen WRITE setWelcomeSeen NOTIFY changed)
+    Q_PROPERTY(QString lastSeenRelease READ lastSeenRelease WRITE setLastSeenRelease NOTIFY changed)
     Q_PROPERTY(QString layoutStyle READ layoutStyle WRITE setLayoutStyle NOTIFY changed)
     Q_PROPERTY(double speed READ speed WRITE setSpeed NOTIFY changed)
     Q_PROPERTY(double intensity READ intensity WRITE setIntensity NOTIFY changed)
@@ -44,6 +45,7 @@ public:
     bool immersiveBackground() const { return m_immersive; }
     bool showBitrate() const { return m_showBitrate; }
     bool welcomeSeen() const { return m_welcomeSeen; }
+    QString lastSeenRelease() const { return m_lastSeenRelease; }
     QString layoutStyle() const { return m_layoutStyle; }
     double speed() const { return m_speed; }
     double intensity() const { return m_intensity; }
@@ -61,6 +63,7 @@ public:
     void setImmersiveBackground(bool value);
     void setShowBitrate(bool value);
     void setWelcomeSeen(bool value);
+    void setLastSeenRelease(const QString &value);
     void setLayoutStyle(const QString &value);
     void setSpeed(double value);
     void setIntensity(double value);
@@ -89,6 +92,8 @@ private:
     bool m_showBitrate{false};
     // Set once the post-login welcome has been shown, so it greets people exactly once.
     bool m_welcomeSeen{false};
+    // Newest bundled release the person has opened; drives the "New" marks in release notes.
+    QString m_lastSeenRelease;
     // "glade" floats the player at the bottom, "canopy" docks it beside search at the top.
     QString m_layoutStyle{QStringLiteral("glade")};
     double m_speed{1.38};

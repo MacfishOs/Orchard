@@ -33,6 +33,7 @@ AppearanceSettings::AppearanceSettings(QObject *parent) : QObject(parent) {
     m_immersive = m_settings.value(QStringLiteral("immersiveBackground"), false).toBool();
     m_showBitrate = m_settings.value(QStringLiteral("showBitrate"), false).toBool();
     m_welcomeSeen = m_settings.value(QStringLiteral("welcomeSeen"), false).toBool();
+    m_lastSeenRelease = m_settings.value(QStringLiteral("lastSeenRelease")).toString();
     const QString layout = m_settings.value(QStringLiteral("layoutStyle")).toString();
     if (layout == QLatin1String("canopy")) m_layoutStyle = layout;
     m_speed = readNumber(m_settings, QStringLiteral("speed"), 1.38, 0.0, 5.0);
@@ -63,6 +64,12 @@ void AppearanceSettings::setWelcomeSeen(bool value) {
     if (value == m_welcomeSeen) return;
     m_welcomeSeen = value;
     m_settings.setValue(QStringLiteral("welcomeSeen"), value);
+    emit changed();
+}
+void AppearanceSettings::setLastSeenRelease(const QString &value) {
+    if (value == m_lastSeenRelease) return;
+    m_lastSeenRelease = value;
+    m_settings.setValue(QStringLiteral("lastSeenRelease"), value);
     emit changed();
 }
 void AppearanceSettings::setLayoutStyle(const QString &value) {

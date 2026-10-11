@@ -29,8 +29,10 @@ ColumnLayout {
     property alias orchardLinkButton: orchardLinkButton
     property alias orchardLicenseButton: orchardLicenseButton
     property alias licenseList: licenseList
+    property alias releaseNotesButton: releaseNotesButton
     property string appVersion: ""
     property var releaseNotes: []
+    property string releaseSummary: ""
 
     spacing: 28
     Layout.fillWidth: true
@@ -229,7 +231,7 @@ ColumnLayout {
         }
     }
 
-    // Bundled notes let every installed build explain itself, even offline.
+    // The history opens in its own window; bundled notes read offline.
     SettingsSection {
         Layout.fillWidth: true
         title: qsTr("Release Notes")
@@ -237,59 +239,14 @@ ColumnLayout {
         verticalPadding: 0
 
         SettingsRow {
-            visible: root.releaseNotes.length === 0
-            iconName: "info"
-            title: qsTr("No release notes")
-            description: qsTr("No release notes are included with this build.")
-        }
+            iconName: "sparkles"
+            title: qsTr("What's new")
+            description: root.releaseSummary
 
-        Repeater {
-            model: root.releaseNotes
-
-            delegate: ColumnLayout {
-                id: releaseEntry
-                required property var modelData
-                Layout.fillWidth: true
-                spacing: 0
-
-                SettingsRow {
-                    iconName: "sparkles"
-                    title: releaseEntry.modelData.title
-                    description: (releaseEntry.modelData.highlights || []).map(function (h) { return "\u2022 " + h; }).join("\n")
-
-                    ColumnLayout {
-                        Layout.alignment: Qt.AlignTop
-                        spacing: 2
-
-                        Text {
-                            Layout.alignment: Qt.AlignRight
-                            text: releaseEntry.modelData.version === root.appVersion
-                                  ? qsTr("Current version") : releaseEntry.modelData.version
-                            color: releaseEntry.modelData.version === root.appVersion ? "#f0eee7" : "#a3ada5"
-                            font.family: "Inter"
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                        }
-
-                        Text {
-                            Layout.alignment: Qt.AlignRight
-                            text: releaseEntry.modelData.date
-                            color: "#7e8781"
-                            font.family: "Inter"
-                            font.pixelSize: 11
-                        }
-                    }
-                }
-
-                Repeater {
-                    model: releaseEntry.modelData.sections || []
-
-                    delegate: SettingsRow {
-                        required property var modelData
-                        title: modelData.title
-                        description: (modelData.items || []).map(function (item) { return "\u2022 " + item; }).join("\n")
-                    }
-                }
+            SettingsButton {
+                id: releaseNotesButton
+                text: qsTr("View release notes")
+                enabled: root.releaseNotes.length > 0
             }
         }
     }

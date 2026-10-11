@@ -29,6 +29,8 @@ Popup {
     signal docsRequested
     // Same deal for bug reports: the shell swaps this popup for the report one.
     signal supportRequested
+    // Release notes live in their own popup too.
+    signal releaseNotesRequested
     parent: Overlay.overlay
     anchors.centerIn: parent
     width: Math.min(980, parent.width - 64)
@@ -132,6 +134,10 @@ Popup {
         Connections {
             target: panel.sectionLoader.item
             ignoreUnknownSignals: true
+
+            function onReleaseNotesRequested() {
+                root.releaseNotesRequested();
+            }
 
             function onSignOutRequested() {
                 root.close();

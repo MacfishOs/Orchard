@@ -23,8 +23,22 @@ import QtQuick.Controls
 // Credits and bundled licenses. Layout lives in AboutSectionForm.ui.qml.
 AboutSectionForm {
     id: root
+
+    // The settings popup closes and opens the release notes window.
+    signal releaseNotesRequested
+
     appVersion: Qt.application.version
     releaseNotes: OrchardReleaseNotes
+    releaseSummary: root.summarize(OrchardReleaseNotes, Qt.application.version)
+
+    function summarize(releases, installed) {
+        if (releases.length === 0)
+            return qsTr("No release notes are included with this build.");
+        const current = releases.find(release => release.version === installed);
+        return current
+            ? qsTr("Installed: %1, %2. Browse every release, including older ones. Works offline.").arg(current.version).arg(current.title)
+            : qsTr("Browse what changed in each release. Works offline.");
+    }
 
     function showLicenseModal(title, key) {
         licenseModal.licenseTitle = title;
@@ -32,6 +46,7 @@ AboutSectionForm {
         licenseModal.open();
     }
 
+    releaseNotesButton.onClicked: root.releaseNotesRequested()
     orchardLinkButton.onClicked: Qt.openUrlExternally("https://sfg545.dev/orchard")
     orchardLicenseButton.onClicked: root.showLicenseModal(qsTr("Orchard License (AGPL-3.0)"), "orchard")
 

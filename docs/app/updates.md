@@ -9,6 +9,9 @@ keywords:
   - new version
   - restart to update
   - canary
+  - release notes
+  - what's new
+  - changelog
   - beta
   - rollback
   - repair
@@ -23,7 +26,11 @@ order: 145
 
 Orchard downloads updates in the background and installs them the next time it starts. You never wait for an update when you open Orchard.
 
-To see what changed in a build, open **Settings** > **About** > **Release Notes**. The notes are included with Orchard, so you can read them offline. About also shows the version of the app you are currently running.
+After an update, Orchard opens the **Release notes** window once to show what changed. Releases you have not opened yet are marked **New**.
+
+To read the notes again, open **Settings** > **About** > **Release Notes** and select **View release notes**. You can also press Ctrl+K (or /) and choose **Release notes**. The window lists every release on the left, newest first. The one you run is marked **Installed**. Select a release to read its changes, or use **Newer** and **Older** to move between releases. Type in the search box to find releases by version, title, or wording, for example "lyrics". Select **Copy notes** to copy a release as Markdown.
+
+The notes are included with Orchard, so you can read them offline. Settings > About still shows the version you are running in the Release Notes row.
 
 ## Install a downloaded update
 

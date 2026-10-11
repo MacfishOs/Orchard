@@ -40,6 +40,7 @@ Popup {
     signal unsupportedRequested(var media)
     signal settingsRequested
     signal docsRequested
+    signal releasesRequested
     signal supportRequested
     signal queueRequested
 
@@ -217,6 +218,14 @@ Popup {
                 icon: "book-open",
                 type: qsTr("Help"),
                 action: () => { root.docsRequested(); }
+            },
+            {
+                id: "cmd:releases",
+                title: qsTr("Release notes"),
+                subtitle: qsTr("What changed in each Orchard release"),
+                icon: "sparkles",
+                type: qsTr("Help"),
+                action: () => { root.releasesRequested(); }
             },
             {
                 id: "cmd:support",

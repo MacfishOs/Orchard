@@ -19,13 +19,14 @@
 
 import "../../components"
 import "../../components/docs"
+import "../../components/releases"
 import "../../components/settings"
 import "../../components/support"
 import "../../components/welcome"
 import Orchard
 import QtQuick
 
-// Settings, docs, spotlight and support popups plus the shell keyboard shortcuts.
+// Settings, docs, release notes, spotlight and support popups plus the shell keyboard shortcuts.
 Item {
     id: overlays
 
@@ -49,8 +50,24 @@ Item {
             overlays.openWelcome();
     }
 
-    onSignedInChanged: overlays.maybeOpenWelcome()
-    Component.onCompleted: overlays.maybeOpenWelcome()
+    // Shows the notes once after an update. A first run only records the newest release.
+    function maybeOpenReleases() {
+        const newest = OrchardReleaseNotes.length > 0 ? OrchardReleaseNotes[0].version : "";
+        if (!overlays.signedIn || newest === "" || OrchardAppearance.lastSeenRelease === newest)
+            return;
+        if (overlays.welcomeOpen || !OrchardAppearance.welcomeSeen)
+            OrchardAppearance.lastSeenRelease = newest;
+        else
+            overlays.openReleases("");
+    }
+
+    function maybeOpenOnLaunch() {
+        overlays.maybeOpenWelcome();
+        overlays.maybeOpenReleases();
+    }
+
+    onSignedInChanged: overlays.maybeOpenOnLaunch()
+    Component.onCompleted: overlays.maybeOpenOnLaunch()
 
     function openSettings() {
         settingsLoader.active = true;
@@ -69,8 +86,22 @@ Item {
         });
     }
 
+    function openReleases(version) {
+        releasesLoader.release = version || "";
+        releasesLoader.active = true;
+        Qt.callLater(() => {
+            if (releasesLoader.item)
+                releasesLoader.item.open();
+        });
+    }
+
+    // Docs and release notes are reading popups.
+    function readerOpen() {
+        return overlays.overlayOpen(docsLoader) || overlays.overlayOpen(releasesLoader);
+    }
+
     function openSupport(reportId) {
-        const closing = overlays.overlayOpen(settingsLoader) || overlays.overlayOpen(spotlightLoader) || overlays.overlayOpen(docsLoader);
+        const closing = overlays.overlayOpen(settingsLoader) || overlays.overlayOpen(spotlightLoader) || overlays.readerOpen();
         supportHost.open(reportId || "", closing);
     }
 
@@ -100,6 +131,10 @@ Item {
                 }
                 onSupportRequested: {
                     overlays.openSupport("");
+                    close();
+                }
+                onReleaseNotesRequested: {
+                    overlays.openReleases("");
                     close();
                 }
             }
@@ -139,6 +174,21 @@ Item {
     }
 
     Loader {
+        id: releasesLoader
+        // Version to open on; set before the loader activates.
+        property string release: ""
+        active: false
+
+        sourceComponent: Component {
+            ReleasesPopup {
+                backdrop: overlays.stage
+                release: releasesLoader.release
+                onClosed: releasesLoader.active = false
+            }
+        }
+    }
+
+    Loader {
         id: spotlightLoader
         active: false
 
@@ -169,6 +219,7 @@ Item {
                 }
                 onSettingsRequested: overlays.openSettings()
                 onDocsRequested: overlays.openDocs()
+                onReleasesRequested: overlays.openReleases("")
                 onSupportRequested: overlays.openSupport("")
                 onQueueRequested: overlays.shell.queueOpen = true
             }
@@ -187,14 +238,14 @@ Item {
     // AC/DC in an input box unless you want an angry mob with pitchforks.
     Shortcut {
         sequence: "/"
-        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.shell.fullscreenOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.overlayOpen(docsLoader) && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
+        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.shell.fullscreenOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.readerOpen() && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
         onActivated: overlays.openSpotlight("")
     }
 
     // Ctrl+K for the terminal-jockeys and VS Code muscle-memory victims.
     Shortcut {
         sequence: "Ctrl+K"
-        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.shell.fullscreenOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.overlayOpen(docsLoader) && !supportHost.popupOpen
+        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.shell.fullscreenOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.readerOpen() && !supportHost.popupOpen
         onActivated: overlays.openSpotlight("")
     }
 
@@ -202,7 +253,7 @@ Item {
     Shortcut {
         sequence: "Space"
         autoRepeat: false
-        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.overlayOpen(docsLoader) && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
+        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.readerOpen() && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
         onActivated: {
             OrchardPlayback.toggle();
             overlays.shell.wakeFullscreen();
@@ -213,19 +264,19 @@ Item {
     Shortcut {
         sequence: "F"
         autoRepeat: false
-        enabled: overlays.shell.visible && !overlays.welcomeOpen && !OrchardMusicVideo.open && Boolean(OrchardPlayback.track.id) && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.overlayOpen(docsLoader) && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
+        enabled: overlays.shell.visible && !overlays.welcomeOpen && !OrchardMusicVideo.open && Boolean(OrchardPlayback.track.id) && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.readerOpen() && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
         onActivated: overlays.shell.setFullscreen(!overlays.shell.fullscreenOpen)
     }
 
     Shortcut {
         sequence: "Escape"
-        enabled: overlays.shell.fullscreenOpen && !OrchardMusicVideo.open && !overlays.overlayOpen(settingsLoader) && !overlays.overlayOpen(docsLoader) && !supportHost.popupOpen
+        enabled: overlays.shell.fullscreenOpen && !OrchardMusicVideo.open && !overlays.overlayOpen(settingsLoader) && !overlays.readerOpen() && !supportHost.popupOpen
         onActivated: overlays.shell.setFullscreen(false)
     }
 
     Shortcut {
         sequence: "Left"
-        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.overlayOpen(docsLoader) && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
+        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.readerOpen() && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
         onActivated: {
             OrchardPlayback.seekBy(-5);
             overlays.shell.wakeFullscreen();
@@ -234,7 +285,7 @@ Item {
 
     Shortcut {
         sequence: "Right"
-        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.overlayOpen(docsLoader) && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
+        enabled: overlays.shell.visible && !overlays.welcomeOpen && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.readerOpen() && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
         onActivated: {
             OrchardPlayback.seekBy(5);
             overlays.shell.wakeFullscreen();
