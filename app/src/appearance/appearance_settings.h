@@ -34,6 +34,7 @@ class AppearanceSettings final : public QObject {
     Q_PROPERTY(double brightness READ brightness WRITE setBrightness NOTIFY changed)
     Q_PROPERTY(bool fullscreenAutoHide READ fullscreenAutoHide WRITE setFullscreenAutoHide NOTIFY changed)
     Q_PROPERTY(bool fullscreenPulse READ fullscreenPulse WRITE setFullscreenPulse NOTIFY changed)
+    Q_PROPERTY(bool artistVideoBackdrop READ artistVideoBackdrop WRITE setArtistVideoBackdrop NOTIFY changed)
     Q_PROPERTY(bool animatedArtworkEnabled READ animatedArtworkEnabled WRITE setAnimatedArtworkEnabled NOTIFY changed)
     Q_PROPERTY(bool animatedCollageEnabled READ animatedCollageEnabled WRITE setAnimatedCollageEnabled NOTIFY changed)
     Q_PROPERTY(QString artworkSource READ artworkSource WRITE setArtworkSource NOTIFY changed)
@@ -53,6 +54,7 @@ public:
     double brightness() const { return m_brightness; }
     bool fullscreenAutoHide() const { return m_fullscreenAutoHide; }
     bool fullscreenPulse() const { return m_fullscreenPulse; }
+    bool artistVideoBackdrop() const { return m_artistVideoBackdrop; }
     bool animatedArtworkEnabled() const { return m_animatedArtwork; }
     bool animatedCollageEnabled() const { return m_animatedCollage; }
     QString artworkSource() const { return m_artworkSource; }
@@ -71,6 +73,7 @@ public:
     void setBrightness(double value);
     void setFullscreenAutoHide(bool value);
     void setFullscreenPulse(bool value);
+    void setArtistVideoBackdrop(bool value);
     void setAnimatedArtworkEnabled(bool value);
     void setAnimatedCollageEnabled(bool value);
     void setArtworkSource(const QString &value);
@@ -103,6 +106,8 @@ private:
     double m_brightness{1.0};
     bool m_fullscreenAutoHide{true};
     bool m_fullscreenPulse{true};
+    // Plays one of the artist's music videos, muted, behind the artist page hero.
+    bool m_artistVideoBackdrop{false};
     // Moving album art: when a still image simply isn't consuming enough of your monthly data plan.
     bool m_animatedArtwork{true};
     // Four videos at once: off by default, because your GPU didn't sign up for a lava lamp.

@@ -101,7 +101,8 @@ Item {
         anchors.fill: parent
         source: OrchardAppearance.immersiveBackground ? (OrchardPlayback.track.thumbnail || scene.detailThumbnail()) : ""
         visible: OrchardAppearance.immersiveBackground
-        running: scene.shell.visible && visible && OrchardPlayback.playing && scene.Window.window !== null && scene.Window.window.visibility !== Window.Minimized && scene.Window.window.visibility !== Window.Hidden
+        // The video ambient fully covers it on artist pages; no need to warp underneath.
+        running: scene.shell.visible && visible && !videoAmbient.covering && OrchardPlayback.playing && scene.Window.window !== null && scene.Window.window.visibility !== Window.Minimized && scene.Window.window.visibility !== Window.Hidden
         speed: OrchardAppearance.speed
         intensity: OrchardAppearance.intensity
         saturation: OrchardAppearance.saturation
@@ -151,6 +152,19 @@ Item {
 
         }
 
+    }
+
+    // Colors of the artist page's backdrop video, in place of the artwork background.
+    VideoAmbient {
+        id: videoAmbient
+
+        readonly property bool covering: opacity === 1
+
+        anchors.fill: parent
+        colors: OrchardArtistVideo.ambient
+        opacity: scene.shell.currentPage === "artist" && OrchardAppearance.artistVideoBackdrop && ready ? 1 : 0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 1200; easing.type: Easing.InOutQuad } }
     }
 
     NavigationSidebar {

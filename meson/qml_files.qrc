@@ -55,6 +55,7 @@
     <file alias="app/qml/components/GoogleSignInButton.qml">../app/qml/components/GoogleSignInButton.qml</file>
     <file alias="app/qml/components/LucideIcon.qml">../app/qml/components/LucideIcon.qml</file>
     <file alias="app/qml/components/home/RoundedArtwork.qml">../app/qml/components/home/RoundedArtwork.qml</file>
+    <file alias="app/qml/components/home/VideoAmbient.qml">../app/qml/components/home/VideoAmbient.qml</file>
     <file alias="app/qml/components/home/AnimatedArtwork.qml">../app/qml/components/home/AnimatedArtwork.qml</file>
     <file alias="app/qml/components/home/HoverArtwork.qml">../app/qml/components/home/HoverArtwork.qml</file>
     <file alias="app/qml/components/home/ImmersiveBackground.qml">../app/qml/components/home/ImmersiveBackground.qml</file>
@@ -92,7 +93,9 @@
     <file alias="app/qml/components/detail/CollectionTrackRow.qml">../app/qml/components/detail/CollectionTrackRow.qml</file>
     <file alias="app/qml/components/detail/CollectionStickyBar.qml">../app/qml/components/detail/CollectionStickyBar.qml</file>
     <file alias="app/qml/components/detail/PageLoadState.qml">../app/qml/components/detail/PageLoadState.qml</file>
+    <file alias="app/qml/components/detail/ArtistBackdropVideo.qml">../app/qml/components/detail/ArtistBackdropVideo.qml</file>
     <file alias="app/qml/components/detail/ArtistHero.ui.qml">../app/qml/components/detail/ArtistHero.ui.qml</file>
+    <file alias="app/qml/components/detail/ArtistHeroCredits.ui.qml">../app/qml/components/detail/ArtistHeroCredits.ui.qml</file>
     <file alias="app/qml/components/detail/ArtistHeroGhostButton.ui.qml">../app/qml/components/detail/ArtistHeroGhostButton.ui.qml</file>
     <file alias="app/qml/views/artist/ArtistView.qml">../app/qml/views/artist/ArtistView.qml</file>
     <file alias="app/qml/views/artist/ArtistViewForm.ui.qml">../app/qml/views/artist/ArtistViewForm.ui.qml</file>

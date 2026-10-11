@@ -1,6 +1,6 @@
 ---
 title: Appearance
-summary: Show the bitrate, set how the fullscreen player behaves, turn animated artwork on or off, set the artwork source order, and tune the immersive background.
+summary: Show the bitrate, set how the fullscreen player behaves, play music videos behind artist pages, turn animated artwork on or off, set the artwork source order, and tune the immersive background.
 group: Customize
 icon: palette
 keywords:
@@ -13,6 +13,8 @@ keywords:
   - fullscreen player
   - hide controls
   - pulse
+  - artist page video
+  - music video background
   - layout
   - glade
   - canopy
@@ -49,6 +51,17 @@ Turn off **Hide controls when idle** in the **Fullscreen player** group. The ful
 ## Stop the fullscreen player from pulsing with the music
 
 Turn off **Pulse with the music** in the **Fullscreen player** group. The glow behind the cover then breathes slowly instead of brightening on each bass hit, and the background stays steady. The setting is on by default.
+
+## Play a music video behind artist pages
+
+Turn on **Play a music video behind the artist** in the **Artist pages** group. The top of each artist page then plays the first video from the artist's **Videos** shelf, muted, in place of the artist photo. The setting is off by default and uses extra network bandwidth.
+
+- The photo shows until the video has loaded, then the video fades in.
+- The video starts about a fifth of the way in, skipping most intros, and loops.
+- **Now showing**, at the right end of the row under the artist name, names the video. Select the title (tooltip "Watch video") to open it in the music video player with sound.
+- While the video plays, the whole window behind the artist page, including the sidebar and the top bar, takes its colors from the video and shifts with each scene. This replaces the artwork background on artist pages, whether or not **Use artwork background** is on. Black bars baked into the video are left out of the colors.
+- The video pauses when you scroll past the top of the page, open a full shelf, leave the page, or minimize Orchard. The song that is playing is not affected.
+- Artists without a **Videos** shelf, and videos that fail to load, keep the photo.
 
 ## Turn animated artwork on or off
 
@@ -104,4 +117,4 @@ Four sliders in the **Immersive background** group shape the effect. They are di
 
 ## Reset the immersive background controls
 
-Select **Reset controls**. The button restores Speed, Intensity, Saturation, and Brightness to their defaults. It also turns **Hide controls when idle**, **Pulse with the music**, and **Enable animated artwork** back on, sets the artwork source to Apple Music, and restores the default mirror order. It leaves **Use artwork background** and **Show audio bitrate** as they are.
+Select **Reset controls**. The button restores Speed, Intensity, Saturation, and Brightness to their defaults. It also turns **Hide controls when idle**, **Pulse with the music**, and **Enable animated artwork** back on, sets the artwork source to Apple Music, restores the default mirror order, and turns **Play a music video behind the artist** off. It leaves **Use artwork background** and **Show audio bitrate** as they are.

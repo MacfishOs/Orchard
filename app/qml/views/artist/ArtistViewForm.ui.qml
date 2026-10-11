@@ -57,6 +57,15 @@ Item {
     // Bottom padding so the last row clears the player pill.
     property real playerInset: 0
 
+    // Backdrop video for the hero; the logic layer picks and resolves it.
+    property bool heroVideoWanted: false
+    // Subscribers plus genre and origin, joined by the logic layer.
+    property string heroMeta: ""
+    // {label, value} pairs for the hero's credit row.
+    property var heroCredits: []
+    property url heroVideoSource: ""
+    property string heroVideoTitle: ""
+    property bool heroVideoPlaying: true
     property color accentColor: "#7fbe90"
     property color accentSoftColor: "#96caa4"
     property color deepColor: "#0f1512"
@@ -125,15 +134,20 @@ Item {
 
                 x: root.heroBleeds ? -root.pageInset : 0
                 width: root.heroBleeds ? scroll.width : parent.width
-                fullBleed: !!root.detail.heroArtwork
+                fullBleed: !!root.detail.heroArtwork || root.heroVideoWanted
                 sideInset: root.heroBleeds ? root.pageInset : 0
                 compact: root.compact
                 title: root.detail.title || qsTr("Artist")
-                subtitle: root.detail.subtitle || ""
+                subtitle: root.heroMeta || root.detail.subtitle || ""
                 // Wide art comes from TheAudioDB or the YouTube Music artist header.
                 banner: root.detail.heroArtwork || root.detail.thumbnail || ""
                 portrait: root.detail.thumbnail || ""
                 scrollY: scroll.contentY
+                videoWanted: root.heroVideoWanted
+                credits: root.heroCredits
+                videoSource: root.heroVideoSource
+                videoTitle: root.heroVideoTitle
+                videoPlaying: root.heroVideoPlaying
                 actionsEnabled: root.tracks.length > 0 && !root.loading
                 playing: root.collectionPlaying
                 shareEnabled: !!root.browseIdentity

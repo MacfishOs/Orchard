@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "audiodb_artist.h"
+
 #include <QByteArray>
 #include <QCache>
 #include <QJsonObject>
@@ -73,7 +75,7 @@ private:
   void receiveFailure(quint64 requestId, const QString &message);
   void requestArtwork(const QString &url);
   void requestArtistArtwork();
-  void applyArtistArtwork(const QString &url);
+  void applyAudioDbArtist(const AudioDbArtist &artist);
   void sampleArtwork(QByteArray bytes);
   void cancelArtwork();
   static QVariantMap defaultPalette();
@@ -84,7 +86,7 @@ private:
   QNetworkAccessManager m_network;
   QNetworkReply *m_artworkReply{nullptr};
   QNetworkReply *m_artistArtworkReply{nullptr};
-  QCache<QString, QString> m_artistArtworkCache{64};
+  QCache<QString, AudioDbArtist> m_artistArtworkCache{64};
   QVariantMap m_pendingItem;
   QVariantMap m_detail;
   QVariantMap m_palette;

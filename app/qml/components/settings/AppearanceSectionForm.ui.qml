@@ -28,6 +28,7 @@ ColumnLayout {
     property bool showBitrate: false
     property bool fullscreenAutoHide: true
     property bool fullscreenPulse: true
+    property bool artistVideoBackdrop: false
     property bool animatedArtworkEnabled: true
     property bool animatedCollageEnabled: false
     property string artworkSource: "apple_music"
@@ -42,6 +43,7 @@ ColumnLayout {
     property alias bitrateSwitch: bitrateSwitch
     property alias autoHideSwitch: autoHideSwitch
     property alias pulseSwitch: pulseSwitch
+    property alias artistVideoSwitch: artistVideoSwitch
     property alias animatedArtworkSwitch: animatedArtworkSwitch
     property alias collageSwitch: collageSwitch
     property alias sourcePicker: sourcePicker
@@ -130,6 +132,26 @@ ColumnLayout {
                 objectName: "fullscreenPulseToggle"
                 checked: root.fullscreenPulse
                 Accessible.name: qsTr("Pulse with the music")
+            }
+        }
+    }
+
+    SettingsSection {
+        Layout.fillWidth: true
+        title: qsTr("Artist pages")
+        rowSpacing: 0
+        verticalPadding: 0
+
+        SettingsRow {
+            iconName: "video"
+            title: qsTr("Play a music video behind the artist")
+            description: qsTr("Replace the artist photo at the top of artist pages with one of the artist's music videos, muted. The photo shows while the video loads, and artists without videos keep their photo. Uses extra network bandwidth.")
+
+            SettingsSwitch {
+                id: artistVideoSwitch
+                objectName: "artistVideoBackdropToggle"
+                checked: root.artistVideoBackdrop
+                Accessible.name: qsTr("Play a music video behind the artist")
             }
         }
     }

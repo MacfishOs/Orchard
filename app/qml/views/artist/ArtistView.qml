@@ -21,6 +21,7 @@ import "../../components"
 import "../../components/home"
 import "../../components/detail"
 import QtQuick
+import QtQuick.Window
 
 // Artist page. Layout lives in ArtistViewForm.ui.qml; this file binds the artist model and handles input.
 // Backstage crew only: the form keeps the spotlight.
@@ -29,6 +30,16 @@ ArtistViewForm {
 
     readonly property var sections: detail.sections || []
     readonly property var artistPalette: OrchardArtist.palette || ({})
+    // First entry of the artist's Videos shelf, when the backdrop setting is on.
+    readonly property var backdropVideo: {
+        if (!OrchardAppearance.artistVideoBackdrop)
+            return null;
+        const shelf = sections.find((section) => sectionKind(section) === "videos");
+        const items = shelf && shelf.items || [];
+        return items.find((item) => item && item.id) || null;
+    }
+    // Feeds the shell's ambient colors while the backdrop has moving pictures.
+    readonly property bool samplingVideo: hero.backdropVideo.live && heroVideoPlaying
     readonly property bool containsCurrent: {
         const id = OrchardPlayback.track.id;
         return Boolean(id) && tracks.some((track) => track.id === id);
@@ -56,6 +67,28 @@ ArtistViewForm {
     browseIdentity: detail.browseId || ""
     collectionPlaying: containsCurrent && OrchardPlayback.playing
     playerInset: scroll.playerInset
+    heroMeta: [detail.subtitle].concat((detail.facts || [])
+        .filter((fact) => fact.key === "genre" || fact.key === "origin")
+        .map((fact) => fact.value))
+        .filter(Boolean).join(" · ")
+    heroCredits: {
+        const facts = detail.facts || [];
+        const fact = (key) => (facts.find((entry) => entry.key === key) || {}).value || "";
+        // "25.5M subscribers" becomes a SUBSCRIBERS credit of 25.5M.
+        const audience = String(detail.subtitle || "").match(/^([\d.,]+\s*[KMB]?)\s+(.+)$/i);
+        return [
+            { label: qsTr("Genre"), value: fact("genre") },
+            { label: qsTr("From"), value: fact("origin") },
+            audience ? { label: audience[2], value: audience[1] } : { label: "", value: "" },
+            { label: qsTr("Active since"), value: fact("formed") }
+        ].filter((credit) => credit.label && credit.value);
+    }
+    heroVideoWanted: !!backdropVideo && OrchardArtistVideo.status !== "error"
+    heroVideoSource: backdropVideo && OrchardArtistVideo.videoId === backdropVideo.id ? OrchardArtistVideo.source : ""
+    heroVideoTitle: backdropVideo ? backdropVideo.title || "" : ""
+    // Runs only while the hero is on screen and the window is shown.
+    heroVideoPlaying: visible && !expandedSection && scroll.contentY < hero.height
+                      && Window.visibility !== Window.Minimized && Window.visibility !== Window.Hidden
     accentColor: rgb(artistPalette.accent, [127, 190, 144])
     accentSoftColor: rgb(artistPalette.accentSoft, [150, 202, 164])
     deepColor: rgb(artistPalette.deep, [15, 21, 18])
@@ -125,6 +158,9 @@ ArtistViewForm {
             OrchardPlayback.playCollection(tracks, 0, false);
     }
 
+    onSamplingVideoChanged: OrchardArtistVideo.watchFrames(samplingVideo ? hero.backdropVideo.sink : null)
+    Component.onDestruction: OrchardArtistVideo.watchFrames(null)
+
     onBrowseIdentityChanged: {
         expandedSection = null;
         scroll.contentY = 0;
@@ -146,6 +182,8 @@ ArtistViewForm {
 
     hero.playButton.onClicked: root.playOrToggle()
     hero.shuffleButton.onClicked: OrchardPlayback.playCollection(root.tracks, 0, true)
+    hero.watchButton.onClicked: if (root.backdropVideo) root.unsupportedRequested(root.backdropVideo)
+    hero.backdropVideo.onFailed: OrchardArtistVideo.retry()
     hero.shareButton.onClicked: OrchardBackend.copyToClipboard("https://music.youtube.com/channel/" + root.browseIdentity, qsTr("Copied artist link to clipboard"))
 
     stickyBar.onPlayClicked: root.playOrToggle()
@@ -235,6 +273,19 @@ ArtistViewForm {
         onAlbumRequested: function(album) { root.albumRequested(album); }
         onArtistRequested: function(artist) { root.artistRequested(artist); }
         onPlaylistRequested: function(playlist) { root.playlistRequested(playlist); }
+    }
+
+    Binding {
+        target: OrchardArtistVideo
+        property: "targetHeight"
+        value: root.hero.backdropVideo.pixelHeight
+    }
+
+    // Leaving the page releases the stream.
+    Binding {
+        target: OrchardArtistVideo
+        property: "videoId"
+        value: root.visible && root.backdropVideo ? root.backdropVideo.id : ""
     }
 
     // The grid's Back button lives in its header delegate, so it is wired through the header item.

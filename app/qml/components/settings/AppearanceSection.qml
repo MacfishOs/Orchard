@@ -25,6 +25,7 @@ AppearanceSectionForm {
     showBitrate: OrchardAppearance.showBitrate
     fullscreenAutoHide: OrchardAppearance.fullscreenAutoHide
     fullscreenPulse: OrchardAppearance.fullscreenPulse
+    artistVideoBackdrop: OrchardAppearance.artistVideoBackdrop
     animatedArtworkEnabled: OrchardAppearance.animatedArtworkEnabled
     animatedCollageEnabled: OrchardAppearance.animatedCollageEnabled
     artworkSource: OrchardAppearance.artworkSource
@@ -39,6 +40,7 @@ AppearanceSectionForm {
     bitrateSwitch.onToggled: OrchardAppearance.showBitrate = bitrateSwitch.checked
     autoHideSwitch.onToggled: OrchardAppearance.fullscreenAutoHide = autoHideSwitch.checked
     pulseSwitch.onToggled: OrchardAppearance.fullscreenPulse = pulseSwitch.checked
+    artistVideoSwitch.onToggled: OrchardAppearance.artistVideoBackdrop = artistVideoSwitch.checked
     animatedArtworkSwitch.onToggled: OrchardAppearance.animatedArtworkEnabled = animatedArtworkSwitch.checked
     collageSwitch.onToggled: OrchardAppearance.animatedCollageEnabled = collageSwitch.checked
     sourcePicker.onPicked: value => OrchardAppearance.artworkSource = value

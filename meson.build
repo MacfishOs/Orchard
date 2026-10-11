@@ -437,6 +437,8 @@ if get_option('tests')
     ['adaptive_mix_output', 'tests/adaptive_mix_output_test.cpp'],
     ['music_video_match', 'tests/music_video_match_test.cpp'],
     ['letterbox', 'tests/letterbox_test.cpp'],
+    ['video_ambient', 'tests/video_ambient_test.cpp'],
+    ['audiodb_artist', 'tests/audiodb_artist_test.cpp'],
     ['lyrics_translation', 'tests/lyrics_translation_test.cpp'],
   ]
   foreach spec : app_test_specs

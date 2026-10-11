@@ -42,6 +42,7 @@
 #include "offline/download_manager.h"
 #include "offline/offline_library.h"
 #include "playback/sleep_timer.h"
+#include "playback/artist_video_backdrop.h"
 #include "playback/music_video_controller.h"
 #include "playback/playback_controller.h"
 #include "providers/qobuz/qobuz_service.h"
@@ -278,6 +279,7 @@ int main(int argc, char *argv[]) {
   // Lyrics in English, courtesy of a 20 MB model that has never heard a song in its life.
   LyricsTranslator lyricsTranslation(lyrics.get());
   MusicVideoController musicVideo(&youtubeProvider, &authManager, playback.get());
+  ArtistVideoBackdrop artistVideo(&youtubeProvider, &authManager);
   // Local imports announce themselves through the same pill as copied links.
   QObject::connect(&localLibrary, &LocalLibrary::noticeRequested, &backend, &BackendInfo::noticeRequested);
   QObject::connect(&downloads, &DownloadManager::noticeRequested, &backend, &BackendInfo::noticeRequested);
@@ -335,6 +337,7 @@ int main(int argc, char *argv[]) {
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardTranslation"), &lyricsTranslation);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardSleep"), &sleepTimer);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardMusicVideo"), &musicVideo);
+  engine.rootContext()->setContextProperty(QStringLiteral("OrchardArtistVideo"), &artistVideo);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardLibrary"), libraryActions.get());
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardLocal"), &localLibrary);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardNetwork"), &connectivity);

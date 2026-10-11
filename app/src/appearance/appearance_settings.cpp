@@ -42,6 +42,7 @@ AppearanceSettings::AppearanceSettings(QObject *parent) : QObject(parent) {
     m_brightness = readNumber(m_settings, QStringLiteral("brightness"), 1.0, 0.0, 2.0);
     m_fullscreenAutoHide = m_settings.value(QStringLiteral("fullscreenAutoHide"), true).toBool();
     m_fullscreenPulse = m_settings.value(QStringLiteral("fullscreenPulse"), true).toBool();
+    m_artistVideoBackdrop = m_settings.value(QStringLiteral("artistVideoBackdrop"), false).toBool();
     m_animatedArtwork = m_settings.value(QStringLiteral("animatedArtworkEnabled"), true).toBool();
     m_animatedCollage = m_settings.value(QStringLiteral("animatedCollageEnabled"), false).toBool();
     m_artworkSource = m_settings.value(QStringLiteral("artworkSource"), QStringLiteral("apple_music")).toString();
@@ -99,6 +100,7 @@ void AppearanceSettings::setFlag(const QString &key, bool value, bool &field) {
 }
 void AppearanceSettings::setFullscreenAutoHide(bool value) { setFlag(QStringLiteral("fullscreenAutoHide"), value, m_fullscreenAutoHide); }
 void AppearanceSettings::setFullscreenPulse(bool value) { setFlag(QStringLiteral("fullscreenPulse"), value, m_fullscreenPulse); }
+void AppearanceSettings::setArtistVideoBackdrop(bool value) { setFlag(QStringLiteral("artistVideoBackdrop"), value, m_artistVideoBackdrop); }
 
 void AppearanceSettings::setAnimatedArtworkEnabled(bool value) {
     if (value == m_animatedArtwork) return;
@@ -213,6 +215,7 @@ void AppearanceSettings::reset() {
     setBrightness(1.0);
     setFullscreenAutoHide(true);
     setFullscreenPulse(true);
+    setArtistVideoBackdrop(false);
     setAnimatedArtworkEnabled(true);
     setAnimatedCollageEnabled(false);
     setArtworkSource(QStringLiteral("apple_music"));

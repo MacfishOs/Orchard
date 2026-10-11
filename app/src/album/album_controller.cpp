@@ -274,8 +274,8 @@ void AlbumController::requestArtistArtwork() {
   if (name.isEmpty())
     return;
   const QString key = name.toCaseFolded();
-  if (const QString *cached = m_artistArtworkCache.object(key)) {
-    applyArtistArtwork(*cached);
+  if (const AudioDbArtist *cached = m_artistArtworkCache.object(key)) {
+    applyAudioDbArtist(*cached);
     return;
   }
 
@@ -306,34 +306,25 @@ void AlbumController::requestArtistArtwork() {
       return;
     const auto artists =
         document.object().value(QStringLiteral("artists")).toArray();
-    const auto artist =
-        artists.isEmpty() ? QJsonObject() : artists.first().toObject();
-    QString artwork;
-    for (const auto *field : {"strArtistFanart", "strArtistFanart2",
-                              "strArtistFanart3", "strArtistBanner"}) {
-      const QString candidate =
-          artist.value(QLatin1String(field)).toString().trimmed();
-      const QUrl candidateUrl(candidate);
-      if (candidateUrl.isValid() && !candidateUrl.host().isEmpty() &&
-          (candidateUrl.scheme() == QStringLiteral("https") ||
-           candidateUrl.scheme() == QStringLiteral("http"))) {
-        artwork = candidate;
-        break;
-      }
-    }
-    m_artistArtworkCache.insert(key, new QString(artwork));
-    applyArtistArtwork(artwork);
+    const AudioDbArtist artist = parseAudioDbArtist(
+        artists.isEmpty() ? QJsonObject() : artists.first().toObject());
+    m_artistArtworkCache.insert(key, new AudioDbArtist(artist));
+    applyAudioDbArtist(artist);
   });
 }
 
-void AlbumController::applyArtistArtwork(const QString &url) {
-  if (url.isEmpty())
+void AlbumController::applyAudioDbArtist(const AudioDbArtist &artist) {
+  if (!artist.facts.isEmpty()) {
+    m_detail.insert(QStringLiteral("facts"), artist.facts);
+    emit stateChanged();
+  }
+  if (artist.artwork.isEmpty())
     return;
   // Keep thumbnails on queued songs intact; only the artist hero uses fanart.
   cancelArtwork();
-  m_detail.insert(QStringLiteral("heroArtwork"), url);
+  m_detail.insert(QStringLiteral("heroArtwork"), artist.artwork);
   emit stateChanged();
-  requestArtwork(url);
+  requestArtwork(artist.artwork);
 }
 
 void AlbumController::receiveFailure(quint64 requestId,
