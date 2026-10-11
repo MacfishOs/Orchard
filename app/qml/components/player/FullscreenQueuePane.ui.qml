@@ -145,6 +145,10 @@ ColumnLayout {
             primaryText: pane.primaryText
             mutedText: pane.mutedText
         }
+
+        FlickableWheel {
+            view: upNext
+        }
     }
 
     Text {

@@ -232,6 +232,10 @@ RowLayout {
                                      : generalComponent
                 }
             }
+
+            FlickableWheel {
+                view: scroller.contentItem
+            }
         }
     }
 

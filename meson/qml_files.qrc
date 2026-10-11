@@ -87,6 +87,8 @@
     <file alias="app/qml/components/PlaylistPicker.qml">../app/qml/components/PlaylistPicker.qml</file>
     <file alias="app/qml/components/DetailListView.qml">../app/qml/components/DetailListView.qml</file>
     <file alias="app/qml/components/WheelGlide.qml">../app/qml/components/WheelGlide.qml</file>
+    <file alias="app/qml/components/ScrollWheelHandler.qml">../app/qml/components/ScrollWheelHandler.qml</file>
+    <file alias="app/qml/components/FlickableWheel.qml">../app/qml/components/FlickableWheel.qml</file>
     <file alias="app/qml/components/detail/CollectionHero.qml">../app/qml/components/detail/CollectionHero.qml</file>
     <file alias="app/qml/components/detail/CollageArtwork.qml">../app/qml/components/detail/CollageArtwork.qml</file>
     <file alias="app/qml/components/detail/CollectionTrackHeader.qml">../app/qml/components/detail/CollectionTrackHeader.qml</file>

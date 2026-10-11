@@ -275,5 +275,9 @@ Item {
         }
 
         footer: Item { width: 1; height: 28 }
+
+        FlickableWheel {
+            view: grid
+        }
     }
 }

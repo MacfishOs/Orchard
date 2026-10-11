@@ -28,10 +28,10 @@ FrameAnimation {
     required property Flickable view
     property bool horizontal: false
     // Seconds for friction to shrink the velocity by a factor of e. A notch travels delta pixels in total.
-    property real friction: 0.3
+    property real friction: 0.18
     // Spring stiffness in 1/s for the edge bounce.
     property real omega: 14
-    property real maxVelocity: 7000
+    property real maxVelocity: 24000
     property real maxOvershoot: 90
 
     property real velocity: 0
@@ -66,6 +66,18 @@ FrameAnimation {
         root.velocity = Math.max(-root.maxVelocity, Math.min(root.velocity + travel / root.friction, root.maxVelocity));
         if (!root.running)
             root.start();
+    }
+
+    // Smooth input glides with edge bounce; touchpad input moves the content directly.
+    function scrollBy(delta, smooth) {
+        if (delta === 0)
+            return;
+        if (smooth) {
+            root.fling(-delta, true);
+            return;
+        }
+        root.stop();
+        root.place(Math.max(root.lowBound, Math.min(root.offset() - delta, root.highBound)));
     }
 
     onTriggered: {

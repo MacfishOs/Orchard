@@ -608,6 +608,10 @@ Popup {
                     onClicked: root.activateRow(rowItem.modelData)
                 }
             }
+
+            FlickableWheel {
+                view: resultsList
+            }
         }
 
         // Empty Status Placeholder

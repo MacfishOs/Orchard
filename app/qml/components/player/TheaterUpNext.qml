@@ -21,6 +21,7 @@ import Orchard
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import ".."
 
 // Frosted "Up next" rail laid over the right edge of the picture.
 Rectangle {
@@ -137,6 +138,10 @@ Rectangle {
                         }
                     }
                 }
+            }
+
+            FlickableWheel {
+                view: list
             }
         }
     }

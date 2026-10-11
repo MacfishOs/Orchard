@@ -375,6 +375,11 @@ Item {
                     delegate: QueueRow { panel: root; list: queueList }
 
                     QueueEmptyState { panel: root; visible: root.rows.length === 0 }
+
+                    FlickableWheel {
+                        view: queueList
+                        enabled: queueList.interactive
+                    }
                 }
             }
 

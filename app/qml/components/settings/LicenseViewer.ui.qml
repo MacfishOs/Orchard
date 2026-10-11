@@ -20,6 +20,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import ".."
 
 // Title bar and scrolling text of the license dialog.
 ColumnLayout {
@@ -71,6 +72,7 @@ ColumnLayout {
         clip: true
 
         ScrollView {
+            id: licenseScroller
             anchors.fill: parent
             anchors.margins: 14
             contentWidth: availableWidth
@@ -86,6 +88,10 @@ ColumnLayout {
                 font.pixelSize: 11
                 wrapMode: TextEdit.Wrap
                 background: null
+            }
+
+            FlickableWheel {
+                view: licenseScroller.contentItem
             }
         }
     }

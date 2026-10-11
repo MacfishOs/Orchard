@@ -262,6 +262,10 @@ Item {
                 running: OrchardSupport.activeLoading && events.count === 0
                 visible: running
             }
+
+            FlickableWheel {
+                view: events
+            }
         }
     }
 }

@@ -20,6 +20,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import ".."
 
 Rectangle {
     id: root
@@ -67,6 +68,10 @@ Rectangle {
             }
 
             ScrollBar.vertical: ScrollBar {}
+
+            FlickableWheel {
+                view: pageScroller
+            }
         }
 
         RowLayout {

@@ -86,6 +86,8 @@ qml_sources = [
   'app/qml/components/PlaylistPicker.qml',
   'app/qml/components/DetailListView.qml',
   'app/qml/components/WheelGlide.qml',
+  'app/qml/components/ScrollWheelHandler.qml',
+  'app/qml/components/FlickableWheel.qml',
   'app/qml/components/detail/CollectionHero.qml',
   'app/qml/components/detail/CollageArtwork.qml',
   'app/qml/components/detail/CollectionTrackHeader.qml',

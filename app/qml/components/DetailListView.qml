@@ -44,32 +44,19 @@ ListView {
         if (delta === 0)
             return;
         pinnedToTop = false;
-        if (smooth) {
-            wheelAnimation.fling(-delta, true);
-            return;
-        }
-        wheelAnimation.stop();
-        const minimum = originY - topMargin;
-        const maximum = Math.max(minimum, originY + contentHeight + bottomMargin - height);
-        contentY = Math.max(minimum, Math.min(contentY - delta, maximum));
+        wheelAnimation.scrollBy(delta, smooth);
     }
 
     // Mouse wheel notches add momentum; touchpad updates follow the fingers.
-    WheelHandler {
+    ScrollWheelHandler {
         id: wheelHandler
-        target: null
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         onWheel: function(event) {
-            const hasPixels = event.pixelDelta.x !== 0 || event.pixelDelta.y !== 0;
-            const delta = hasPixels ? event.pixelDelta : event.angleDelta;
-            if (Math.abs(delta.x) > Math.abs(delta.y)) {
+            const motion = wheelHandler.measure(event);
+            if (motion.horizontal) {
                 event.accepted = false;
                 return;
             }
-            const touchpad = wheelHandler.point.device
-                    && wheelHandler.point.device.type === PointerDevice.TouchPad;
-            root.scrollBy(hasPixels ? delta.y * 1.75 : delta.y,
-                          !touchpad);
+            root.scrollBy(motion.delta, motion.smooth);
             event.accepted = true;
         }
     }

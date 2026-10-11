@@ -275,5 +275,9 @@ Item {
                 }
             }
         }
+
+        FlickableWheel {
+            view: scroll.contentItem
+        }
     }
 }

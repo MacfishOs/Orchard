@@ -232,5 +232,9 @@ ColumnLayout {
             font.family: "Inter"
             font.pixelSize: 13
         }
+
+        FlickableWheel {
+            view: list
+        }
     }
 }

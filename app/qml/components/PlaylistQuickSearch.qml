@@ -486,6 +486,10 @@ Popup {
                     }
                 }
             }
+
+            FlickableWheel {
+                view: resultsList
+            }
         }
 
         // Empty Status Placeholder

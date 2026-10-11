@@ -124,4 +124,8 @@ GridView {
         animatedArtist: grid.artistTitle
         navigable: media.type === "album" || media.type === "artist" || media.type === "playlist"
     }
+
+    FlickableWheel {
+        view: grid
+    }
 }

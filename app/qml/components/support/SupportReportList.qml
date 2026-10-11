@@ -184,6 +184,10 @@ Item {
                 font.family: "Inter"
                 font.pixelSize: 12
             }
+
+            FlickableWheel {
+                view: list
+            }
         }
 
         Text {

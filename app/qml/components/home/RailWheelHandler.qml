@@ -18,39 +18,26 @@
  */
 
 import QtQuick
+import ".."
 
 // Routes wheel input for a horizontal rail: sideways deltas scroll the rail,
 // vertical ones go back to the containing page.
-WheelHandler {
+ScrollWheelHandler {
     id: root
 
     signal verticalRequested(real delta, bool smooth)
     signal horizontalRequested(real delta, bool smooth)
 
-    target: null
-    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-
     onWheel: function (event) {
-        // Compare axes in the same units; pixels and wheel angles
-        // should not be competing in the same Olympic event.
-        const hasPixels = event.pixelDelta.x !== 0 || event.pixelDelta.y !== 0;
-        const delta = hasPixels ? event.pixelDelta : event.angleDelta;
-        const touchpad = root.point.device
-                && root.point.device.type === PointerDevice.TouchPad;
-        const horizontal = Math.abs(delta.x) > Math.abs(delta.y);
+        const motion = root.measure(event);
         event.accepted = true;
-        if (horizontal !== (root.orientation === Qt.Horizontal))
+        if (motion.horizontal !== (root.orientation === Qt.Horizontal))
             return;
-        const amount = horizontal ? delta.x : delta.y;
-        const smooth = !touchpad;
-
-        // Trackpads often report a small incidental horizontal delta during a
-        // vertical gesture. Route those gestures to the containing page.
-        if (!horizontal) {
-            root.verticalRequested(hasPixels ? amount * 1.75 : amount, smooth);
+        // Trackpads often add a small sideways delta to vertical gestures; those go to the page.
+        if (!motion.horizontal) {
+            root.verticalRequested(motion.delta, motion.smooth);
             return;
         }
-
-        root.horizontalRequested(hasPixels ? amount : amount / 2, smooth);
+        root.horizontalRequested(motion.touchpad ? motion.delta : motion.delta / 2, motion.smooth);
     }
 }

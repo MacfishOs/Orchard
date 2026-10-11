@@ -411,5 +411,9 @@ ColumnLayout {
                 }
             }
         }
+
+        FlickableWheel {
+            view: scroller.contentItem
+        }
     }
 }

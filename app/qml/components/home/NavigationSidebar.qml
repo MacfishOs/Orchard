@@ -323,6 +323,9 @@ Item {
                 font.pixelSize: 11
             }
 
+            FlickableWheel {
+                view: playlistList
+            }
         }
 
     }

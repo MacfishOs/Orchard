@@ -290,6 +290,10 @@ ColumnLayout {
                 }
             }
         }
+
+        FlickableWheel {
+            view: scroller.contentItem
+        }
     }
 
     // Card pointing at the neighbouring release; empty at either end of the history.
