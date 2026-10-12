@@ -41,8 +41,8 @@ if a.platform == "windows-x86_64-msvc" and dxc != {"dxil.dll", "dxcompiler.dll"}
     raise SystemExit("ort's DXC libraries were not found in Cargo's linker output")
 # Static FFmpeg for Windows, where no system decoder is on PATH.
 FFMPEG = {
-    "windows-x86_64-msvc": ("autobuild-2026-09-26-13-03", "ffmpeg-n9.0.2-10-g51c4a23d74-win64-gpl-9.0",
-                            "1f09d6d90fb9f47cfb588c6b85e2a2c23e991b5cde90027face382c402c3649d"),
+    "windows-x86_64-msvc": ("autobuild-2026-10-11-13-04", "ffmpeg-n9.0.2-25-g67b60c310b-win64-gpl-9.0",
+                            "b1860fbeb14e87d1de44aecc5eb9e25dfecc7ee8efa8d54250995a9acfbe6070"),
 }
 FFMPEG["windows-x86_64-gnu"] = FFMPEG["windows-x86_64-msvc"]
 if a.platform in FFMPEG:

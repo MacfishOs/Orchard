@@ -99,8 +99,8 @@ spectrograms, annotations or audio do.
 ## FFmpeg (Windows packages)
 
 Windows packages bundle a static `ffmpeg.exe` from BtbN FFmpeg-Builds
-(`ffmpeg-n9.0.2-10-g51c4a23d74-win64-gpl-9.0`, release
-`autobuild-2026-09-26-13-03`), used by `orchard-adaptive-mix` to decode audio.
+(`ffmpeg-n9.0.2-25-g67b60c310b-win64-gpl-9.0`, release
+`autobuild-2026-10-11-13-04`), used by `orchard-adaptive-mix` to decode audio.
 This build is licensed under the GNU GPL version 3; its license text ships as
 `ffmpeg-LICENSE.txt`. Corresponding source: FFmpeg at
 <https://github.com/FFmpeg/FFmpeg/tree/n9.0.2> and the build scripts at
