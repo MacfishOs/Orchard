@@ -206,6 +206,8 @@ app_sources = [
   'app/src/system_tray.h',
   'app/src/update/bootstrapper_client.cpp',
   'app/src/update/bootstrapper_client.h',
+  'app/src/window_occlusion.cpp',
+  'app/src/window_occlusion.h',
   'app/src/window_state.cpp',
   'app/src/window_state.h',
 ]
@@ -526,6 +528,7 @@ app_moc_headers = [
   'app/src/system_media_bridge.h',
   'app/src/system_tray.h',
   'app/src/update/bootstrapper_client.h',
+  'app/src/window_occlusion.h',
   'app/src/window_state.h',
 ]
 

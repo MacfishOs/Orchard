@@ -102,6 +102,7 @@ Item {
         source: OrchardAppearance.immersiveBackground ? (OrchardPlayback.track.thumbnail || scene.detailThumbnail()) : ""
         visible: OrchardAppearance.immersiveBackground
         // The video ambient fully covers it on artist pages; no need to warp underneath.
+        throttled: OrchardWindowState.backgroundIdle
         running: scene.shell.visible && visible && !videoAmbient.covering && OrchardPlayback.playing && scene.Window.window !== null && scene.Window.window.visibility !== Window.Minimized && scene.Window.window.visibility !== Window.Hidden
         speed: OrchardAppearance.speed
         intensity: OrchardAppearance.intensity

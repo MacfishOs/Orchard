@@ -130,8 +130,13 @@ platform_deps = [thread_dep]
 # DBus (Linux) and IOKit (macOS) back the screen wake lock.
 if host_machine.system() == 'linux'
   platform_deps += [cpp.find_library('dl'), cpp.find_library('m'), dependency('qt6', modules: ['DBus'])]
+  # X11 visibility events detect a fully covered window.
+  xcb_dep = dependency('xcb', required: false)
+  if xcb_dep.found()
+    platform_deps += [xcb_dep]
+  endif
 elif host_machine.system() == 'windows'
-  platform_deps += [cpp.find_library('dbghelp'), cpp.find_library('shell32')]
+  platform_deps += [cpp.find_library('dbghelp'), cpp.find_library('shell32'), cpp.find_library('dwmapi')]
 elif host_machine.system() == 'darwin'
   platform_deps += [dependency('appleframeworks', modules: ['IOKit', 'CoreFoundation'])]
 endif
@@ -289,6 +294,9 @@ app_dependencies = [qt_dep, qt_gui_private, connect_dep, rust_dep, discord_sdk_d
 app_args = ['-DORCHARD_VERSION="' + meson.project_version() + '"']
 if host_machine.system() == 'windows' or host_machine.system() == 'linux'
   app_args += ['-DORCHARD_NATIVE_COOKIE_AUTH']
+endif
+if host_machine.system() == 'linux' and xcb_dep.found()
+  app_args += ['-DORCHARD_HAVE_XCB']
 endif
 app_moc = qt6.compile_moc(headers: app_moc_headers,
   sources: ['app/src/providers/runtime/provider_runtime.cpp'],

@@ -34,6 +34,7 @@ Item {
     // Drifts and warps only while playing on screen.
     property bool playing: false
     property bool warpRunning: false
+    property bool warpThrottled: false
     property real warpSpeed: 1
     property real warpIntensity: 1
     property real warpSaturation: 1
@@ -88,6 +89,7 @@ Item {
         anchors.fill: parent
         source: backdrop.visible ? backdrop.thumbnail : ""
         running: backdrop.warpRunning
+        throttled: backdrop.warpThrottled
         speed: backdrop.warpSpeed
         intensity: backdrop.warpIntensity
         saturation: backdrop.warpSaturation

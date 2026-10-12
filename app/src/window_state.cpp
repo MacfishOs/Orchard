@@ -19,11 +19,15 @@
 
 #include "window_state.h"
 
+#include <QEvent>
+#include <QGuiApplication>
 #include <QWindow>
 
 namespace {
 constexpr int kDefaultWidth = 1360;
 constexpr int kDefaultHeight = 820;
+// Keeps the background animating while alt-tab previews the window.
+constexpr int kUnfocusedGraceMs = 2500;
 }
 
 WindowState::WindowState(QObject *parent) : QObject(parent)
@@ -38,6 +42,12 @@ WindowState::WindowState(QObject *parent) : QObject(parent)
     m_saveTimer.setSingleShot(true);
     m_saveTimer.setInterval(400);
     connect(&m_saveTimer, &QTimer::timeout, this, &WindowState::save);
+
+    m_unfocusedTimer.setSingleShot(true);
+    m_unfocusedTimer.setInterval(kUnfocusedGraceMs);
+    connect(&m_unfocusedTimer, &QTimer::timeout, this, [this] { setUnfocused(true); });
+    connect(qGuiApp, &QGuiApplication::applicationStateChanged, this, &WindowState::updateState);
+    connect(&m_occlusion, &WindowOcclusion::occludedChanged, this, &WindowState::updateState);
 }
 
 void WindowState::setEnabled(bool value)
@@ -60,6 +70,65 @@ void WindowState::setWindow(QWindow *window)
     connect(window, &QWindow::widthChanged, this, schedule);
     connect(window, &QWindow::heightChanged, this, schedule);
     connect(window, &QWindow::visibilityChanged, this, schedule);
+    connect(window, &QWindow::visibilityChanged, this, &WindowState::updateState);
+    connect(window, &QWindow::visibleChanged, this, &WindowState::updateState);
+    window->installEventFilter(this);
+    m_occlusion.setWindow(window);
+    updateState();
+}
+
+bool WindowState::eventFilter(QObject *watched, QEvent *event)
+{
+    // Platforms that report occlusion deliver it as an expose change.
+    if (watched == m_window && event->type() == QEvent::Expose)
+        updateState();
+    return QObject::eventFilter(watched, event);
+}
+
+void WindowState::updateState()
+{
+    if (!m_window)
+        return;
+    const bool minimized = m_window->visibility() == QWindow::Minimized
+        || m_window->visibility() == QWindow::Hidden;
+    setIdle(minimized || !m_window->isVisible() || !m_window->isExposed()
+        || m_occlusion.occluded());
+
+    if (qGuiApp->applicationState() == Qt::ApplicationActive) {
+        m_unfocusedTimer.stop();
+        setUnfocused(false);
+    } else if (!m_unfocused && !m_unfocusedTimer.isActive()) {
+        m_unfocusedTimer.start();
+    }
+    syncBackgroundIdle();
+}
+
+void WindowState::setIdle(bool value)
+{
+    if (value == m_idle)
+        return;
+    m_idle = value;
+    emit idleChanged();
+    syncBackgroundIdle();
+}
+
+void WindowState::setUnfocused(bool value)
+{
+    if (value == m_unfocused)
+        return;
+    m_unfocused = value;
+    emit unfocusedChanged();
+    syncBackgroundIdle();
+}
+
+void WindowState::syncBackgroundIdle()
+{
+    const bool fullscreen = m_window && m_window->visibility() == QWindow::FullScreen;
+    const bool value = m_idle || (m_unfocused && !fullscreen);
+    if (value == m_backgroundIdle)
+        return;
+    m_backgroundIdle = value;
+    emit backgroundIdleChanged();
 }
 
 void WindowState::save()

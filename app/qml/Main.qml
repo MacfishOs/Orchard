@@ -70,8 +70,16 @@ Window {
         property real time: 0.0
         property vector2d extent: Qt.vector2d(width, height)
 
+        // One frame per second while idle.
+        Timer {
+            running: meshBackground.visible && OrchardWindowState.idle && mainWindow.visible
+            interval: 1000
+            repeat: true
+            onTriggered: meshBackground.time = (meshBackground.time + 1.0) % 1000.0
+        }
+
         NumberAnimation on time {
-            running: meshBackground.visible && mainWindow.visibility !== Window.Minimized && mainWindow.visible
+            running: meshBackground.visible && !OrchardWindowState.idle && mainWindow.visible
             loops: Animation.Infinite
             from: 0.0
             to: 1000.0
