@@ -417,6 +417,17 @@ Item {
         z: 6
     }
 
+    // Above the player bar, which sits in the top row on canopy.
+    TopErrorPill {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        topInset: root.canopy ? scene.topBar.y + scene.topBar.height + 8 : 24
+        z: 8
+        text: root.noticeMessage || OrchardPlayback.errorMessage || (OrchardPlayback.loading ? qsTr("Loading audio…") : "")
+        pillColor: root.noticeMessage || OrchardPlayback.errorMessage ? "#e6a197" : "#2d3340"
+        textColor: root.noticeMessage || OrchardPlayback.errorMessage ? "#110c0b" : "#e5e9f0"
+    }
+
     Loader {
         id: queuePanelLoader
 

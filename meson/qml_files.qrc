@@ -111,6 +111,7 @@
     <file alias="app/qml/components/player/QueueEmptyState.qml">../app/qml/components/player/QueueEmptyState.qml</file>
     <file alias="app/qml/components/player/QueueAutoplayCard.qml">../app/qml/components/player/QueueAutoplayCard.qml</file>
     <file alias="app/qml/components/player/SleepTimerButton.qml">../app/qml/components/player/SleepTimerButton.qml</file>
+    <file alias="app/qml/components/player/VolumePopup.qml">../app/qml/components/player/VolumePopup.qml</file>
     <file alias="app/qml/components/player/LyricsView.qml">../app/qml/components/player/LyricsView.qml</file>
     <file alias="app/qml/components/player/LyricsWordRows.qml">../app/qml/components/player/LyricsWordRows.qml</file>
     <file alias="app/qml/components/player/LyricsPauseDots.qml">../app/qml/components/player/LyricsPauseDots.qml</file>

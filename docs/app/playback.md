@@ -48,7 +48,7 @@ Select the repeat button in the player bar. Each click moves to the next mode in
 
 ## Change the volume
 
-Drag the volume slider next to the volume icon in the player bar. The icon changes to a muted speaker when the volume is at zero.
+Drag the volume slider next to the volume icon in the player bar. In the Canopy layout, click the volume icon to open a vertical slider below it, and drag that. In both layouts you can also scroll the mouse wheel over the control. The icon changes to a muted speaker when the volume is at zero.
 
 Turn on **Exponential volume** in Settings, Playback for finer control at low volumes. You can also choose **Exponential volume** on the welcome screen's **Tune the sound** step. The setting is off by default and is saved between sessions. With it on, 50% on the slider produces 12.5% output, while zero stays silent and 100% stays at full volume.
 

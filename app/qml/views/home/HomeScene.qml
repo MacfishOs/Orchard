@@ -339,15 +339,6 @@ Item {
         onSupportRequested: scene.shell.openSupport("")
     }
 
-    TopErrorPill {
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.top: parent.top
-        z: 100
-        text: scene.shell.noticeMessage || OrchardPlayback.errorMessage || (OrchardPlayback.loading ? qsTr("Loading audio…") : "")
-        pillColor: scene.shell.noticeMessage || OrchardPlayback.errorMessage ? "#e6a197" : "#2d3340"
-        textColor: scene.shell.noticeMessage || OrchardPlayback.errorMessage ? "#110c0b" : "#e5e9f0"
-    }
-
     Loader {
         id: albumLoader
         anchors.left: home.left

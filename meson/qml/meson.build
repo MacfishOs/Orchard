@@ -110,6 +110,7 @@ qml_sources = [
   'app/qml/components/player/QueueEmptyState.qml',
   'app/qml/components/player/QueueAutoplayCard.qml',
   'app/qml/components/player/SleepTimerButton.qml',
+  'app/qml/components/player/VolumePopup.qml',
   'app/qml/components/player/LyricsView.qml',
   'app/qml/components/player/TransitionArtwork.qml',
   'app/qml/components/player/MixSwapText.qml',

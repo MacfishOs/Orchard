@@ -26,6 +26,8 @@ Item {
     property string text: ""
     property color pillColor: "#e6a197"
     property color textColor: "#110c0b"
+    // Resting distance from the top edge.
+    property real topInset: 24
     
     height: pill.height
     visible: pill.opacity > 0
@@ -34,7 +36,7 @@ Item {
         id: pill
         anchors.horizontalCenter: parent.horizontalCenter
         
-        y: root.text ? 24 : -height - 24
+        y: root.text ? root.topInset : -height - 24
         opacity: root.text ? 1 : 0
         
         Behavior on y {

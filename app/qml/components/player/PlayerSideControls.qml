@@ -25,6 +25,8 @@ import QtQuick.Layouts
 
 // Orchard Connect, volume and the queue button.
 RowLayout {
+    id: sideControls
+
     // The player bar this lives in; it owns the colours and helpers.
     required property Item bar
 
@@ -83,6 +85,23 @@ RowLayout {
         ToolTip.visible: hovered
         ToolTip.delay: 500
         ToolTip.text: qsTr("Volume")
+        onClicked: if (bar.canopy) volumePopup.visible ? volumePopup.close() : volumePopup.open()
+
+        // Canopy has no room for an inline slider, so the button opens a vertical one.
+        WheelHandler {
+            enabled: bar.canopy
+            target: null
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onWheel: function(event) {
+                const step = (event.inverted ? -event.angleDelta.y : event.angleDelta.y) / 120 * 0.05;
+                bar.setVolumeLevel(Math.max(0, Math.min(1, bar.volumeLevel + step)));
+            }
+        }
+
+        VolumePopup {
+            id: volumePopup
+            bar: sideControls.bar
+        }
 
         background: Rectangle {
             radius: width / 2
@@ -105,8 +124,8 @@ RowLayout {
     Slider {
         id: volume
 
-        visible: !bar.compact
-        Layout.preferredWidth: bar.canopy ? 56 : 72
+        visible: !bar.compact && !bar.canopy
+        Layout.preferredWidth: 72
         from: 0
         to: 1
         stepSize: 0.01
