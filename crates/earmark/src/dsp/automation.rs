@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Sample-accurate parameter automation.
 //!
 //! A curve is a list of breakpoints over a normalised `0.0..=1.0` timeline, which makes it

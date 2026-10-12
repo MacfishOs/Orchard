@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Bar position of every beat: beat-synchronous evidence scored against per-position
 //! templates, then a Viterbi pass over 3/4 and 4/4 bars.
 

@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Tempo from beat times: the median slope of straight lines fitted to windows of beats.
 
 /// Beats per fitted window and the distance between window starts.

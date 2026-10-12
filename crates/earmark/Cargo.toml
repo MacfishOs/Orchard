@@ -2,7 +2,7 @@
 name = "earmark"
 version = "0.1.0"
 edition = "2024"
-license = "MIT OR Apache-2.0"
+license-file = "LICENSE"
 description = "Beat-aware smart crossfade engine: analyses, plans, and renders DJ-style transitions from decoded PCM and precomputed beat metadata."
 repository = "https://github.com/SFG5453/orchard"
 keywords = ["audio", "crossfade", "dsp", "beatmatching", "dj"]

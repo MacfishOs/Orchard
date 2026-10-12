@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL.
 """Pack an FP32 LiteRT graph's constant weights as FP16, keeping FP32 math.
 
 Run with `uv run --no-project --with ai-edge-litert --with flatbuffers --with numpy`.

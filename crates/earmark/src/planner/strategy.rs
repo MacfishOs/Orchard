@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Strategy selection and the automation each strategy implies.
 //!
 //! Choice is deterministic and driven by the measurements, not by a preference list. The result

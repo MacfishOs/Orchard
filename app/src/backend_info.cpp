@@ -127,7 +127,14 @@ QString BackendInfo::licenseText(const QString &key) const
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         return QStringLiteral("Could not load license text from resource: %1").arg(path);
     }
-    return QString::fromUtf8(file.readAll());
+    QString text = QString::fromUtf8(file.readAll());
+    // The adaptive mix engine is under OOL-1.0; show it with the AGPL.
+    if (key == QLatin1String("orchard")) {
+        QFile ool(QStringLiteral(":/licenses/orchard-ool.txt"));
+        if (ool.open(QIODevice::ReadOnly | QIODevice::Text))
+            text += QStringLiteral("\n\n---\n\n") + QString::fromUtf8(ool.readAll());
+    }
+    return text;
 }
 
 QString BackendInfo::songlinkAlbumUrl(const QString &audioPlaylistId) const

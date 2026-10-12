@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Beat metadata supplied by a caller or produced by whole-track analysis.
 
 use crate::error::{CrossfadeError, Result};

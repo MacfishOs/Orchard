@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Per-frame log densities for the beat-pointer states.
 
 /// Log densities for frames inside a beat, half a beat later, and elsewhere.

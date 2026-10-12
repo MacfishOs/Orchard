@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Reusable real-FFT workspaces and window functions shared by whole-track analysis.
 
 use std::sync::Arc;

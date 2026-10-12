@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Candidate generation.
 //!
 //! Transition points come from the supplied downbeats, never from a fixed offset. Generation is

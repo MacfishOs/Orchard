@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Stateless-by-default DSP primitives.
 //!
 //! Nothing here decides *what* a transition should do — that belongs to [`crate::planner`].

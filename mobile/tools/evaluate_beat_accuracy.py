@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL.
 """Reproduce the GTZAN-mini accuracy check for prepared beat_this models.
 
 Run from the repository root. Requires artifacts/beat-quant/upstream and the

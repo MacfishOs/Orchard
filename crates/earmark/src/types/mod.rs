@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Data types shared across the analysis, planning, and rendering stages.
 
 pub mod analysis;

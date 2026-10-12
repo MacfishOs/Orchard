@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL.
 """Make Beat This's reductions and rotary trigonometry safe for FP16 GPU.
 
 The direct LiteRT export computes normalize(x) * sqrt(512) as

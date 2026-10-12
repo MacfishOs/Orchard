@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! The contract between planning and rendering.
 //!
 //! A [`TransitionPlan`] is complete: given the same plan and the same PCM, the renderer produces

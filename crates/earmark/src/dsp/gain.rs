@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Decibel conversions and static gain application.
 
 /// Anything at or below this is treated as digital silence rather than an ever-deeper negative.

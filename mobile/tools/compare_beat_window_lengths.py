@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL.
 """Compare fixed-window Beat This LiteRT exports on the same saved mel excerpts.
 
 Both graphs use BeatTracker's six-frame borders and reverse stitching, so this

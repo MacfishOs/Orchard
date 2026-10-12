@@ -1,21 +1,4 @@
-/*
- * Copyright (C) 2026 SFG545
- *
- * This file is part of Orchard.
- *
- * Orchard is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Affero General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * Orchard is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU Affero General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
- */
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 
 //! Everything the transition engine needs that earmark itself must not know
 //! about, in plain Rust with no binding types anywhere in it.

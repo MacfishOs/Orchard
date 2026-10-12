@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Aggregation of frame features into a single description of a transition region.
 
 use crate::config::AnalysisConfig;

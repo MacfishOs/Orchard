@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Inspectable record of why the planner chose what it chose.
 //!
 //! Diagnostics are opt-in via [`crate::config::EngineConfig::collect_diagnostics`]. Rendering

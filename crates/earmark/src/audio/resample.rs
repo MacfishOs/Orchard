@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Sample-rate conversion.
 //!
 //! Only used to reconcile two tracks that were decoded at different rates. Musical tempo

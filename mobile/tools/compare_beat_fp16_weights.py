@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL.
 """Compare two 1500-frame Beat This LiteRT graphs on local GTZAN mel files.
 
 Run with `uv run --no-project --with ai-edge-litert --with numpy`.

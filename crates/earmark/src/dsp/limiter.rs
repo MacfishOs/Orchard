@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Look-ahead peak limiting.
 //!
 //! The limiter works offline on a whole buffer: it knows every peak in advance, so it eases into

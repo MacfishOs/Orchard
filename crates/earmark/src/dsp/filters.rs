@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Biquad filter automation.
 //!
 //! A sweep is planned once into a list of coefficient sets, then replayed per channel. Filter

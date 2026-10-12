@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Candidate scoring.
 //!
 //! Every component returns `0.0..=1.0` where 1.0 is ideal, and the total is their weighted mean.

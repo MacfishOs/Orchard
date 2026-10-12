@@ -1,6 +1,7 @@
 <RCC>
   <qresource prefix="/licenses">
     <file alias="orchard.txt">../LICENSE</file>
+    <file alias="orchard-ool.txt">../LICENSE-OOL</file>
     <file alias="lucide.txt">../app/qml/assets/lucide/LICENSE.txt</file>
     <file alias="quickjs.txt">../third_party/quickjs/LICENSE</file>
     <file alias="qtkeychain.txt">../third_party/qtkeychain/COPYING</file>

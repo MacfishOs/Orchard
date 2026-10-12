@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Perceived loudness of a transition region, via EBU R128.
 //!
 //! Only the regions a transition actually touches are measured. Normalising whole tracks would

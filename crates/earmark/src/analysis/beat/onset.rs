@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Onset strength per frequency band from the 50 fps log-mel beat spectrogram.
 
 use crate::analysis::BEAT_SPECTROGRAM_MELS;

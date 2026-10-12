@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! PCM representation.
 //!
 //! Audio is stored **planar** as one `Vec<f32>` per channel. Every operation in this crate —

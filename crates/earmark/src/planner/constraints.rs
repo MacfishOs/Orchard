@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
 //! Caller-supplied limits on where a transition may be placed.
 //!
 //! A host that already knows where a track should be mixed out of — from its own cue points or
