@@ -28,6 +28,7 @@ import {
 
 const SOURCE_LIMIT = 12;
 const SEGMENT_CACHE_LIMIT = 4;
+const RANGE_CONCURRENCY = 4;
 const SOURCE_MAX_AGE_MS = 6 * 60 * 60_000;
 
 function streamExpiry(info) {
@@ -85,14 +86,41 @@ export function createQobuzPlayback({
   }
 
   async function refreshSource(source) {
-    const info = await client.streamingInfo(source.trackId, source.quality);
-    source.urlTemplate = info.url_template;
-    source.contentKey = contentKey(info, crypto);
-    source.expiresAt = streamExpiry(info);
-    source.blob = String(info.blob || source.blob || '');
+    if (!source.refreshPromise) {
+      source.refreshPromise = (async () => {
+        const info = await client.streamingInfo(source.trackId, source.quality);
+        source.urlTemplate = info.url_template;
+        source.contentKey = contentKey(info, crypto);
+        source.expiresAt = streamExpiry(info);
+        source.blob = String(info.blob || source.blob || '');
+      })().finally(() => { source.refreshPromise = null; });
+    }
+    return source.refreshPromise;
   }
 
-  async function segment(source, number, { retry = true } = {}) {
+  async function fetchSegment(source, number, retry = true) {
+    try {
+      const raw = await fetchBytes(source.urlTemplate.replace('$SEGMENT$', String(number)), `Qobuz segment ${number}`);
+      const decrypted = decryptQobuzAudioSegment(raw, source.contentKey, crypto);
+      const declared = source.init.segmentTable[number - 1]?.byteLength;
+      if (declared && decrypted.length !== declared) {
+        logger.warn?.(`Qobuz segment ${number} declared ${declared} bytes but produced ${decrypted.length}`);
+      }
+      source.segmentCache.set(number, decrypted);
+      while (source.segmentCache.size > SEGMENT_CACHE_LIMIT) {
+        source.segmentCache.delete(source.segmentCache.keys().next().value);
+      }
+      return decrypted;
+    } catch (error) {
+      if (retry && [401, 403, 404, 410].includes(Number(error.status))) {
+        await refreshSource(source);
+        return fetchSegment(source, number, false);
+      }
+      throw error;
+    }
+  }
+
+  async function segment(source, number) {
     const cached = source.segmentCache.get(number);
     if (cached) {
       source.segmentCache.delete(number);
@@ -100,30 +128,7 @@ export function createQobuzPlayback({
       return cached;
     }
     if (source.segmentPromises.has(number)) return source.segmentPromises.get(number);
-    const pending = (async () => {
-      try {
-        const raw = await fetchBytes(source.urlTemplate.replace('$SEGMENT$', String(number)), `Qobuz segment ${number}`);
-        const decrypted = decryptQobuzAudioSegment(raw, source.contentKey, crypto);
-        const declared = source.init.segmentTable[number - 1]?.byteLength;
-        if (declared && decrypted.length !== declared) {
-          logger.warn?.(`Qobuz segment ${number} declared ${declared} bytes but produced ${decrypted.length}`);
-        }
-        source.segmentCache.set(number, decrypted);
-        while (source.segmentCache.size > SEGMENT_CACHE_LIMIT) {
-          source.segmentCache.delete(source.segmentCache.keys().next().value);
-        }
-        return decrypted;
-      } catch (error) {
-        if (retry && [401, 403, 404, 410].includes(Number(error.status))) {
-          source.segmentPromises.delete(number);
-          await refreshSource(source);
-          return segment(source, number, { retry: false });
-        }
-        throw error;
-      } finally {
-        source.segmentPromises.delete(number);
-      }
-    })();
+    const pending = fetchSegment(source, number).finally(() => { source.segmentPromises.delete(number); });
     source.segmentPromises.set(number, pending);
     return pending;
   }
@@ -167,7 +172,7 @@ export function createQobuzPlayback({
    * The Qt host can expose this through QIODevice without an HTTP loopback
    * server or Node stream objects.
    */
-  async function readRange(playbackId, { start = 0, end } = {}) {
+  async function readRange(playbackId, { start = 0, end } = {}, singleSegment = false) {
     const source = sources.get(playbackId);
     if (!source) throw new Error('Qobuz playback source expired');
     touch(playbackId, source);
@@ -178,22 +183,46 @@ export function createQobuzPlayback({
         rangeStart < 0 || rangeStart >= totalLength || rangeEnd < rangeStart) {
       throw new RangeError(`Invalid Qobuz byte range for ${totalLength} byte stream`);
     }
-    const boundedEnd = Math.min(rangeEnd, totalLength - 1);
-    const chunks = [];
+    let boundedEnd = Math.min(rangeEnd, totalLength - 1);
     const headerEnd = source.init.flacHeader.length - 1;
+    const table = source.init.segmentTable;
+    let first = 0, limit = table.length;
+    while (first < limit) {
+      const middle = Math.floor((first + limit) / 2);
+      const entry = table[middle];
+      if (headerEnd + 1 + entry.byteOffset + entry.byteLength <= rangeStart) first = middle + 1;
+      else limit = middle;
+    }
+    if (singleSegment) {
+      // Keep upcoming bytes in flight while yielding the first ready piece.
+      for (let index = first; index < Math.min(table.length, first + RANGE_CONCURRENCY); index++) {
+        if (source.init.flacHeader.length + table[index].byteOffset > boundedEnd) break;
+        void segment(source, index + 1).catch(() => {});
+      }
+      const segmentEnd = rangeStart <= headerEnd ? headerEnd :
+        headerEnd + table[first].byteOffset + table[first].byteLength;
+      boundedEnd = Math.min(boundedEnd, segmentEnd);
+    }
+    const chunks = [];
     if (rangeStart <= headerEnd) {
       chunks.push(source.init.flacHeader.subarray(rangeStart, Math.min(boundedEnd, headerEnd) + 1));
     }
-    for (let index = 0; index < source.init.segmentTable.length; index += 1) {
-      const entry = source.init.segmentTable[index];
-      const logicalStart = source.init.flacHeader.length + entry.byteOffset;
-      const logicalEnd = logicalStart + entry.byteLength - 1;
-      if (boundedEnd < logicalStart) break;
-      if (rangeStart > logicalEnd) continue;
-      const segmentBytes = await segment(source, index + 1);
-      const sliceStart = Math.max(0, rangeStart - logicalStart);
-      const sliceEnd = Math.min(segmentBytes.length, boundedEnd - logicalStart + 1);
-      chunks.push(segmentBytes.subarray(sliceStart, sliceEnd));
+    // Fetch only the requested span, in bounded batches, and assemble in stream order.
+    for (let index = first; index < table.length;) {
+      const pending = [];
+      while (index < table.length && pending.length < RANGE_CONCURRENCY) {
+        const entry = table[index];
+        const logicalStart = source.init.flacHeader.length + entry.byteOffset;
+        if (boundedEnd < logicalStart) break;
+        const number = ++index;
+        pending.push(segment(source, number).then((segmentBytes) => {
+          const sliceStart = Math.max(0, rangeStart - logicalStart);
+          const sliceEnd = Math.min(segmentBytes.length, boundedEnd - logicalStart + 1);
+          return segmentBytes.subarray(sliceStart, sliceEnd);
+        }));
+      }
+      if (!pending.length) break;
+      chunks.push(...await Promise.all(pending));
     }
     return {
       bytes: concatBytes(chunks),
@@ -202,6 +231,11 @@ export function createQobuzPlayback({
       totalLength,
       mimeType: 'audio/flac'
     };
+  }
+
+  // Streaming reads yield metadata or one segment while later audio loads.
+  function readChunk(playbackId, range) {
+    return readRange(playbackId, range, true);
   }
 
   async function playbackStarted(playbackId, position) {
@@ -221,6 +255,5 @@ export function createQobuzPlayback({
     sources.clear();
   }
 
-  return { clear, playbackEnded, playbackStarted, readRange, release, resolveStream };
+  return { clear, playbackEnded, playbackStarted, readChunk, readRange, release, resolveStream };
 }
-

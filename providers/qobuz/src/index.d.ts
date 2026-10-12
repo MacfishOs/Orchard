@@ -144,6 +144,8 @@ export interface QobuzService {
   matchTrack(track: CanonicalTrackInput): Promise<QobuzMatch | null>;
   playbackEnded(playbackId: string, positionSeconds?: number): Promise<void>;
   playbackStarted(playbackId: string, positionSeconds?: number): Promise<void>;
+  /** Returns metadata or one audio segment, bounded by the requested range. */
+  readChunk(playbackId: string, range?: { start?: number; end?: number }): Promise<QobuzByteRange>;
   readRange(playbackId: string, range?: { start?: number; end?: number }): Promise<QobuzByteRange>;
   release(playbackId: string): void;
   resolveStream(match: QobuzMatch, quality?: QobuzQuality): Promise<QobuzPlaybackSource>;
@@ -219,6 +221,7 @@ export function createQobuzPlayback(options: {
   clear(): void;
   playbackEnded(playbackId: string, positionSeconds?: number): Promise<void>;
   playbackStarted(playbackId: string, positionSeconds?: number): Promise<void>;
+  readChunk(playbackId: string, range?: { start?: number; end?: number }): Promise<QobuzByteRange>;
   readRange(playbackId: string, range?: { start?: number; end?: number }): Promise<QobuzByteRange>;
   release(playbackId: string): void;
   resolveStream(match: QobuzMatch, quality: QobuzQuality): Promise<QobuzPlaybackSource>;

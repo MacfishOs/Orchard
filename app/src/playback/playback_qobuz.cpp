@@ -72,7 +72,7 @@ void PlaybackController::installRangeReaders() {
       done({}, 503);
       return;
     }
-    qobuz->readRange(stream.value(QStringLiteral("playbackId")).toString(), start, end,
+    qobuz->readChunk(stream.value(QStringLiteral("playbackId")).toString(), start, end,
                      [done = std::move(done)](const QByteArray &bytes, const QString &error) {
                        done(error.isEmpty() ? bytes : QByteArray(), error.isEmpty() ? 0 : 502);
                      });

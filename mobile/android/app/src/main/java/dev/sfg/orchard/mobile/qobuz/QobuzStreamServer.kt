@@ -26,8 +26,8 @@ import java.io.OutputStream
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.max
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -36,13 +36,29 @@ private const val TAG = "QobuzStreamServer"
 private const val READ_CHUNK = 512 * 1024L
 private const val MAX_SESSIONS = 16
 
+internal interface QobuzStreamSource {
+    suspend fun read(playbackId: String, start: Long, end: Long): ByteArray
+    suspend fun started(playbackId: String)
+}
+
 /**
  * Loopback HTTP server that gives Media3 a seekable URL for a Qobuz FLAC stream.
- * Bytes come from the provider's `playback.read`, which owns segments and decryption.
+ * Bytes come from the provider's `playback.readChunk`, which owns segments and decryption.
  */
-class QobuzStreamServer(private val provider: ProviderHost) {
+class QobuzStreamServer internal constructor(private val source: QobuzStreamSource) {
+    constructor(provider: ProviderHost) : this(object : QobuzStreamSource {
+        override suspend fun read(playbackId: String, start: Long, end: Long) = provider.invokeBytes(
+            "playback.readChunk",
+            JSONObject().put("playbackId", playbackId).put("start", start).put("end", end),
+        )
+
+        override suspend fun started(playbackId: String) {
+            provider.invokeRaw("playback.started", JSONObject().put("playbackId", playbackId).put("position", 0))
+        }
+    })
+
     private class Session(val totalBytes: Long, val remote: RemoteQobuz?) {
-        @Volatile var reported = false
+        val reported = AtomicBoolean()
     }
 
     private val sessions = object : LinkedHashMap<String, Session>() {
@@ -129,12 +145,9 @@ class QobuzStreamServer(private val provider: ProviderHost) {
         while (position <= end) {
             val last = minOf(end, position + READ_CHUNK - 1)
             val bytes = runBlocking {
-                session.remote?.read(playbackId, position, last) ?: provider.invokeBytes(
-                    "playback.read",
-                    JSONObject().put("playbackId", playbackId).put("start", position).put("end", last),
-                )
+                session.remote?.read(playbackId, position, last) ?: source.read(playbackId, position, last)
             }
-            if (bytes.isEmpty()) return
+            if (bytes.isEmpty() || bytes.size > last - position + 1) return
             output.write(bytes)
             position += bytes.size
         }
@@ -143,15 +156,12 @@ class QobuzStreamServer(private val provider: ProviderHost) {
 
     // Qobuz counts a play when audio is first requested.
     private fun reportStarted(playbackId: String, session: Session) {
-        if (session.reported) return
-        session.reported = true
-        session.remote?.let {
-            it.report(playbackId, true, 0.0)
-            return
-        }
-        runCatching {
-            runBlocking {
-                provider.invokeRaw("playback.started", JSONObject().put("playbackId", playbackId).put("position", 0))
+        if (!session.reported.compareAndSet(false, true)) return
+        workers.execute {
+            runCatching {
+                val remote = session.remote
+                if (remote != null) remote.report(playbackId, true, 0.0)
+                else runBlocking { source.started(playbackId) }
             }
         }
     }

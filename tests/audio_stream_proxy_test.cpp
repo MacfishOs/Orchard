@@ -334,6 +334,45 @@ private slots:
         QCOMPARE(failures.first().at(0).toInt(), 502);
         reply->deleteLater();
     }
+
+    void forwardsShortProviderReadsBeforeLaterAudioArrives() {
+        AudioStreamProxy proxy;
+        QList<QPair<qint64, qint64>> reads;
+        std::function<void(const QByteArray &, int)> pending;
+        proxy.setRangeReader([&](const QJsonObject &, qint64 start, qint64 end, auto done) {
+            reads.append({start, end});
+            if (start == 0)
+                QTimer::singleShot(0, [done] { done("fLaC", 0); });
+            else
+                pending = done;
+        });
+        const auto url = proxy.open({{"provider", "qobuz"}, {"contentLength", 8}});
+        QNetworkAccessManager client;
+        auto *reply = client.get(QNetworkRequest(url));
+        QTRY_VERIFY(reply->bytesAvailable() == 4);
+        QCOMPARE(reply->readAll(), QByteArray("fLaC"));
+        QVERIFY(!reply->isFinished());
+        QTRY_VERIFY(bool(pending));
+        QCOMPARE(reads, (QList<QPair<qint64, qint64>>{{0, 7}, {4, 7}}));
+        pending("data", 0);
+        QTRY_VERIFY(reply->isFinished());
+        QCOMPARE(reply->error(), QNetworkReply::NoError);
+        QCOMPARE(reply->readAll(), QByteArray("data"));
+        reply->deleteLater();
+    }
+
+    void rejectsProviderReadsPastTheRequestedRange() {
+        AudioStreamProxy proxy;
+        QSignalSpy failures(&proxy, &AudioStreamProxy::streamFailed);
+        proxy.setRangeReader([](const QJsonObject &, qint64, qint64, auto done) { done("too long", 0); });
+        const auto url = proxy.open({{"provider", "qobuz"}, {"contentLength", 4}});
+        QNetworkAccessManager client;
+        auto *reply = client.get(QNetworkRequest(url));
+        QTRY_VERIFY(reply->isFinished());
+        QCOMPARE(failures.count(), 1);
+        QVERIFY(reply->readAll().isEmpty());
+        reply->deleteLater();
+    }
 };
 QTEST_GUILESS_MAIN(AudioStreamProxyTest)
 #include "audio_stream_proxy_test.moc"

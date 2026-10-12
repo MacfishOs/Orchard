@@ -30,8 +30,8 @@
 class AudioStreamProxy final : public QObject {
     Q_OBJECT
 public:
-    // Inclusive byte range of a provider stream. `done` gets the bytes, or an
-    // empty array and an HTTP-like status on failure.
+    // Up to the inclusive byte range of a provider stream. `done` gets a
+    // nonempty prefix, or an empty array and an HTTP-like status on failure.
     using RangeReader = std::function<void(const QJsonObject &stream, qint64 start, qint64 end,
                                            std::function<void(const QByteArray &, int status)> done)>;
 

@@ -205,7 +205,7 @@ export function decryptQobuzAudioSegment(input, contentKey, crypto) {
   for (const frame of parsed.frames) {
     const end = position + frame.size;
     if (end > parsed.data.length) throw new Error('Qobuz audio segment ends inside a FLAC frame');
-    let frameBytes = parsed.data.slice(position, end);
+    let frameBytes = parsed.data.subarray(position, end);
     if (frame.flags !== 0) {
       if (!contentKey) throw new Error('Qobuz encrypted audio segment has no content key');
       frameBytes = bytes(capability(crypto, 'decryptAes128Ctr')({ key: bytes(contentKey), iv: frame.iv, data: frameBytes }));

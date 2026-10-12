@@ -215,12 +215,12 @@ private:
         m_reader(m_stream, m_offset, end, [self, end](const QByteArray &bytes, int status) {
             if (!self) return;
             self->m_reading = false;
-            if (bytes.size() != end - self->m_offset + 1) {
+            if (bytes.isEmpty() || bytes.size() > end - self->m_offset + 1) {
                 self->fail(status ? status : 502, AudioStreamProxy::tr("The audio source stopped responding."));
                 return;
             }
             self->m_socket->write(bytes);
-            self->m_offset = end + 1;
+            self->m_offset += bytes.size();
             self->pump();
         });
     }

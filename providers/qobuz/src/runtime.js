@@ -80,6 +80,8 @@ const methods = new Map([
   // Raw bytes: the host passes a top-level Uint8Array through without JSON.
   ['playback.read', async (payload = {}) =>
     (await qobuz.readRange(String(payload.playbackId || ''), { start: payload.start, end: payload.end })).bytes],
+  ['playback.readChunk', async (payload = {}) =>
+    (await qobuz.readChunk(String(payload.playbackId || ''), { start: payload.start, end: payload.end })).bytes],
   ['playback.started', async (payload = {}) => {
     await qobuz.playbackStarted(String(payload.playbackId || ''), Number(payload.position || 0));
     return null;

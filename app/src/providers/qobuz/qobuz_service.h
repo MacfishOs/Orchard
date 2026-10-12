@@ -66,6 +66,7 @@ public:
   // whenever the account is connected, whatever this desktop's own quality is.
   void resolveTrack(const QVariantMap &track, Reply done, bool forPeer = false);
   void readRange(const QString &playbackId, qint64 start, qint64 end, Bytes done);
+  void readChunk(const QString &playbackId, qint64 start, qint64 end, Bytes done);
   void playbackStarted(const QString &playbackId, double position);
   void playbackEnded(const QString &playbackId, double position);
   // Best quality this account streams for an album, or null.
@@ -78,6 +79,7 @@ signals:
   void accountDisconnected();
 
 private:
+  void readBytes(const QString &method, const QString &playbackId, qint64 start, qint64 end, Bytes done);
   quint64 call(const QString &method, const QJsonValue &payload, Reply done = {});
   void restoreSession();
   void storeSession(const QString &token, qint64 userId);

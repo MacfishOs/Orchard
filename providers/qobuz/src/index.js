@@ -91,6 +91,7 @@ export function createQobuz({
     matchTrack,
     playbackEnded: playback.playbackEnded,
     playbackStarted: playback.playbackStarted,
+    readChunk: playback.readChunk,
     readRange: playback.readRange,
     release: playback.release,
     resolveStream,

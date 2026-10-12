@@ -281,8 +281,17 @@ void QobuzService::resolveTrack(const QVariantMap &track, Reply done, bool forPe
 }
 
 void QobuzService::readRange(const QString &playbackId, qint64 start, qint64 end, Bytes done) {
+  readBytes(QStringLiteral("playback.read"), playbackId, start, end, std::move(done));
+}
+
+void QobuzService::readChunk(const QString &playbackId, qint64 start, qint64 end, Bytes done) {
+  readBytes(QStringLiteral("playback.readChunk"), playbackId, start, end, std::move(done));
+}
+
+void QobuzService::readBytes(const QString &method, const QString &playbackId, qint64 start, qint64 end,
+                           Bytes done) {
   const quint64 id = m_runtime->invoke(
-      QStringLiteral("playback.read"),
+      method,
       QJsonObject{{QStringLiteral("playbackId"), playbackId},
                   {QStringLiteral("start"), static_cast<double>(start)},
                   {QStringLiteral("end"), static_cast<double>(end)}});
