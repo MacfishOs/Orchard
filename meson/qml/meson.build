@@ -290,5 +290,6 @@ shader_sources = [
   'app/qml/shaders/liquid_glass_box.frag',
   'app/qml/shaders/liquid_glass_blur.frag',
   'app/qml/shaders/artwork_dissolve.frag',
+  'app/qml/shaders/rounded_artwork.frag',
   'app/qml/shaders/mix_dots.frag',
 ]

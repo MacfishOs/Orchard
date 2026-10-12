@@ -19,7 +19,6 @@
 
 import Orchard
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Window
 
 Item {
@@ -78,12 +77,25 @@ Item {
                 root.shownSource = root.source;
             }
         }
-        layer.enabled: true
+        // Sampled by the mask shader; a hidden Image still provides its texture.
+        visible: false
+    }
 
-        layer.effect: MultiEffect {
-            maskEnabled: true
-            maskSource: mask
-        }
+    // Rounds corners in one pass so cards need no offscreen layers.
+    ShaderEffect {
+        readonly property real sourceAspect: image.implicitHeight > 0 ? image.implicitWidth / image.implicitHeight : 1
+        readonly property real itemAspect: height > 0 ? width / height : 1
+        property var source: image
+        property size size: Qt.size(width, height)
+        property size cropScale: sourceAspect > itemAspect ? Qt.size(itemAspect / sourceAspect, 1)
+                                                           : Qt.size(1, sourceAspect / itemAspect)
+        property real radius: root.radius
+        property real bottomRadius: root.bottomRadius
+
+        anchors.fill: parent
+        opacity: image.opacity
+        visible: image.status === Image.Ready || image.opacity > 0
+        fragmentShader: "qrc:/shaders/rounded_artwork.frag.qsb"
     }
 
     NumberAnimation {
@@ -95,16 +107,5 @@ Item {
         to: 1
         duration: Motion.normal
         easing.type: Motion.enter
-    }
-
-    Rectangle {
-        id: mask
-
-        anchors.fill: parent
-        radius: root.radius
-        bottomLeftRadius: root.bottomRadius
-        bottomRightRadius: root.bottomRadius
-        visible: false
-        layer.enabled: true
     }
 }
