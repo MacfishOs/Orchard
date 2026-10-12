@@ -2,7 +2,7 @@
   "_comment": "Input: the packaged AppDir. Component versions identify immutable file sets. The excluded libexec helper duplicates the mapped bin copy.",
   "exclude": ["AppRun", "*.desktop", ".DirIcon", "usr/bin/qt.conf", "usr/libexec/QtWebEngineProcess", "usr/share/applications/*", "usr/share/icons/*"],
   "components": {
-    "ffmpeg": {"version": "8.0-2", "map": [
+    "ffmpeg": {"version": "8.0-3", "map": [
       {"from": "usr/bin/ffmpeg", "to": "ffmpeg"},
       {"from": "usr/bin/ffprobe", "to": "ffprobe"},
       {"from": "usr/lib/libav*", "to": "lib"},
@@ -15,7 +15,7 @@
     "models": {"version": "2", "map": [
       {"from": "usr/bin/models", "to": ""}
     ]},
-    "qt": {"version": "6.12.0-9", "map": [
+    "qt": {"version": "6.12.0-10", "map": [
       {"from": "usr/bin/QtWebEngineProcess", "to": "libexec/QtWebEngineProcess"},
       {"from": "usr/libexec/qt.conf", "to": "libexec/qt.conf"},
       {"from": "usr/lib", "to": "lib"},

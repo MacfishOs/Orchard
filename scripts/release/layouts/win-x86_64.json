@@ -2,13 +2,13 @@
   "_comment": "Input: the staged Orchard folder from scripts/package-windows-native.py or package-windows-msvc.sh. Unmapped files fail the build so new Qt plugin folders get a deliberate home. DLLs do not file their own travel papers.",
   "exclude": [],
   "components": {
-    "ffmpeg": {"version": "8.0.2-3", "map": [
+    "ffmpeg": {"version": "8.0.2-4", "map": [
       {"from": "ffmpeg.exe", "to": "ffmpeg.exe"},
       {"from": "ffmpeg-LICENSE.txt", "to": "LICENSE.txt"},
       {"from": "avcodec-*.dll"}, {"from": "avformat-*.dll"},
       {"from": "avutil-*.dll"}, {"from": "swresample-*.dll"}, {"from": "swscale-*.dll"}
     ]},
-    "onnxruntime": {"version": "1.23.0-2", "map": [
+    "onnxruntime": {"version": "1.23.0-3", "map": [
       {"from": "webgpu_dawn.dll", "to": "webgpu_dawn.dll"},
       {"from": "dxil.dll"}, {"from": "dxcompiler.dll"}
     ]},
@@ -18,7 +18,7 @@
     "msvc-runtime": {"version": "14.51.36231-1", "map": [
       {"from": "concrt140.dll"}, {"from": "msvcp140*.dll"}, {"from": "vccorlib140.dll"}, {"from": "vcruntime140*.dll"}
     ]},
-    "qt": {"version": "6.11.2-5", "map": [
+    "qt": {"version": "6.11.2-6", "map": [
       {"from": "Qt6*.dll"}, {"from": "d3dcompiler_47.dll"}, {"from": "D3Dcompiler_47.dll"},
       {"from": "icu.dll"}, {"from": "icuuc.dll"}, {"from": "icuin.dll"}, {"from": "opengl32sw.dll"},
       {"from": "QtWebEngineProcess.exe"},
