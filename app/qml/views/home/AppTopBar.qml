@@ -217,15 +217,15 @@ Item {
 
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        width: root.width > 730 ? 176 : 38
-        height: 38
+        width: 42
+        height: 42
         onClicked: root.settingsRequested()
         Accessible.name: qsTr("Account and settings")
         ToolTip.visible: hovered
-        ToolTip.text: qsTr("Account and settings")
+        ToolTip.text: OrchardAuth.userName || qsTr("Account and settings")
 
         background: Rectangle {
-            radius: 19
+            radius: 21
             color: account.hovered ? "#12ffffff" : "#00ffffff"
 
             Behavior on color {
@@ -233,39 +233,15 @@ Item {
             }
         }
 
-        contentItem: Row {
-            spacing: 10
+        padding: 0
 
+        contentItem: Item {
             RoundedArtwork {
-                width: 32
-                height: 32
-                radius: 16
+                anchors.centerIn: parent
+                width: 36
+                height: 36
+                radius: 18
                 source: OrchardAuth.userAvatar || ""
-            }
-
-            Column {
-                width: account.width - 48
-                anchors.verticalCenter: parent.verticalCenter
-                visible: account.width > 38
-
-                Text {
-                    width: parent.width
-                    text: OrchardAuth.userName || qsTr("Your account")
-                    color: "#dce0df"
-                    font.family: "Inter"
-                    font.pixelSize: 12
-                    elide: Text.ElideRight
-                }
-
-                Text {
-                    width: parent.width
-                    visible: OrchardAuth.userHandle !== ""
-                    text: OrchardAuth.userHandle
-                    color: "#929ba1"
-                    font.family: "Inter"
-                    font.pixelSize: 11
-                    elide: Text.ElideRight
-                }
             }
         }
     }
