@@ -38,7 +38,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -75,7 +74,6 @@ private val destinations = listOf(
     BottomDestination(Routes.HOME, "Home", Icons.Rounded.Home),
     BottomDestination(Routes.SEARCH, "Search", Icons.Rounded.Search),
     BottomDestination(Routes.LIBRARY, "Library", Icons.Rounded.LibraryMusic),
-    BottomDestination(Routes.SETTINGS, "Settings", Icons.Rounded.Person),
 )
 
 /**
@@ -90,13 +88,7 @@ private val BottomBarShape = RoundedCornerShape(26.dp)
 fun OrchardBottomBar(currentRoute: String?, onSelect: (String) -> Unit) {
     val glassTint = LocalGlass.current.tint
     val selectedIndex = remember(currentRoute, destinations) {
-        val idx = destinations.indexOfFirst { it.route == currentRoute }
-        if (idx != -1) idx
-        else if (currentRoute == Routes.SETTINGS_HOME_LAYOUT) {
-            destinations.indexOfFirst { it.route == Routes.SETTINGS }.takeIf { it != -1 }
-        } else {
-            null
-        }
+        destinations.indexOfFirst { it.route == currentRoute }.takeIf { it != -1 }
     }
     var lastKnownIndex by remember { mutableIntStateOf(selectedIndex ?: 0) }
     LaunchedEffect(selectedIndex) {
