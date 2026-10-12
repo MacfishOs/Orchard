@@ -434,6 +434,7 @@ if get_option('tests')
     ['playback_persistence', 'tests/playback_persistence_test.cpp'],
     ['songlink', 'tests/songlink_test.cpp'],
     ['animated_artwork', 'tests/animated_artwork_test.cpp'],
+    ['artwork_video_cache', 'tests/artwork_video_cache_test.cpp'],
     ['artwork_sampler', 'tests/artwork_sampler_test.cpp'],
     ['streaming_services', 'tests/streaming_services_test.cpp'],
     ['slop_detector', 'tests/slop_detector_test.cpp'],

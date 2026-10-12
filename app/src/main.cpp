@@ -30,6 +30,8 @@
 #include "docs/docs_library.h"
 #include "appearance/appearance_settings.h"
 #include "appearance/animated_artwork_service.h"
+#include "appearance/artwork_video_cache.h"
+#include "heap_trim.h"
 #include "home/home_controller.h"
 #include "integrations/integrations.h"
 #include "integrations/spotify_canvas.h"
@@ -198,6 +200,7 @@ int main(int argc, char *argv[]) {
       QQuickWindow::setGraphicsApi(QSGRendererInterface::Vulkan);
   }
 #endif
+  startHeapTrim(&application);
   authDiagnostic(QStringLiteral("startup diagnostic-build=3 built=" __DATE__ " " __TIME__));
   QObject::connect(&application, &QCoreApplication::aboutToQuit, &application, [] {
     authDiagnostic(QStringLiteral("application-quitting"));
@@ -225,6 +228,7 @@ int main(int argc, char *argv[]) {
   SpotifyCanvas spotifyCanvas;
   AnimatedArtworkService animatedArtwork(&appearance);
   animatedArtwork.setSpotifyCanvas(&spotifyCanvas);
+  ArtworkVideoCache artworkVideos;
   BackendInfo backend;
   // The manual nobody reads, with a copy button for the robots that will.
   DocsLibrary docs;
@@ -304,6 +308,7 @@ int main(int argc, char *argv[]) {
                    });
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardAppearance"), &appearance);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardAnimatedArtwork"), &animatedArtwork);
+  engine.rootContext()->setContextProperty(QStringLiteral("OrchardArtworkVideos"), &artworkVideos);
   NoHttp2NetworkFactory networkFactory;
   engine.setNetworkAccessManagerFactory(&networkFactory);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardBackend"),
