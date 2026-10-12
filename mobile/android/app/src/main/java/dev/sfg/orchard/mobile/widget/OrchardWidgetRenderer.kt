@@ -108,7 +108,7 @@ internal object OrchardWidgetRenderer {
         if (artwork != null) {
             views.setImageViewBitmap(
                 R.id.widget_artwork,
-                roundedArtwork(artwork, if (expanded) 136 else 104),
+                roundedArtwork(artwork, artworkPx(context, if (expanded) 118 else 56)),
             )
         } else {
             views.setImageViewResource(R.id.widget_artwork, R.drawable.ic_widget_orchard)
@@ -216,7 +216,7 @@ internal object OrchardWidgetRenderer {
             if (track != null) {
                 val bitmap = artwork.getOrNull(index)
                 if (bitmap != null) {
-                    views.setImageViewBitmap(covers[index], roundedArtwork(bitmap, 112))
+                    views.setImageViewBitmap(covers[index], roundedArtwork(bitmap, artworkPx(context, 58)))
                 } else {
                     views.setImageViewResource(covers[index], R.drawable.ic_widget_orchard)
                 }
@@ -279,6 +279,10 @@ internal object OrchardWidgetRenderer {
         return output
     }
 
+    // Device pixels for the on-screen size, capped to the loader's stored edge.
+    private fun artworkPx(context: Context, dp: Int): Int =
+        (dp * context.resources.displayMetrics.density).toInt().coerceIn(dp, MAX_ARTWORK_PX)
+
     private fun roundedArtwork(source: Bitmap, size: Int): Bitmap {
         val edge = minOf(source.width, source.height)
         val left = (source.width - edge) / 2
@@ -324,6 +328,7 @@ internal object OrchardWidgetRenderer {
 
     private const val EXPANDED_HEIGHT_DP = 112
     private const val BACKGROUND_WIDTH = 336
+    private const val MAX_ARTWORK_PX = 384
     private const val PROGRESS_MAX = 1_000
     private const val REQUEST_OPEN = 900
     private const val REQUEST_PREVIOUS = 901
