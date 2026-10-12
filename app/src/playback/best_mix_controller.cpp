@@ -64,7 +64,8 @@ QString workerPath() {
 // Bump when the worker adds a feature. Rows re-analyze from cached audio, so no download.
 // Version 1: subBassRatio, so the shortlist can tell boom-bap from trap.
 // Version 2: shared native-rate decode and worker-built summaries, identical to Android.
-constexpr int kFeatureVersion = 2;
+// Version 3: edge bass curves, so finalists plan with playback's beat-flow evidence.
+constexpr int kFeatureVersion = 3;
 QByteArray cbor(const QJsonObject &value) {
   return QCborValue::fromJsonValue(QJsonValue(value)).toCbor();
 }

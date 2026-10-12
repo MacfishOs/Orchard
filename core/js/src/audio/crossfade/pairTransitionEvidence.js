@@ -9,6 +9,7 @@ import {
   MAX_STRETCH_DEVIATION,
   ratioDeviation
 } from './pairTempoHarmony.js';
+import { cueTempoFit, holdsTempo } from './sectionTempo.js';
 
 export {
   MAX_RAMP_DEVIATION,
@@ -374,26 +375,33 @@ export function buildCandidatePairs(
   // Overlaps must fit the decoded render windows when the caller names them.
   const earliestOut = Math.max(outgoingRange.start, finite(options.outgoingWindowStart) ?? -Infinity);
   const latestIn = Math.min(incomingRange.end, (finite(options.incomingWindowEnd) ?? Infinity) - WINDOW_MARGIN);
-  const targetBpm = finite(fit.targetBpm) ?? 0;
-  const matched = Boolean(fit.beatmatched);
-  // Unmatched fits keep native ratios and plan ordinary short blends.
-  const outgoingRatio = matched ? finite(fit.outgoingRatio) ?? 1 : 1;
-  const incomingRatio = matched ? finite(fit.incomingRatio) ?? 1 : 1;
-  const tempoRamp = Boolean(fit.tempoRamp && matched);
-  const tempoDeviation = tempoRamp
-    ? finite(fit.deviation) ?? Infinity
-    : ratioDeviation(outgoingRatio, incomingRatio);
-  const tempoLimit = tempoRamp ? MAX_RAMP_DEVIATION : MAX_STRETCH_DEVIATION;
   const pairs = [];
   const rejected = { bounds: 0, tempo: 0, duration: 0 };
   let combinations = 0;
-  if (!(targetBpm > 0)) {
+  if (!((finite(fit.targetBpm) ?? 0) > 0)) {
     return { finalists: [], diagnostics: { combinations, rejected, detailed: 0 } };
   }
+  // Tempo comes from the beats around each cue; songs drift, slow down or switch sections.
+  const measured = outgoingAnalysis.timing?.beats?.length && incomingAnalysis.timing?.beats?.length;
 
   for (const outgoing of outgoingCandidates.slice(0, MAX_ROLE_CANDIDATES)) {
     for (const incoming of incomingCandidates.slice(0, MAX_ROLE_CANDIDATES)) {
-      for (const spec of durationSpecsFor(outgoing, incoming, fit, matched, options)) {
+      const cueFit = measured
+        ? cueTempoFit(outgoingAnalysis, incomingAnalysis, outgoing.anchorTime, incoming.anchorTime,
+          { tempoRamp: Boolean(fit.tempoRamp) })
+        : fit;
+      const targetBpm = finite(cueFit.targetBpm) ?? 0;
+      if (!(targetBpm > 0)) continue;
+      const matched = Boolean(cueFit.beatmatched);
+      // Unmatched fits keep native ratios and plan ordinary short blends.
+      const outgoingRatio = matched ? finite(cueFit.outgoingRatio) ?? 1 : 1;
+      const incomingRatio = matched ? finite(cueFit.incomingRatio) ?? 1 : 1;
+      const tempoRamp = Boolean(cueFit.tempoRamp && matched);
+      const tempoDeviation = tempoRamp
+        ? finite(cueFit.deviation) ?? Infinity
+        : ratioDeviation(outgoingRatio, incomingRatio);
+      const tempoLimit = tempoRamp ? MAX_RAMP_DEVIATION : MAX_STRETCH_DEVIATION;
+      for (const spec of durationSpecsFor(outgoing, incoming, cueFit, matched, options)) {
         const beats = spec.beats;
         const durationSeconds = spec.durationSeconds;
         if (matched && (beats < MIN_BEATMATCH_BEATS || durationSeconds < MIN_BEATMATCH_SECONDS - 1e-6)) {
@@ -426,7 +434,10 @@ export function buildCandidatePairs(
             rejected.bounds += 1;
             continue;
           }
-          if (tempoDeviation > tempoLimit + 1e-6) {
+          // Longer overlaps reach past the cue's section; the whole span must hold its tempo.
+          if (tempoDeviation > tempoLimit + 1e-6 || (matched && measured && !(
+            holdsTempo(outgoingAnalysis, outgoingStart, outgoing.anchorTime, cueFit.sections?.[0]) &&
+            holdsTempo(incomingAnalysis, incomingStart, incomingEnd, cueFit.sections?.[1])))) {
             rejected.tempo += 1;
             continue;
           }
@@ -447,7 +458,8 @@ export function buildCandidatePairs(
             outgoingRatio,
             incomingRatio,
             ...(tempoRamp ? { tempoRamp } : {}),
-            beatmatched: matched
+            beatmatched: matched,
+            fit: cueFit
           };
           const flow = beatFlow(pair, outgoingAnalysis, incomingAnalysis);
           const voice = incomingVoiceRisk(pair, incomingAnalysis) ?? 0;

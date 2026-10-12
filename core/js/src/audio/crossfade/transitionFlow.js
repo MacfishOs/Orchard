@@ -215,6 +215,31 @@ export function outgoingVoiceRisk(pair, outgoing) {
   return voiceRisk(outgoing, pair.outgoingEnd - 1.5, pair.outgoingEnd);
 }
 
+// A pause this long lets a line finish before the song ends.
+const LINE_PAUSE_SECONDS = 2;
+// Seconds at the song's end where its beat must be gone for the voice to count as an outro.
+const OUTRO_SECONDS = 4;
+
+/**
+ * True when the voice runs from `time` to the end with no pause for a line to finish while the
+ * song winds down: adlibs or a repeated hook that any exit, the song's own included, cuts off.
+ * Songs that stop at full tilt keep the voice-cut veto; their last line is the main vocal.
+ */
+export function singsOut(analysis, time) {
+  const end = analysis.audibleRange?.end;
+  if (!Number.isFinite(end) || end - time < OUTRO_SECONDS) return false;
+  const closing = beatPresence(analysis, end - OUTRO_SECONDS / 2);
+  if (closing === null || closing >= 0.5 || (beatPresence(analysis, end - 0.5) ?? 1) >= 0.5) return false;
+  let pause = 0;
+  for (let at = time; at < end - 1; at += 0.25) {
+    const risk = voiceRisk(analysis, at, at + 0.5);
+    if (risk === null) return false;
+    pause = risk < 0.3 ? pause + 0.25 : 0;
+    if (pause >= LINE_PAUSE_SECONDS) return false;
+  }
+  return true;
+}
+
 /**
  * Bar-aligned overlap fraction where the low end changes hands: the first bar
  * near the middle where the incoming has a bass to hand to.

@@ -6,7 +6,7 @@ import {
   summarizeTrackWindow
 } from '../../../shared/trackAnalysis.js';
 import { MEASURED_CHANGES, mappedVocalCollision } from './pairTransitionEvidence.js';
-import { beatFlow, incomingVoiceRisk, outgoingVoiceRisk } from './transitionFlow.js';
+import { beatFlow, incomingVoiceRisk, outgoingVoiceRisk, singsOut } from './transitionFlow.js';
 import {
   PAIR_TRANSITION_POLICY,
   candidateGates,
@@ -133,7 +133,8 @@ function durationScore(beats) {
 }
 
 export function evaluatePair(pair, context) {
-  const { outgoing, incoming, fit, harmonic } = context;
+  const { outgoing, incoming, harmonic } = context;
+  const fit = pair.fit ?? context.fit;
   const outgoingSummary = windowSummary(
     outgoing,
     pair.outgoingStart,
@@ -157,7 +158,8 @@ export function evaluatePair(pair, context) {
   });
   const voice = {
     incoming: incomingVoiceRisk(pair, incoming),
-    outgoing: outgoingVoiceRisk(pair, outgoing)
+    outgoing: outgoingVoiceRisk(pair, outgoing),
+    singsOut: singsOut(outgoing, pair.outgoingEnd)
   };
   const vocal = vocalScore(collision, outgoingSummary, incomingSummary, voice);
   const flow = beatFlow(pair, outgoing, incoming);

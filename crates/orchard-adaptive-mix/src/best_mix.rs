@@ -6,8 +6,18 @@ use earmark::{WholeTrackAnalysis, WholeTrackAnalyzer};
 use serde_json::{Value, json};
 use std::{sync::mpsc, thread};
 
+/// The part of a `{start, step, values}` curve inside `span`.
+fn curve_span(curve: &Value, span: (f64, f64)) -> Value {
+    let (start, step) = (number(curve, "start"), number(curve, "step"));
+    let values = curve["values"].as_array().map(Vec::as_slice).unwrap_or_default();
+    if step <= 0.0 { return Value::Null; }
+    let first = (((span.0 - start) / step).floor().max(0.0) as usize).min(values.len());
+    let last = (((span.1 - start) / step).ceil().max(0.0) as usize).clamp(first, values.len());
+    json!({"start": start + first as f64 * step, "step": step, "values": &values[first..last]})
+}
+
 /// One mix edge: whole-song tempo, key, loudness and 808 weight, with timed evidence cut to `span`.
-fn edge(value: &WholeTrackAnalysis, sub_bass: Option<f64>, span: (f64, f64)) -> Value {
+fn edge(value: &WholeTrackAnalysis, sub_bass: Option<f64>, bass: &Value, span: (f64, f64)) -> Value {
     let within = |time: f64| time >= span.0 && time <= span.1;
     json!({
         "duration": value.duration, "bpm": value.bpm, "beatConfidence": value.beat_confidence,
@@ -16,6 +26,8 @@ fn edge(value: &WholeTrackAnalysis, sub_bass: Option<f64>, span: (f64, f64)) -> 
         "loudnessLufs": value.loudness_lufs,
         // Whole-song production weight; the planner's style-clash gate compares it.
         "subBassRatio": sub_bass,
+        // Same DSP curve as playback, so finalists see beat flow, beat entries and bass swaps.
+        "bassCurve": curve_span(bass, span),
         // Spectral estimate, same as playback analysis. The planner treats it as risk only.
         "vocalProbability": value.vocal_probability,
         "beats": value.beats.iter().copied().filter(|t| within(*t)).collect::<Vec<_>>(),
@@ -62,9 +74,10 @@ pub fn analyze_track(track: &Track, duration: f64) -> Result<Value, String> {
         .analyze(&track.mono, ANALYSIS_RATE as f64, track.duration)
         .map_err(|e| e.to_string())?;
     let sub_bass = evidence::sub_bass_ratio(&track.mono, ANALYSIS_RATE);
+    let bass = evidence::bass_curve(&track.mono, ANALYSIS_RATE);
     let end = value.duration;
-    let head = edge(&value, sub_bass, (0.0, end.min(WINDOW)));
-    let tail = edge(&value, sub_bass, ((end - WINDOW).max(0.0), end));
+    let head = edge(&value, sub_bass, &bass, (0.0, end.min(WINDOW)));
+    let tail = edge(&value, sub_bass, &bass, ((end - WINDOW).max(0.0), end));
     Ok(json!({"headSummary": summary(&head, false), "tailSummary": summary(&tail, true),
               "head": head, "tail": tail}))
 }
@@ -431,6 +444,14 @@ mod tests {
         assert_eq!(input["analysis"]["beatConfidence"], json!(CONFIRMED_BEAT_CONFIDENCE));
         assert_eq!(input["nextAnalysis"]["beatConfidence"], json!(0.97));
         assert_eq!(input["tempoRamp"], json!(true));
+    }
+
+    #[test]
+    fn edge_curves_keep_track_time() {
+        let curve = json!({"start": 0.0, "step": 0.25, "values": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]});
+        assert_eq!(curve_span(&curve, (0.5, 1.0)),
+                   json!({"start": 0.5, "step": 0.25, "values": [0.2, 0.3]}));
+        assert_eq!(curve_span(&curve, (9.0, 10.0))["values"], json!([]));
     }
 
     #[test]

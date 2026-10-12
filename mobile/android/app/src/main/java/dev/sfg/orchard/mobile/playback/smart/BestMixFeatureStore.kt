@@ -103,7 +103,8 @@ class BestMixFeatureStore(context: Context) : SQLiteOpenHelper(
         private const val TAG = "OrchardBestMixStore"
         internal const val DATABASE_NAME = "best-mix-analysis.db"
         // Version 3: saver-quality audio, the encode desktop analyzes for its feature version 2.
-        private const val DATABASE_VERSION = 3
+        // Version 4: edge bass curves, desktop's feature version 3.
+        private const val DATABASE_VERSION = 4
         private const val MAX_BYTES = 32L * 1024 * 1024
     }
 }

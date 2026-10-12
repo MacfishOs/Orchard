@@ -133,12 +133,25 @@ export function addGate(gates, code, maximumClass, severity = 'demotion') {
 /**
  * Overlaps that need the low-pass to hide a clash: keys apart, unlike spectra or two
  * voices. Weak key reads score a neutral 0.5, so only trusted keys may call a clash.
+ * Spectral frame vocals sit near 0.3 over silence, so their mean cannot call a collision;
+ * only a sustained run of both singing can.
  */
-export function needsFilter(harmonic, spectral, collision) {
+export function needsFilter(harmonic, spectral, collision, measuredVoice = true) {
   const trustedHarmonic = harmonic.confidence >= PAIR_TRANSITION_POLICY.trustedHarmonicConfidence;
   return (trustedHarmonic && clamp(harmonic.score) < 0.55) ||
     spectral < 0.55 ||
-    (collision.simultaneousMean ?? 0) > 0.25;
+    (measuredVoice ? (collision.simultaneousMean ?? 0) > 0.25 : sustained(collision));
+}
+
+function sustained(collision) {
+  const vocal = PAIR_TRANSITION_POLICY.vocal;
+  return collision.coverage >= vocal.minCoverage &&
+    collision.activeFraction >= vocal.activeFraction &&
+    collision.longestRunBeats >= vocal.sustainedBeats;
+}
+
+function measuredVoices(voice = {}) {
+  return Number.isFinite(voice.incoming) && Number.isFinite(voice.outgoing);
 }
 
 export function candidateGates({
@@ -163,9 +176,7 @@ export function candidateGates({
   }
   if (harmonic.severeClash) lower('harmonic-clash', 'simple_crossfade', 'veto');
 
-  const sustainedCollision = collision.coverage >= PAIR_TRANSITION_POLICY.vocal.minCoverage &&
-    collision.activeFraction >= PAIR_TRANSITION_POLICY.vocal.activeFraction &&
-    collision.longestRunBeats >= PAIR_TRANSITION_POLICY.vocal.sustainedBeats;
+  const sustainedCollision = sustained(collision);
   // Analysis "vocal" values are broad spectral-risk estimates, so synth-heavy
   // passages can look vocal; a sustained run only caps confidence.
   if (sustainedCollision) {
@@ -173,14 +184,15 @@ export function candidateGates({
   }
   // Measured vocals only: a sustained two-voice overlap, or one that enters and leaves
   // mid-line, swaps one singer for another, so the songs play out instead.
-  const measuredVoice = Number.isFinite(voice.incoming) && Number.isFinite(voice.outgoing);
+  const measuredVoice = measuredVoices(voice);
   if (measuredVoice && (sustainedCollision || Math.min(voice.incoming, voice.outgoing) >= 0.5)) {
     lower('voice-over-voice', 'normal_boundary', 'veto');
   }
-  // Fading the outgoing singer out mid-line sounds forced even over a clean incoming.
-  if (measuredVoice && voice.outgoing >= 0.3) lower('voice-cut', 'normal_boundary', 'veto');
+  // Fading the outgoing singer out mid-line sounds forced even over a clean incoming,
+  // unless the voice never stops before the song does.
+  if (measuredVoice && voice.outgoing >= 0.3 && !voice.singsOut) lower('voice-cut', 'normal_boundary', 'veto');
   // Blends that only work behind a filter sound forced; they play out.
-  if (needsFilter(harmonic, spectral, collision)) lower('needs-filter', 'simple_crossfade', 'veto');
+  if (needsFilter(harmonic, spectral, collision, measuredVoice)) lower('needs-filter', 'simple_crossfade', 'veto');
 
   const left = pair.outgoingCandidate;
   const right = pair.incomingCandidate;
@@ -264,7 +276,8 @@ export function strategyFor(evaluation) {
     return 'filtered_blend';
   }
   const measured = (evaluation.flow?.coverage ?? 0) > 0;
-  if (needsFilter(evaluation.harmonic, evaluation.components.spectral, evaluation.collision)) {
+  if (needsFilter(evaluation.harmonic, evaluation.components.spectral, evaluation.collision,
+    measuredVoices(evaluation.voice))) {
     return 'filtered_blend';
   }
   // The filtered blend also swaps bass, so a clash wins; two beats under each other

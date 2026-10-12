@@ -383,6 +383,22 @@ rust_sources = [
   'crates/orchard-youtube-extractor/src/lib.rs',
   'Cargo.toml',
   'Cargo.lock',
+  # The transition planner embeds these with include_str!, so editing one rebuilds the worker.
+  'core/js/shared/trackAnalysis.js',
+  'crates/orchard-transition-planner/js/index.js',
+  'core/js/src/audio/crossfade/outgoingLoop.js',
+  'core/js/src/audio/crossfade/pairTempoHarmony.js',
+  'core/js/src/audio/crossfade/pairTransitionEvidence.js',
+  'core/js/src/audio/crossfade/pairTransitionFallback.js',
+  'core/js/src/audio/crossfade/pairTransitionGates.js',
+  'core/js/src/audio/crossfade/pairTransitionPlanner.js',
+  'core/js/src/audio/crossfade/pairTransitionScoring.js',
+  'core/js/src/audio/crossfade/sectionTempo.js',
+  'core/js/src/audio/crossfade/transitionChoreography.js',
+  'core/js/src/audio/crossfade/transitionFlow.js',
+  'core/js/src/audio/crossfade/transitionPlanner.js',
+  'core/js/src/audio/crossfade/transitionPolicy.js',
+  'core/js/src/audio/crossfade/wsolaPlanner.js',
 ]
 
 youtube_sources = [
