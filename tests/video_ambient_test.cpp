@@ -49,6 +49,31 @@ private slots:
     QVERIFY(cells[8].green() > 200);
   }
 
+  void samplingMatchesOwnedCrop() {
+    for (const auto format : {QImage::Format_RGB32, QImage::Format_ARGB32,
+                              QImage::Format_RGBA8888, QImage::Format_RGB888}) {
+      QImage image(301, 199, format);
+      for (int y = 0; y < image.height(); ++y)
+        for (int x = 0; x < image.width(); ++x)
+          image.setPixelColor(x, y, QColor((x * 7) % 256, (y * 11) % 256,
+                                          (x + y * 3) % 256, (x * y) % 256));
+      for (const QRectF crop : {QRectF(), QRectF(0.13, 0.21, 0.73, 0.61),
+                                QRectF(-0.1, 0, 1.2, 1), QRectF(0.99, 0.99, 0.01, 0.01)}) {
+        const QRectF area = crop.isNull() ? QRectF(0, 0, 1, 1) : crop;
+        const QRect pixels = QRect(qRound(area.x() * image.width()), qRound(area.y() * image.height()),
+                                    qRound(area.width() * image.width()), qRound(area.height() * image.height()))
+                                  .intersected(image.rect());
+        const QImage reference = image.copy(pixels).convertToFormat(QImage::Format_RGB32)
+                                      .scaled(3, 3, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        QList<QColor> expected;
+        for (int y = 0; y < 3; ++y)
+          for (int x = 0; x < 3; ++x)
+            expected.append(QColor(reference.pixel(x, y)));
+        QCOMPARE(videoambient::grid(image, crop, 3, 3), expected);
+      }
+    }
+  }
+
   void tonesStayDarkAndKeepHue() {
     const QColor white = videoambient::backgroundTone(Qt::white);
     QVERIFY(white.lightnessF() <= 0.21);

@@ -34,8 +34,17 @@ QList<QColor> grid(const QImage &frame, const QRectF &crop, int cols, int rows) 
   if (pixels.isEmpty())
     return colors;
   // Smooth downscaling area-averages, so each output pixel is its cell's mean.
-  const QImage cells = frame.copy(pixels)
-                           .convertToFormat(QImage::Format_RGB32)
+  QImage region;
+  if (pixels == frame.rect()) {
+    region = frame;
+  } else if (frame.format() == QImage::Format_RGB32) {
+    // Borrow the crop until scaling completes; retain the original row stride.
+    region = QImage(frame.constScanLine(pixels.y()) + pixels.x() * 4,
+                    pixels.width(), pixels.height(), frame.bytesPerLine(), frame.format());
+  } else {
+    region = frame.copy(pixels);
+  }
+  const QImage cells = region.convertToFormat(QImage::Format_RGB32)
                            .scaled(cols, rows, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
   colors.reserve(cols * rows);
   for (int y = 0; y < rows; ++y)
