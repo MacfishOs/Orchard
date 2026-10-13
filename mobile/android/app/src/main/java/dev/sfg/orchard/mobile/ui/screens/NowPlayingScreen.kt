@@ -251,6 +251,8 @@ fun NowPlayingScreen(
             val verticalVideo = track.animatedArtworkVerticalUrl.ifBlank { track.animatedArtworkUrl }
             val hasRichArtwork = animatedArtworkEnabled && verticalVideo.isNotBlank()
             var videoFrame by remember(verticalVideo) { mutableStateOf<Bitmap?>(null) }
+            var artworkSeam by remember { mutableStateOf<Float?>(null) }
+            var artworkRoom by remember { mutableStateOf<Float?>(null) }
             val palette = rememberFullBleedPalette(track, videoFrame)
             val lyricAccent = palette.accent.lyricAccent()
 
@@ -273,6 +275,8 @@ fun NowPlayingScreen(
                 onVideoFrame = { videoFrame = it },
                 onArtworkBounds = { if ((!wideLayout || isFoldable) && hasRichArtwork && settledOpen()) onRestingCoverBounds(it) },
                 swipe = swipe.takeIf { !wideLayout && !isFoldable },
+                onArtworkSeam = { artworkSeam = it },
+                artworkRoom = artworkRoom,
             )
 
             if (isFoldable) {
@@ -445,6 +449,8 @@ fun NowPlayingScreen(
                 onAutoplayEnabled = onAutoplayEnabled,
                 smartCrossfade = smartCrossfade,
                 onBestMixUpcoming = onBestMixUpcoming,
+                artworkSeam = artworkSeam,
+                onArtworkRoom = { artworkRoom = it },
                 reserveSwitchSpace = musicVideo.playing || musicVideo.available || musicVideo.checking,
             )
         }

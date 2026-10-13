@@ -33,10 +33,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import kotlin.math.max
+import kotlin.math.roundToInt
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -114,6 +128,10 @@ internal fun PhonePlayerBody(
     onAutoplayEnabled: ((Boolean) -> Unit)?,
     smartCrossfade: Boolean,
     onBestMixUpcoming: ((onProgress: (String) -> Unit, onComplete: () -> Unit) -> Unit)?,
+    /** Where the controls start over short motion art, in the body's px; they spread below it. */
+    artworkSeam: Float? = null,
+    /** Reports the px above the controls at their natural height, for the art to grow into. */
+    onArtworkRoom: (Float?) -> Unit = {},
     reserveSwitchSpace: Boolean = false,
 ) {
     val queueOpen = panel == PlayerPanel.QUEUE
@@ -122,12 +140,31 @@ internal fun PhonePlayerBody(
         ?.let { id -> onOpenCollection?.let { open -> { open(id) } } }
     val (previous, next) = playback.neighbours()
     val swipeEnabled = gesturesEnabled && canControl && panel == PlayerPanel.NONE
+    var bodyHeight by remember { mutableIntStateOf(0) }
+    val bottomInset = WindowInsets.systemBars.getBottom(LocalDensity.current) +
+        with(LocalDensity.current) { BODY_BOTTOM_PADDING.roundToPx() }
+    val spreadTarget = artworkSeam
+        ?.takeIf { hasRichArtwork && panel == PlayerPanel.NONE && bodyHeight > 0 }
+        ?.let { bodyHeight - it - bottomInset }
+        ?: 0f
+    val spreadHeight by animateFloatAsState(spreadTarget, tween(SPREAD_MS), label = "ControlsSpread")
+    val spreading = spreadHeight > 0f
+    // A synced lyric line takes all the slack between title and scrubber; otherwise every gap shares it.
+    val peekFills = spreading && panel == PlayerPanel.NONE &&
+        (lyrics as? LoadState.Content)?.value?.any { it.startMs != null } == true
+    // Measured with no panel open, so opening lyrics or the queue never resizes the art.
+    var controlsHeight by remember { mutableIntStateOf(0) }
+    val artworkRoom = if (hasRichArtwork && bodyHeight > 0 && controlsHeight > 0) {
+        (bodyHeight - controlsHeight - bottomInset).toFloat()
+    } else null
+    LaunchedEffect(artworkRoom) { onArtworkRoom(artworkRoom) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .onSizeChanged { bodyHeight = it.height }
             .systemBarsPadding()
-            .padding(bottom = 20.dp),
+            .padding(bottom = BODY_BOTTOM_PADDING),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         PlayerHeader(
@@ -230,20 +267,19 @@ internal fun PhonePlayerBody(
             }
         }
 
-        if (panel == PlayerPanel.NONE) {
-            LyricPeek(
-                lyrics = lyrics,
-                onOpen = onLyricsPanel,
-                modifier = Modifier.padding(horizontal = 24.dp),
-            )
-        }
-
+        // Rows share whatever the art leaves equally; never less than their own height.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .spreadTo(target = { spreadHeight }, onNatural = { if (panel == PlayerPanel.NONE) controlsHeight = it })
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            val gap: @Composable (Dp) -> Unit = { min ->
+                Spacer(Modifier.height(min))
+                if (spreading && !peekFills) Spacer(Modifier.weight(1f))
+            }
+            if (spreading && !peekFills) Spacer(Modifier.weight(1f))
             SmartCrossfadeBadge(
                 visible = mixProgress in 0.001f..0.999f && transition != null,
                 style = transition?.style.orEmpty(),
@@ -266,7 +302,12 @@ internal fun PhonePlayerBody(
                 onOpenArtist = onOpenArtist,
                 showMenu = false,
             )
-            Spacer(Modifier.height(24.dp))
+            if (peekFills) {
+                LyricPeek(lyrics = lyrics, onOpen = onLyricsPanel, modifier = Modifier.weight(1f))
+            } else {
+                if (panel == PlayerPanel.NONE) LyricPeek(lyrics = lyrics, onOpen = onLyricsPanel)
+                gap(24.dp)
+            }
 
             PlayerControlStack(
                 playback = playback,
@@ -293,10 +334,28 @@ internal fun PhonePlayerBody(
                 onQueue = onQueuePanel,
                 sleepTimerActive = sleepTimerRemainingSeconds > 0 || sleepTimerEndOfTrack,
                 onSleepTimer = onSleepTimer,
+                gap = gap,
             )
         }
     }
 }
+
+/** Takes at least [target] px, measuring the content's own height first so it never clips. */
+private fun Modifier.spreadTo(target: () -> Float, onNatural: (Int) -> Unit): Modifier = layout { measurable, constraints ->
+    val wanted = target()
+    val natural = measurable.minIntrinsicHeight(constraints.maxWidth)
+    onNatural(natural)
+    val placeable = if (wanted <= 0f) {
+        measurable.measure(constraints)
+    } else {
+        val height = max(wanted.roundToInt(), natural).coerceIn(constraints.minHeight, constraints.maxHeight)
+        measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
+    }
+    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+}
+
+private val BODY_BOTTOM_PADDING = 20.dp
+private const val SPREAD_MS = 420
 
 /** Dissolves the queue into the header and title at either end. */
 private fun Modifier.queueEdgeFade(): Modifier = this

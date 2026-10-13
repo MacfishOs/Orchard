@@ -29,7 +29,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -76,7 +76,7 @@ internal fun LyricPeek(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .heightIn(min = 44.dp)
             .clip(RoundedCornerShape(14.dp))
             .clickable(onClickLabel = "Show lyrics", onClick = onOpen)
             .padding(horizontal = 12.dp),

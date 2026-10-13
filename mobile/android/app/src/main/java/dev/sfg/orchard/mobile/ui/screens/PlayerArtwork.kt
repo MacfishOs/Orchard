@@ -53,6 +53,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -96,6 +98,10 @@ fun FullBleedPlayerBackdrop(
     transitionProgress: Float = 0f,
     gesturesEnabled: Boolean = false,
     artworkAlpha: Float = 1f,
+    /** Where the controls start over short art, in this layer's px; null when art fills the screen. */
+    onArtworkSeam: (Float?) -> Unit = {},
+    /** Height in px above the controls; short art grows toward it, cropping its sides. */
+    artworkRoom: Float? = null,
     onNext: () -> Unit = {},
     onPrevious: () -> Unit = {},
     onLiked: () -> Unit = {},
@@ -136,6 +142,7 @@ fun FullBleedPlayerBackdrop(
 
     val currentVideo = track.animatedArtworkVerticalUrl.ifBlank { track.animatedArtworkUrl }
     val currentRich = !warpedArtworkEnabled && animatedArtworkEnabled && currentVideo.isNotBlank()
+    LaunchedEffect(currentRich) { if (!currentRich) onArtworkSeam(null) }
 
     Box(
         modifier
@@ -214,10 +221,17 @@ fun FullBleedPlayerBackdrop(
             // The frame takes the video's own shape, so nothing is cropped unless the video
             // is taller than the screen (9:16 canvas), which then fills it edge to edge.
             val screenAspect = screenAspect()
+            val screenWidth = LocalWindowInfo.current.containerSize.width
             var videoAspect by remember(currentVideo) { mutableStateOf<Float?>(null) }
-            val targetFrame = maxOf(videoAspect ?: guessedVideoAspect(track), screenAspect)
+            val naturalFrame = maxOf(videoAspect ?: guessedVideoAspect(track), screenAspect)
+            // Seam lands on the controls' top edge, so the art fills the gap above them.
+            val grownFrame = artworkRoom?.takeIf { it > 0f }
+                ?.let { room -> screenWidth * (1f - FRAME_OVERLAP) / room }
+                ?.coerceIn(naturalFrame * (1f - maxSideCrop(naturalFrame)), naturalFrame)
+                ?: naturalFrame
+            val targetFrame = maxOf(grownFrame, screenAspect)
             val frameAspect by animateFloatAsState(targetFrame, tween(420), label = "ArtworkFrameAspect")
-            val fillsScreen = targetFrame <= screenAspect + FULL_SCREEN_SLACK
+            val fillsScreen = naturalFrame <= screenAspect + FULL_SCREEN_SLACK
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -230,14 +244,15 @@ fun FullBleedPlayerBackdrop(
                         alpha = artworkAlpha * (1f - abs(shift) / size.width.coerceAtLeast(1f)).coerceIn(0f, 1f)
                     }
                     .onGloballyPositioned { onArtworkBounds?.invoke(it.boundsInRoot()) }
+                    .onSizeChanged { onArtworkSeam(if (fillsScreen) null else it.height * (1f - FRAME_OVERLAP)) }
                     .drawWithContent {
                         drawContent()
+                        // Full-screen art goes opaque before the gesture bar; short art by its own bottom edge.
                         drawRect(
                             smoothScrimBrush(
                                 from = animatedDeep.copy(alpha = 0f),
                                 to = animatedDeep,
-                                // Scrim ends opaque before the gesture bar or the frame's edge.
-                                startFraction = if (fillsScreen) SCRIM_START else FRAME_SCRIM_START,
+                                startFraction = if (fillsScreen) SCRIM_START else SHORT_SCRIM_START,
                                 endFraction = if (fillsScreen) SCRIM_END else 1f,
                             ),
                         )
@@ -336,9 +351,22 @@ private const val WASH_START = 0.45f
 private const val SCRIM_START = 0.38f
 private const val SCRIM_END = 0.94f
 
-/** Scrim start within a frame shorter than the screen; it ends opaque at the frame's edge. */
-private const val FRAME_SCRIM_START = 0.5f
+/** Short art fades over its lower part; the title sits on the fade, the controls on solid deep. */
+private const val SHORT_SCRIM_START = 0.62f
+
+/** Bottom share of short art that the controls overlap. */
+private const val FRAME_OVERLAP = 0.12f
+
 private const val TALL_ART_ASPECT = 0.75f
+
+/** Most of the width art may lose to the sides while growing toward the controls. */
+private const val MAX_SIDE_CROP = 0.4f
+
+/** Square motion art is usually the cover itself, with type near the edges, so it crops less. */
+private const val MAX_SQUARE_CROP = 0.15f
+private const val SQUARE_ASPECT_MIN = 0.9f
+
+private fun maxSideCrop(aspect: Float) = if (aspect >= SQUARE_ASPECT_MIN) MAX_SQUARE_CROP else MAX_SIDE_CROP
 
 /** Within this of the screen's shape, a frame counts as full screen. */
 private const val FULL_SCREEN_SLACK = 0.01f
