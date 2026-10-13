@@ -181,7 +181,7 @@ enum class LyricTranslationQuality(val key: String) { STANDARD("standard"), HIGH
 
 enum class LyricTranslationProvider(val key: String, val label: String) {
     LOCAL("local", "Local"), OPENAI("openai", "OpenAI"), CLAUDE("claude", "Claude"),
-    GEMINI("gemini", "Gemini"), CUSTOM("custom", "Custom API");
+    GEMINI("gemini", "Gemini"), CUSTOM("custom", "Custom API"), ORCHARD("orchard", "Orchard Account");
 }
 
 /** How playback treats non-music sections; the same three choices as desktop. */

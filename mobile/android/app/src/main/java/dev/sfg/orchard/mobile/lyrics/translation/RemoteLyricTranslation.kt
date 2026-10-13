@@ -93,6 +93,7 @@ internal class RemoteLyricTranslation(http: OkHttpClient) {
                 LyricTranslationProvider.CUSTOM -> baseUrl.trim().trimEnd('/').let {
                     if (it.endsWith("/chat/completions")) it else "$it/chat/completions"
                 }
+                LyricTranslationProvider.ORCHARD -> error("Account translation uses the account service.")
                 LyricTranslationProvider.LOCAL -> error("Local translation has no API endpoint.")
             }
             val url = target.toHttpUrlOrNull() ?: error("Enter a valid translation API URL.")

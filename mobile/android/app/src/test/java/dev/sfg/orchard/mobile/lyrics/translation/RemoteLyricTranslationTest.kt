@@ -27,6 +27,14 @@ class RemoteLyricTranslationTest {
             LyricTranslationProvider.GEMINI, 2))
     }
 
+    @Test fun accountResponseKeepsSongLineAlignment() {
+        val body = """{"song_id":"one","lines":["Hello","World"],"cached":true}"""
+        assertEquals(listOf("Hello", "World"), parseAccountLines(body, 2))
+        assertNull(parseAccountLines(body, 3))
+        assertNull(parseAccountLines("""{"lines":["Hello",42]}""", 2))
+        assertNull(parseAccountLines("""{"lines":[""]}""", 1))
+    }
+
     @Test fun endpointsAndCacheAreScoped() {
         assertEquals("https://api.anthropic.com/v1/messages",
             RemoteLyricTranslation.endpoint(LyricTranslationProvider.CLAUDE, "", "key").toString())

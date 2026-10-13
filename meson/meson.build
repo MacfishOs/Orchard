@@ -74,6 +74,8 @@ app_sources = [
   'core/native/translation/lyric_language.cpp',
   'core/native/translation/lyric_language.h',
   'app/src/lyrics/translation/lyrics_translator.cpp',
+  'app/src/lyrics/translation/lyrics_remote_translation.cpp',
+  'app/src/lyrics/translation/lyrics_account_translation.cpp',
   'app/src/lyrics/translation/lyrics_translator.h',
   'app/src/lyrics/translation/remote_translation.cpp',
   'app/src/lyrics/translation/remote_translation.h',

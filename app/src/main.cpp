@@ -282,6 +282,7 @@ int main(int argc, char *argv[]) {
   lyrics->setLocalLibrary(&localLibrary);
   // Lyrics in English, courtesy of a 20 MB model that has never heard a song in its life.
   LyricsTranslator lyricsTranslation(lyrics.get());
+  lyricsTranslation.setAccount(&orchardAccount);
   MusicVideoController musicVideo(&youtubeProvider, &authManager, playback.get());
   ArtistVideoBackdrop artistVideo(&youtubeProvider, &authManager);
   // Local imports announce themselves through the same pill as copied links.

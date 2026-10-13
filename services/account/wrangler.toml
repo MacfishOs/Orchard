@@ -56,3 +56,12 @@ new_sqlite_classes = ["ConnectHub"]
 [triggers]
 # Hourly purge, and the support sweep that pulls GitHub issue activity.
 crons = ["17 * * * *", "*/10 * * * *"]
+
+[ai]
+binding = "AI"
+
+[observability]
+enabled = true
+
+[observability.traces]
+enabled = true

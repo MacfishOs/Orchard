@@ -77,12 +77,14 @@ class LyricTranslator(
     val packs = TranslationPacks(context.applicationContext, http)
     private val store = TranslationStore(context.applicationContext)
     private val apiKeys = TranslationApiKeys(context.applicationContext)
+    private val account = dev.sfg.orchard.mobile.auth.OrchardAccountService.get(context)
+    private val accountRemote = AccountLyricTranslation(http, account)
     private val remote = RemoteLyricTranslation(http)
     data class ApiKeyState(val saved: Set<LyricTranslationProvider>, val message: String = "") {
         fun has(provider: LyricTranslationProvider) = provider in saved
     }
     private val mutableApiKeys = MutableStateFlow(ApiKeyState(
-        LyricTranslationProvider.entries.filterTo(mutableSetOf()) { it != LyricTranslationProvider.LOCAL && apiKeys.has(it) },
+        LyricTranslationProvider.entries.filterTo(mutableSetOf()) { it != LyricTranslationProvider.LOCAL && it != LyricTranslationProvider.ORCHARD && apiKeys.has(it) },
     ))
     val apiKeyState: StateFlow<ApiKeyState> = mutableApiKeys.asStateFlow()
     // One thread owns the model handle; lowest priority so a long chorus never stutters playback.
@@ -97,7 +99,8 @@ class LyricTranslator(
     private var unload: Job? = null
 
     private val generation = AtomicInteger()
-    private val viewers = MutableStateFlow<Pair<List<LyricLine>, Int>?>(null)
+    private data class Viewer(val lines: List<LyricLine>, val count: Int, val songId: String)
+    private val viewers = MutableStateFlow<Viewer?>(null)
     private val mutableState = MutableStateFlow(LyricTranslationState())
     val state: StateFlow<LyricTranslationState> = mutableState.asStateFlow()
 
@@ -126,22 +129,25 @@ class LyricTranslator(
         }
             .distinctUntilChanged()
         scope.launch {
-            combine(viewers, wanted, retries) { shown, config, _ -> shown?.first to config }
+            combine(viewers.map { it?.let { viewer -> viewer.lines to viewer.songId } }.distinctUntilChanged(),
+                wanted, retries, account.state.map { it.email }.distinctUntilChanged()) { shown, config, _, _ ->
+                shown to config
+            }
                 // Before collectLatest joins the old run, so its native decode stops at the next token.
                 .onEach { TranslationNative.takeIf { it.available }?.setGeneration(generation.incrementAndGet()) }
-                .collectLatest { (lines, config) -> run(lines, config) }
+                .collectLatest { (viewer, config) -> run(viewer?.first, config, viewer?.second.orEmpty()) }
         }
     }
 
     /** Called while a lyrics view shows [lines]; pair every call with [hide]. */
-    fun show(lines: List<LyricLine>) = viewers.update { current ->
-        lines to (if (current?.first === lines) current.second + 1 else 1)
+    fun show(lines: List<LyricLine>, songId: String) = viewers.update { current ->
+        Viewer(lines, if (current?.lines === lines && current.songId == songId) current.count + 1 else 1, songId)
     }
 
-    fun hide(lines: List<LyricLine>) = viewers.update { current ->
+    fun hide(lines: List<LyricLine>, songId: String) = viewers.update { current ->
         when {
-            current == null || current.first !== lines -> current
-            current.second > 1 -> lines to current.second - 1
+            current == null || current.lines !== lines || current.songId != songId -> current
+            current.count > 1 -> current.copy(count = current.count - 1)
             else -> null
         }
     }
@@ -152,7 +158,7 @@ class LyricTranslator(
     }
 
     fun saveApiKey(provider: LyricTranslationProvider, raw: String) {
-        if (provider == LyricTranslationProvider.LOCAL || raw.isBlank()) return
+        if (provider == LyricTranslationProvider.LOCAL || provider == LyricTranslationProvider.ORCHARD || raw.isBlank()) return
         scope.launch(Dispatchers.IO) {
             val result = runCatching { apiKeys.save(provider, raw) }
             mutableApiKeys.update {
@@ -164,7 +170,7 @@ class LyricTranslator(
     }
 
     fun removeApiKey(provider: LyricTranslationProvider) {
-        if (provider == LyricTranslationProvider.LOCAL) return
+        if (provider == LyricTranslationProvider.LOCAL || provider == LyricTranslationProvider.ORCHARD) return
         scope.launch(Dispatchers.IO) {
             val result = runCatching { apiKeys.remove(provider) }
             mutableApiKeys.update {
@@ -187,7 +193,7 @@ class LyricTranslator(
         }
     }
 
-    private suspend fun run(lines: List<LyricLine>?, config: Config) {
+    private suspend fun run(lines: List<LyricLine>?, config: Config, songId: String) {
         if (!config.enabled) {
             mutableState.value = LyricTranslationState()
             return
@@ -195,6 +201,10 @@ class LyricTranslator(
         // Nobody is looking; keep what is on screen for when they come back.
         if (lines == null) return
         activePack = ""
+        if (config.provider == LyricTranslationProvider.ORCHARD) {
+            runAccount(lines, songId)
+            return
+        }
         if (config.provider != LyricTranslationProvider.LOCAL) {
             runRemote(lines, config)
             return
@@ -322,6 +332,27 @@ class LyricTranslator(
         } catch (error: Throwable) {
             mutableState.value = base.copy(status = LyricTranslationState.Status.FAILED,
                 message = error.message ?: "Translation failed", translations = results.toList())
+        }
+    }
+
+    private suspend fun runAccount(lines: List<LyricLine>, songId: String) {
+        val texts = lines.map(::lineText)
+        val wanted = texts.filter(String::isNotEmpty).distinct()
+        val base = LyricTranslationState(LyricTranslationState.Status.TRANSLATING,
+            message = "Translating with Orchard Account", lines = lines, translations = List(lines.size) { null })
+        mutableState.value = base
+        try {
+            check(account.state.value.signedIn) { "Sign in to Orchard to translate lyrics." }
+            val output = if (wanted.isEmpty()) emptyList() else accountRemote.translate(songId, wanted)
+            val translations = wanted.zip(output).toMap()
+            mutableState.value = base.copy(status = LyricTranslationState.Status.READY,
+                message = "Translated with Orchard Account",
+                translations = texts.map { text -> translations[text]?.let { shown(text, it) } })
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Throwable) {
+            mutableState.value = base.copy(status = LyricTranslationState.Status.FAILED,
+                message = error.message ?: "Account translation failed")
         }
     }
 

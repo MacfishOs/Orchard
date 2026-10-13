@@ -38,6 +38,7 @@ expires. The account routes (`/me`, `/devices`) also check the device row.
 | `POST /auth/token` | `authorization_code` or `refresh_token` grant |
 | `POST /auth/logout` | refresh token in body |
 | `GET /me` | Bearer |
+| `POST /lyrics/translate` | Bearer, live device, Cloudflare IP |
 | `GET /devices` | Bearer |
 | `DELETE /devices/:id` | Bearer |
 | `GET /.well-known/jwks.json` | none |
@@ -54,6 +55,45 @@ expires. The account routes (`/me`, `/devices`) also check the device row.
 | `POST /support/reports/:id/read` | Bearer |
 | `GET /support/screenshots/<key>` | none |
 | `POST /github/webhook` | `X-Hub-Signature-256` |
+
+## Lyric translation
+
+`POST /lyrics/translate` accepts `{song_id, lines}` for a whole song and returns
+`{song_id, lines, cached}` with exactly one English output for each input line.
+The model is fixed server-side to `@cf/google/gemma-4-26b-a4b-it` using the `AI`
+binding. Client model, identity, IP, quota, and reset fields are ignored.
+
+D1 caches results for 90 days in `lyric_translations`, keyed by song ID, prompt/model
+revision, and a server-computed lyrics digest. The digest protects line alignment
+when lyric sources differ. Cache reads require the same session/device checks as
+misses, and cache hits are free across accounts.
+
+Each cache miss reserves one slot in both the authenticated account's quota and
+Cloudflare's `CF-Connecting-IP` quota. Each quota allows 10 starts per UTC day and
+resets at 00:00 UTC from the server clock, independently of cron. D1 triggers check
+both counters and charge admission atomically, including concurrent requests.
+Changing song IDs or lyric content requires another admission. Failed generation
+counts too; failed or partial output is never cached. Missing Cloudflare IP fails
+closed. IPs are hashed with the signing key before storage, and completed cache
+rows discard the account and IP association.
+
+The request body is limited to 48 KiB, 200 nonempty lines, 1024 UTF-8 bytes per
+line, and 24 KiB of lyric JSON. The Worker splits inference into 24-line batches
+with a 4096-token output cap. Inference has a 120-second deadline across all batches
+and rejects requests when model capacity is unavailable. A per-cache-entry lease prevents duplicate inference;
+it expires after 180 seconds. Errors: 429 `translation_daily_limit` with
+`Retry-After` until midnight, 409 `translation_pending` with `Retry-After: 5`,
+502 `translation_failed` or `translation_invalid_result`, 504 `translation_timeout`,
+503 `translation_busy`, and 503 `translation_unavailable` for a missing binding.
+Structured logs record start, completion, elapsed time, and stable failure codes;
+lyric text and credentials are excluded.
+The hourly purge removes expired entries and old daily counters.
+
+Apply migration `0005_translation.sql` and include `ai: {binding: "AI"}` in the
+production Wrangler config before deploying. The ignored production config on
+this checkout includes that binding; the tracked TOML includes its equivalent.
+The model's binding and completion format are documented in the
+[Cloudflare model reference](https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/).
 
 ## Artwork
 
