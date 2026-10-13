@@ -419,6 +419,17 @@ if get_option('tests')
   test('orchard_qml_startup', qml_startup_test, timeout: 60,
     env: ['QT_QPA_PLATFORM=offscreen'])
   qt_test_dep = dependency('qt6', modules: ['Test'])
+  backdrop_test_moc = qt6.compile_moc(sources: ['tests/fullscreen_backdrop_test.cpp'],
+    headers: ['app/src/appearance/kawarp_background.h'],
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
+  backdrop_test = executable('orchard_fullscreen_backdrop_tests',
+    files('tests/fullscreen_backdrop_test.cpp') + backdrop_test_moc,
+    objects: [orchard.extract_objects(files('app/src/appearance/kawarp_background.cpp')),
+      app_lib.extract_objects(files('app/src/appearance/kawarp_artwork.cpp'))],
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep],
+    cpp_args: ['-DORCHARD_SOURCE_DIR="' + source_root + '"'])
+  test('orchard_fullscreen_backdrop', backdrop_test, timeout: 15,
+    env: ['QT_QPA_PLATFORM=offscreen'])
   instance_test_moc = qt6.compile_moc(sources: ['tests/instance_coordinator_test.cpp'],
     include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
   instance_test = executable('orchard_instance_tests',
