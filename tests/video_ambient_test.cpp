@@ -51,7 +51,11 @@ private slots:
 
   void samplingMatchesOwnedCrop() {
     for (const auto format : {QImage::Format_RGB32, QImage::Format_ARGB32,
-                              QImage::Format_RGBA8888, QImage::Format_RGB888}) {
+                              QImage::Format_ARGB32_Premultiplied, QImage::Format_RGBX8888,
+                              QImage::Format_RGBA8888, QImage::Format_RGBA8888_Premultiplied,
+                              QImage::Format_RGB30, QImage::Format_A2RGB30_Premultiplied,
+                              QImage::Format_BGR30, QImage::Format_A2BGR30_Premultiplied,
+                              QImage::Format_CMYK8888, QImage::Format_RGB888}) {
       QImage image(301, 199, format);
       for (int y = 0; y < image.height(); ++y)
         for (int x = 0; x < image.width(); ++x)

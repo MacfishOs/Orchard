@@ -37,7 +37,7 @@ QList<QColor> grid(const QImage &frame, const QRectF &crop, int cols, int rows) 
   QImage region;
   if (pixels == frame.rect()) {
     region = frame;
-  } else if (frame.format() == QImage::Format_RGB32) {
+  } else if (frame.depth() == 32) {
     // Borrow the crop until scaling completes; retain the original row stride.
     region = QImage(frame.constScanLine(pixels.y()) + pixels.x() * 4,
                     pixels.width(), pixels.height(), frame.bytesPerLine(), frame.format());
