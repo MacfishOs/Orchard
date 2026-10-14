@@ -37,6 +37,8 @@ Column {
     // Colour a finished word settles on.
     property color doneColor
     property real clock
+    // Lit words pull wordClock from this source without ticking each row.
+    property var clockSource: null
     readonly property var rows: wrapWords(words, metrics, gap, width - 2)
 
     spacing: Math.round(pixelSize * 0.24)
@@ -72,9 +74,13 @@ Column {
         property bool lit: false
         property color baseColor
         property color fillColor
-        readonly property real progress: !lit ? 0
-                                         : wordRows.clock >= end ? 1
-                                         : Math.max(0, Math.min(1, (wordRows.clock - start) / Math.max(0.1, end - start)))
+        readonly property real progress: {
+            if (!lit)
+                return 0;
+            const clock = wordRows.clockSource ? wordRows.clockSource.wordClock : wordRows.clock;
+            return clock >= end ? 1
+                               : Math.max(0, Math.min(1, (clock - start) / Math.max(0.1, end - start)));
+        }
         readonly property bool singing: lit && progress > 0 && progress < 1
         readonly property real feather: Math.min(0.5, pixelSize * 0.38 / Math.max(1, base.implicitWidth))
 
