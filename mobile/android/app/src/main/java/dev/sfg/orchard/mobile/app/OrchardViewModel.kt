@@ -98,22 +98,19 @@ class OrchardViewModel(application: Application) : AndroidViewModel(application)
     val playback: StateFlow<PlaybackSnapshot> = combine(
         targetPlayback,
         nowPlaying.artwork,
+        nowPlaying.upcomingArtwork,
         nowPlaying.artistCredits,
-    ) { snapshot, artwork, artistCredits ->
+    ) { snapshot, artwork, upcoming, artistCredits ->
         val track = snapshot.currentTrack
         if (track == null) return@combine snapshot
-        val matchingArtwork = artwork?.takeIf { it.trackId == track.id }
+        // At a handoff the prefetched art already matches while the current lookup restarts.
+        val matchingArtwork = listOfNotNull(artwork, upcoming).filter { it.trackId == track.id }
+            .maxByOrNull { if (it.preferredVideoUrl.isNotBlank()) 1 else 0 }
         val matchingArtists = artistCredits?.takeIf { it.first == track.id }?.second.orEmpty()
         snapshot.copy(
-            currentTrack = track.copy(
-                artworkUrl = matchingArtwork?.staticUrl?.ifBlank { track.artworkUrl } ?: track.artworkUrl,
-                animatedArtworkUrl = matchingArtwork?.videoUrl?.ifBlank { track.animatedArtworkUrl }
-                    ?: track.animatedArtworkUrl,
-                animatedArtworkVerticalUrl = matchingArtwork?.videoUrlVertical
-                    ?.ifBlank { track.animatedArtworkVerticalUrl }
-                    ?: track.animatedArtworkVerticalUrl,
-                artists = matchingArtists.ifEmpty { track.artists },
-            ),
+            currentTrack = track.withArtwork(matchingArtwork).copy(artists = matchingArtists.ifEmpty { track.artists }),
+            // A mix presents the next song from the queue before it is current.
+            queue = snapshot.queue.withArtwork(upcoming?.takeIf { it.trackId != track.id }),
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PlaybackSnapshot())
     /** [playback] minus its clock: emits on track, queue or transport changes, never on a tick. */
