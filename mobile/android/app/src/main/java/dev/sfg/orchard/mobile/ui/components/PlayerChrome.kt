@@ -26,8 +26,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -38,6 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -76,6 +81,8 @@ private val destinations = listOf(
     BottomDestination(Routes.LIBRARY, "Library", Icons.Rounded.LibraryMusic),
 )
 
+private val settingsDestination = BottomDestination(Routes.SETTINGS, "Settings", Icons.Rounded.Person)
+
 /**
  * Height the mini player and nav bar occupy together. Screens reserve this much bottom content
  * padding so their last row can still be scrolled clear of the floating chrome.
@@ -85,10 +92,19 @@ val OrchardChromeHeight = 132.dp
 private val BottomBarShape = RoundedCornerShape(26.dp)
 /** Bottom navigation bar: a frosted floating pane, inset from the sides and fully rounded. */
 @Composable
-fun OrchardBottomBar(currentRoute: String?, onSelect: (String) -> Unit) {
+fun OrchardBottomBar(currentRoute: String?, onSelect: (String) -> Unit, showSettings: Boolean = false) {
     val glassTint = LocalGlass.current.tint
-    val selectedIndex = remember(currentRoute, destinations) {
-        destinations.indexOfFirst { it.route == currentRoute }.takeIf { it != -1 }
+    // 0 to 1 as the Settings tab grows in and out of the row.
+    val settingsReveal by animateFloatAsState(
+        targetValue = if (showSettings) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = 300f),
+        label = "BottomBarSettingsReveal",
+    )
+    val settingsVisible = showSettings || settingsReveal > 0.001f
+    val allDestinations = if (settingsVisible) destinations + settingsDestination else destinations
+    val selectedIndex = remember(currentRoute, allDestinations) {
+        allDestinations.indexOfFirst { it.route == currentRoute }.takeIf { it != -1 }
+            ?: if (currentRoute == Routes.SETTINGS_HOME_LAYOUT && settingsVisible) allDestinations.lastIndex else null
     }
     var lastKnownIndex by remember { mutableIntStateOf(selectedIndex ?: 0) }
     LaunchedEffect(selectedIndex) {
@@ -130,11 +146,10 @@ fun OrchardBottomBar(currentRoute: String?, onSelect: (String) -> Unit) {
                 .fillMaxWidth()
                 .height(64.dp),
         ) {
-            val count = destinations.size
-            val slotWidth = maxWidth / count
+            val slotWidth = maxWidth / (destinations.size + settingsReveal)
             val indicatorWidth = if (slotWidth - 8.dp < 56.dp) slotWidth - 8.dp else 56.dp
             val indicatorHeight = 32.dp
-            val targetOffset = (slotWidth * (activeIndex + 0.5f)) - (indicatorWidth / 2)
+            val targetOffset = (slotWidth * (activeIndex.coerceAtMost(allDestinations.lastIndex) + 0.5f)) - (indicatorWidth / 2)
 
             val animatedOffset by animateDpAsState(
                 targetValue = targetOffset,
@@ -179,40 +194,54 @@ fun OrchardBottomBar(currentRoute: String?, onSelect: (String) -> Unit) {
                 windowInsets = WindowInsets(0),
                 modifier = Modifier.height(64.dp),
             ) {
-                destinations.forEach { destination ->
+                allDestinations.forEach { destination ->
+                    val isSettings = destination === settingsDestination
                     val isSelected = currentRoute == destination.route
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = { onSelect(destination.route) },
-                        icon = {
-                            val iconScale by animateFloatAsState(
-                                targetValue = if (isSelected) 1.08f else 1.0f,
-                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
-                                label = "NavIconScale",
-                            )
-                            Icon(
-                                destination.icon,
-                                contentDescription = destination.label,
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .scale(iconScale)
-                                    .popOnChange(isSelected, peak = 1.35f, onlyOn = true),
-                            )
-                        },
-                        label = {
-                            Text(
-                                destination.label,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.White,
-                            selectedTextColor = Color.White,
-                            indicatorColor = Color.Transparent,
-                            unselectedIconColor = Color.White.copy(alpha = 0.72f),
-                            unselectedTextColor = Color.White.copy(alpha = 0.72f),
-                        ),
-                    )
+                    val item: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
+                        NavigationBarItem(
+                            selected = isSelected,
+                            onClick = { onSelect(destination.route) },
+                            icon = {
+                                val iconScale by animateFloatAsState(
+                                    targetValue = if (isSelected) 1.08f else 1.0f,
+                                    animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                    label = "NavIconScale",
+                                )
+                                Icon(
+                                    destination.icon,
+                                    contentDescription = destination.label,
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .scale(iconScale)
+                                        .popOnChange(isSelected, peak = 1.35f, onlyOn = true),
+                                )
+                            },
+                            label = {
+                                Text(
+                                    destination.label,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Color.White,
+                                selectedTextColor = Color.White,
+                                indicatorColor = Color.Transparent,
+                                unselectedIconColor = Color.White.copy(alpha = 0.72f),
+                                unselectedTextColor = Color.White.copy(alpha = 0.72f),
+                            ),
+                        )
+                    }
+                    if (isSettings) {
+                        Box(
+                            Modifier
+                                .weight(settingsReveal.coerceAtLeast(0.001f))
+                                .fillMaxHeight()
+                                .alpha(settingsReveal)
+                                .clipToBounds(),
+                        ) { Row(Modifier.fillMaxSize()) { item() } }
+                    } else {
+                        item()
+                    }
                 }
             }
         }

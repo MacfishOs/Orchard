@@ -113,6 +113,8 @@ data class OrchardSettings(
     val equalizerConfig: EqualizerConfig = EqualizerConfig(),
     /** Enable swipe and tap gestures on the player artwork. */
     val playerGesturesEnabled: Boolean = true,
+    /** Whether the phone bottom bar has a Settings tab. */
+    val showSettingsTab: Boolean = false,
     /** Online layout configuration. */
     val homeLayoutOnline: List<HomeSectionConfig> = listOf(
         HomeSectionConfig(BuiltInHomeSection.YOUR_PLAYLISTS, true),

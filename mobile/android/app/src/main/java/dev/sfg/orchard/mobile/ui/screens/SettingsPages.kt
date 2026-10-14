@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -166,8 +167,19 @@ internal fun AppearancePage(
         )
     }
 
-    SectionLabel("Player", 4)
+    SectionLabel("Navigation", 4)
     SettingsPanel(index = 5) {
+        ToggleRow(
+            title = "Settings tab",
+            subtitle = "Show Settings in the bottom bar",
+            icon = Icons.Rounded.Settings,
+            checked = settings.showSettingsTab,
+            onChecked = { onSettings(settings.copy(showSettingsTab = it)) },
+        )
+    }
+
+    SectionLabel("Player", 6)
+    SettingsPanel(index = 7) {
         ToggleRow(
             title = "Player gestures",
             subtitle = "Swipe to skip and tap to like on artwork",
@@ -195,8 +207,8 @@ internal fun AppearancePage(
         )
     }
 
-    SectionLabel("Background", 6)
-    SettingsPanel(index = 7) {
+    SectionLabel("Background", 8)
+    SettingsPanel(index = 9) {
         ToggleRow(
             title = "Animated background",
             subtitle = "Let the cover's colours drift behind the app",

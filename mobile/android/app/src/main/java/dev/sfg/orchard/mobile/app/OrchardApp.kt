@@ -267,7 +267,7 @@ fun OrchardApp(viewModel: OrchardViewModel) {
                                         viewModel.clearQueue()
                                     },
                                 )
-                                OrchardBottomBar(chromeRoute, selectTopLevel)
+                                OrchardBottomBar(chromeRoute, selectTopLevel, showSettings = settings.showSettingsTab)
                             }
                         }
                     }

@@ -90,6 +90,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                     bassBoost = values[EQUALIZER_BASS_BOOST] ?: 0f,
                 ),
                 playerGesturesEnabled = values[PLAYER_GESTURES_ENABLED] ?: true,
+                showSettingsTab = values[SHOW_SETTINGS_TAB] ?: false,
                 homeLayoutOnline = decodeHomeLayout(values[HOME_LAYOUT_ONLINE], true),
                 homeLayoutOffline = decodeHomeLayout(values[HOME_LAYOUT_OFFLINE], false),
                 customDeviceName = values[CUSTOM_DEVICE_NAME] ?: "",
@@ -146,6 +147,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 it[EQUALIZER_PREAMP] = value.equalizerConfig.preampDb
                 it[EQUALIZER_BASS_BOOST] = value.equalizerConfig.bassBoost
                 it[PLAYER_GESTURES_ENABLED] = value.playerGesturesEnabled
+                it[SHOW_SETTINGS_TAB] = value.showSettingsTab
                 it[HOME_LAYOUT_ONLINE] = encodeHomeLayout(value.homeLayoutOnline)
                 it[HOME_LAYOUT_OFFLINE] = encodeHomeLayout(value.homeLayoutOffline)
                 it[CUSTOM_DEVICE_NAME] = value.customDeviceName
@@ -270,6 +272,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
         val EQUALIZER_PREAMP = floatPreferencesKey("equalizer_preamp")
         val EQUALIZER_BASS_BOOST = floatPreferencesKey("equalizer_bass_boost")
         val PLAYER_GESTURES_ENABLED = booleanPreferencesKey("player_gestures_enabled")
+        val SHOW_SETTINGS_TAB = booleanPreferencesKey("show_settings_tab")
         val HOME_LAYOUT_ONLINE = stringPreferencesKey("home_layout_online")
         val HOME_LAYOUT_OFFLINE = stringPreferencesKey("home_layout_offline")
         val CUSTOM_DEVICE_NAME = stringPreferencesKey("custom_device_name")
