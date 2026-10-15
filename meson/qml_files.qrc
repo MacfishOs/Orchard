@@ -17,6 +17,8 @@
     <file alias="app/qml/components/settings/AboutSection.qml">../app/qml/components/settings/AboutSection.qml</file>
     <file alias="app/qml/components/settings/Discord.qml">../app/qml/components/settings/Discord.qml</file>
     <file alias="app/qml/components/settings/LastFm.qml">../app/qml/components/settings/LastFm.qml</file>
+    <file alias="app/qml/components/settings/AppleMusic.qml">../app/qml/components/settings/AppleMusic.qml</file>
+    <file alias="app/qml/components/settings/AppleMusicForm.ui.qml">../app/qml/components/settings/AppleMusicForm.ui.qml</file>
     <file alias="app/qml/components/settings/Qobuz.qml">../app/qml/components/settings/Qobuz.qml</file>
     <file alias="app/qml/components/settings/Spotify.qml">../app/qml/components/settings/Spotify.qml</file>
     <file alias="app/qml/components/ExplicitBadge.qml">../app/qml/components/ExplicitBadge.qml</file>

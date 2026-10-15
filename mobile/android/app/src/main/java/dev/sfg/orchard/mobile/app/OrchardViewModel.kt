@@ -279,7 +279,7 @@ class OrchardViewModel(application: Application) : AndroidViewModel(application)
 
     suspend fun fetchSectionItems(browseId: String, params: String = ""): List<CatalogItem> {
         if (browseId.isBlank()) return emptyList()
-        return runCatching { graph.catalog.sectionItems(browseId, params) }.getOrDefault(emptyList())
+        return runCatching { graph.catalogRouter.sectionItems(browseId, params) }.getOrDefault(emptyList())
     }
 
     /** The transition Adaptive mix has planned out of the current track, for the scrubber. */

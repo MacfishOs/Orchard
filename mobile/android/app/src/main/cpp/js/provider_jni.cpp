@@ -300,8 +300,10 @@ JniPlatform *platform(jlong handle) { return reinterpret_cast<JniPlatform *>(han
 
 extern "C" JNIEXPORT jlong JNICALL PROVIDER_JNI(create)(JNIEnv *env, jclass, jobject owner, jint bundle) {
   // The ordinal matches Kotlin's ProviderBundle.
-  return reinterpret_cast<jlong>(new JniPlatform(
-      env, owner, bundle == 1 ? orchard::provider::qobuzBundle() : orchard::provider::youtubeBundle()));
+  auto selected = bundle == 1   ? orchard::provider::qobuzBundle()
+                  : bundle == 2 ? orchard::provider::appleMusicBundle()
+                                : orchard::provider::youtubeBundle();
+  return reinterpret_cast<jlong>(new JniPlatform(env, owner, std::move(selected)));
 }
 
 extern "C" JNIEXPORT void JNICALL PROVIDER_JNI(destroy)(JNIEnv *, jclass, jlong handle) {

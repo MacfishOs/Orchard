@@ -2,5 +2,7 @@
   <qresource prefix="/auth">
     <file alias="AuthWebView.qml">../app/qml/views/login/AuthWebView.qml</file>
     <file alias="SpotifyLoginView.qml">../app/qml/views/login/SpotifyLoginView.qml</file>
+    <file alias="AppleMusicLoginView.qml">../app/qml/views/login/AppleMusicLoginView.qml</file>
+    <file alias="applemusic-signin.html">../mobile/android/app/src/main/assets/applemusic/signin.html</file>
   </qresource>
 </RCC>

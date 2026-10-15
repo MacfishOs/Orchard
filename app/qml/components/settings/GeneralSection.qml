@@ -41,6 +41,9 @@ GeneralSectionForm {
     historySwitch.checked: OrchardPlayback.youtubeHistoryEnabled
     historySwitch.onToggled: OrchardPlayback.youtubeHistoryEnabled = historySwitch.checked
 
+    homeSourcePicker.currentValue: OrchardHome.homeSource
+    homeSourcePicker.onPicked: function(value) { OrchardHome.homeSource = value; }
+
     account.onSignOutRequested: root.signOutRequested()
 
     function megabytes(bytes) {

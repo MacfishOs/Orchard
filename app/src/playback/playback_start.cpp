@@ -31,6 +31,11 @@
 #include <QSettings>
 
 void PlaybackController::playSong(const QVariantMap &track) {
+  if (m_trackMatcher && m_trackMatcher({track}, 0, [this](const QVariantList &tracks, int) {
+        if (!tracks.isEmpty())
+          playSong(tracks.first().toMap());
+      }))
+    return;
   if (forwardRemote(QStringLiteral("play_track"), {{QStringLiteral("track"), track}}))
     return;
   startTrack(track, true);

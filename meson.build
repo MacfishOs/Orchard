@@ -243,6 +243,13 @@ qobuz_bundle = custom_target('Qobuz provider bundle',
     '--', 'esbuild', source_root / 'providers/qobuz/src/runtime.js', '--bundle',
     '--platform=browser', '--format=iife', '--target=es2023',
     '--legal-comments=none', '--outfile=' + meson.current_build_dir() / 'qobuz-provider.js'])
+apple_music_bundle = custom_target('Apple Music provider bundle',
+  input: files(apple_music_sources + ['providers/youtube/package-lock.json']),
+  output: 'apple-music-provider.js',
+  command: [npm, '--prefix', source_root / 'providers/youtube', 'exec', '--offline',
+    '--', 'esbuild', source_root / 'providers/apple-music/src/runtime.js', '--bundle',
+    '--platform=browser', '--format=iife', '--target=es2023',
+    '--legal-comments=none', '--outfile=' + meson.current_build_dir() / 'apple-music-provider.js'])
 youtube_bytecode = custom_target('YouTube provider bytecode', input: youtube_bundle,
   output: 'youtube-provider.qjc',
   command: [qjsc, '-b', '-C', '-n', 'youtube-provider.js', '-o', '@OUTPUT@', '@INPUT@'])
@@ -252,9 +259,12 @@ po_bytecode = custom_target('YouTube PO minter bytecode', input: po_bundle[0],
 qobuz_bytecode = custom_target('Qobuz provider bytecode', input: qobuz_bundle,
   output: 'qobuz-provider.qjc',
   command: [qjsc, '-b', '-C', '-n', 'qobuz-provider.js', '-o', '@OUTPUT@', '@INPUT@'])
+apple_music_bytecode = custom_target('Apple Music provider bytecode', input: apple_music_bundle,
+  output: 'apple-music-provider.qjc',
+  command: [qjsc, '-b', '-C', '-n', 'apple-music-provider.js', '-o', '@OUTPUT@', '@INPUT@'])
 
 provider_resources = custom_target('provider resources',
-  input: [youtube_bytecode, po_bytecode, po_bundle[1], qobuz_bytecode],
+  input: [youtube_bytecode, po_bytecode, po_bundle[1], qobuz_bytecode, apple_music_bytecode],
   output: 'qrc_provider_resources.cpp',
   command: [python, files('scripts/meson-rcc.py'), '--rcc', rcc,
     '--name', 'provider_resources', '--prefix', '/providers',

@@ -64,6 +64,11 @@ app_sources = [
   'app/src/integrations/integrations.h',
   'app/src/integrations/lastfm.cpp',
   'app/src/integrations/lastfm.h',
+  'app/src/integrations/apple_music.cpp',
+  'app/src/integrations/apple_music.h',
+  'app/src/integrations/apple_music_catalog.cpp',
+  'app/src/integrations/apple_music_matches.cpp',
+  'app/src/integrations/apple_music_matches.h',
   'app/src/integrations/spotify_canvas.cpp',
   'app/src/integrations/spotify_canvas.h',
   'app/src/integrations/spotify_canvas_api.cpp',
@@ -244,6 +249,8 @@ helper_sources = [
   'app/src/auth/browser_cookie_adapter.h',
   'app/src/auth/spotify_helper.cpp',
   'app/src/auth/spotify_helper.h',
+  'app/src/auth/apple_music_helper.cpp',
+  'app/src/auth/apple_music_helper.h',
   'app/src/providers/runtime/provider_runtime.cpp',
   'app/src/providers/runtime/provider_runtime.h',
   'core/native/provider_host/provider_host.cpp',
@@ -484,6 +491,17 @@ qobuz_sources = [
   'providers/qobuz/src/types.js',
 ]
 
+apple_music_sources = [
+  'providers/apple-music/src/artist.js',
+  'providers/apple-music/src/catalog.js',
+  'providers/apple-music/src/client.js',
+  'providers/apple-music/src/home.js',
+  'providers/apple-music/src/ids.js',
+  'providers/apple-music/src/index.js',
+  'providers/apple-music/src/normalize.js',
+  'providers/apple-music/src/runtime.js',
+]
+
 
 app_moc_headers = [
   'app/src/account/orchard_account.h',
@@ -504,6 +522,8 @@ app_moc_headers = [
   'app/src/integrations/discord.h',
   'app/src/integrations/integrations.h',
   'app/src/integrations/lastfm.h',
+  'app/src/integrations/apple_music.h',
+  'app/src/integrations/apple_music_matches.h',
   'app/src/integrations/spotify_canvas.h',
   'app/src/lyrics/lyrics_controller.h',
   'app/src/lyrics/translation/lyrics_translator.h',
@@ -548,6 +568,7 @@ app_moc_headers = [
 ]
 
 helper_moc_headers = [
+  'app/src/auth/apple_music_helper.h',
   'app/src/auth/auth_manager.h',
   'app/src/auth/auth_session_channel.h',
   'app/src/auth/browser_cookie_adapter.h',

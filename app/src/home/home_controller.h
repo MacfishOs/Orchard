@@ -25,6 +25,7 @@
 #include <QVariantMap>
 
 class AuthManager;
+class AppleMusic;
 class YouTubeCatalog;
 
 class HomeController final : public QObject {
@@ -40,6 +41,7 @@ class HomeController final : public QObject {
   Q_PROPERTY(bool libraryLoading READ libraryLoading NOTIFY libraryChanged)
   Q_PROPERTY(QString libraryError READ libraryError NOTIFY libraryChanged)
   Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged)
+  Q_PROPERTY(QString homeSource READ homeSource WRITE setHomeSource NOTIFY homeSourceChanged)
 
 public:
   explicit HomeController(YouTubeCatalog *catalog, AuthManager *auth,
@@ -50,6 +52,9 @@ public:
   [[nodiscard]] QVariantList sections() const { return m_sections; }
   [[nodiscard]] QVariantMap hero() const { return m_hero; }
   [[nodiscard]] double volume() const { return m_volume; }
+  QString homeSource() const { return m_homeSource; }
+  void setHomeSource(const QString &source);
+  void setAppleMusic(AppleMusic *appleMusic);
 
   [[nodiscard]] QVariantList playlists() const { return m_playlists; }
   [[nodiscard]] bool playlistsLoading() const { return m_playlistsRequestId != 0; }
@@ -68,15 +73,23 @@ signals:
   void playlistsChanged();
   void libraryChanged();
   void volumeChanged();
+  void homeSourceChanged();
+  void noticeRequested(const QString &message);
 
 private:
   void receiveHome(quint64 requestId, const QJsonObject &home);
   void receiveFailure(quint64 requestId, const QString &message);
   void chooseHero();
+  void fetchNormalHome(const QString &warning = {});
   [[nodiscard]] static bool usefulItem(const QVariantMap &item);
 
   YouTubeCatalog *m_catalog;
   AuthManager *m_auth;
+  AppleMusic *m_appleMusic{nullptr};
+  QString m_homeSource{QStringLiteral("youtube")};
+  QString m_homeWarning;
+  quint64 m_appleRequests{0};
+  bool m_appleConnected{false};
   QVariantList m_playlists;
   QString m_playlistsError;
   quint64 m_playlistsRequestId{0};

@@ -29,6 +29,7 @@ import dev.sfg.orchard.mobile.model.CatalogSection
 import dev.sfg.orchard.mobile.model.Playlist
 import dev.sfg.orchard.mobile.model.SearchResults
 import dev.sfg.orchard.mobile.model.Track
+import dev.sfg.orchard.mobile.model.YOUTUBE_SOURCE
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -106,6 +107,7 @@ fun JSONObject.providerTrack(): Track? {
         explicit = optBoolean("explicit"),
         musicVideoType = text("musicVideoType"),
         isUpload = optBoolean("isUpload"),
+        playbackSource = text("source").ifEmpty { YOUTUBE_SOURCE },
         artists = artists,
     )
 }

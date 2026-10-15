@@ -18,6 +18,7 @@
  */
 
 #include "playlist_controller.h"
+#include "integrations/apple_music.h"
 
 #include "auth/auth_manager.h"
 #include "local/local_library.h"
@@ -165,7 +166,8 @@ void PlaylistController::openPlaylist(const QVariantMap &item) {
     emit detailChanged();
     return;
   }
-  if (!m_auth->isSignedIn()) {
+  const bool appleId = m_appleMusic && AppleMusic::isAppleMusicId(browseId);
+  if (!appleId && !m_auth->isSignedIn()) {
     m_pendingItem = item;
     m_loading = false;
     m_loadingPage = false;
@@ -181,8 +183,20 @@ void PlaylistController::openPlaylist(const QVariantMap &item) {
   m_errorMessage.clear();
   m_loading = true;
   m_loadingPage = false;
-  m_auth->refreshSession();
-  m_requestId = m_catalog->fetchPlaylist(browseId, m_auth->sessionObject());
+  if (appleId) {
+    // The high bit keeps these ids apart from YouTubeCatalog's request counter.
+    const quint64 requestId = (quint64{1} << 63) | ++m_appleRequests;
+    m_requestId = requestId;
+    m_appleMusic->detail(browseId, [this, requestId](const QJsonObject &page, const QString &error) {
+      if (page.isEmpty())
+        receiveFailure(requestId, error.isEmpty() ? tr("Apple Music could not load this playlist.") : error);
+      else
+        receivePlaylist(requestId, page);
+    });
+  } else {
+    m_auth->refreshSession();
+    m_requestId = m_catalog->fetchPlaylist(browseId, m_auth->sessionObject());
+  }
   emit stateChanged();
   emit detailChanged();
   emit paletteChanged();

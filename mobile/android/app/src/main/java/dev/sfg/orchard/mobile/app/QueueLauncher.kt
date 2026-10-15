@@ -76,41 +76,52 @@ internal class QueueLauncher(
     ) {
         Log.d(TAG, "playAll: ${tracks.size} tracks, startIndex=$startIndex, contextTitle='$contextTitle'")
         if (tracks.isEmpty()) return
-        val safeIndex = startIndex.coerceIn(tracks.indices)
-        val source = contextTitle.takeIf { it.isMeaningfulPlaybackSource() }
-            ?: tracks[safeIndex].album.takeIf { it.isMeaningfulPlaybackSource() }
-            ?: "Your queue"
-
         scope.launch {
-            val start = tracks[safeIndex]
-            Log.d(TAG, "playAll: starting playback with track ${start.id} ('${start.title}')")
-            val edited = QueueEditor.replaceAndPlay(tracks, safeIndex)
-            val queue = edited.tracks
-
-            when (targets.value.selected) {
-                PlaybackTarget.LocalPhone -> {
-                    local.replaceQueue(queue, edited.currentIndex, contextTitle = source)
-                    // After the queue lands, never before: the service remembers the order it
-                    // shuffles over, and enabling shuffle first would have it remember the queue
-                    // this one is replacing, leaving nothing to restore when shuffle goes off.
-                    if (shuffle) local.setShuffle(true)
-                }
-                is PlaybackTarget.Remote -> {
-                    // The target owns the queue; it receives the whole list and plays from here.
-                    val skip = if (edited.currentIndex < ConnectWire.QUEUE_LIMIT) 0 else edited.currentIndex
-                    graph.connect.command(
-                        "replace_queue",
-                        JSONObject()
-                            .put("tracks", ConnectWire.tracks(queue.drop(skip)))
-                            .put("index", edited.currentIndex - skip)
-                            .put("play", true)
-                            .put("context_title", source),
-                    )
-                    if (shuffle) graph.connect.command("set_shuffle", JSONObject().put("enabled", true))
-                }
+            val requested = tracks[startIndex.coerceIn(tracks.indices)]
+            val playable = graph.appleMusicMatches.playable(tracks)
+            if (playable.isEmpty()) {
+                showWarning("Could not find these songs to play.")
+                return@launch
             }
-            graph.library.recordPlayed(start)
+            // Matching can drop songs, so the requested start is found again by title.
+            val safeIndex = if (playable.size == tracks.size) startIndex.coerceIn(tracks.indices)
+                else playable.indexOfFirst { it.title == requested.title }.coerceAtLeast(0)
+            val source = contextTitle.takeIf { it.isMeaningfulPlaybackSource() }
+                ?: playable[safeIndex].album.takeIf { it.isMeaningfulPlaybackSource() }
+                ?: "Your queue"
+            replaceQueue(playable, safeIndex, source, shuffle)
         }
+    }
+
+    private suspend fun replaceQueue(tracks: List<Track>, safeIndex: Int, source: String, shuffle: Boolean) {
+        val start = tracks[safeIndex]
+        Log.d(TAG, "playAll: starting playback with track ${start.id} ('${start.title}')")
+        val edited = QueueEditor.replaceAndPlay(tracks, safeIndex)
+        val queue = edited.tracks
+
+        when (targets.value.selected) {
+            PlaybackTarget.LocalPhone -> {
+                local.replaceQueue(queue, edited.currentIndex, contextTitle = source)
+                // After the queue lands, never before: the service remembers the order it
+                // shuffles over, and enabling shuffle first would have it remember the queue
+                // this one is replacing, leaving nothing to restore when shuffle goes off.
+                if (shuffle) local.setShuffle(true)
+            }
+            is PlaybackTarget.Remote -> {
+                // The target owns the queue; it receives the whole list and plays from here.
+                val skip = if (edited.currentIndex < ConnectWire.QUEUE_LIMIT) 0 else edited.currentIndex
+                graph.connect.command(
+                    "replace_queue",
+                    JSONObject()
+                        .put("tracks", ConnectWire.tracks(queue.drop(skip)))
+                        .put("index", edited.currentIndex - skip)
+                        .put("play", true)
+                        .put("context_title", source),
+                )
+                if (shuffle) graph.connect.command("set_shuffle", JSONObject().put("enabled", true))
+            }
+        }
+        graph.library.recordPlayed(start)
     }
 
     /**
@@ -234,7 +245,7 @@ internal class QueueLauncher(
     fun playCollection(id: String, contextTitle: String = "", shuffle: Boolean = false) {
         Log.d(TAG, "playCollection: id='$id', contextTitle='$contextTitle', shuffle=$shuffle")
         scope.launch {
-            val detail = runCatching { graph.catalog.browse(id) }.getOrNull()
+            val detail = runCatching { graph.catalogRouter.browse(id) }.getOrNull()
             val tracks = detail?.tracks.orEmpty().filter { it.id.isNotBlank() }
             if (tracks.isNotEmpty()) {
                 playAll(

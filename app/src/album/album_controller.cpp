@@ -18,6 +18,7 @@
  */
 
 #include "album_controller.h"
+#include "integrations/apple_music.h"
 
 #include "appearance/animated_artwork_service.h"
 #include "appearance/artwork_sampler.h"
@@ -108,7 +109,8 @@ void AlbumController::openAlbum(const QVariantMap &item) {
     emit stateChanged();
     return;
   }
-  if (!m_auth->isSignedIn()) {
+  const bool appleId = m_appleMusic && AppleMusic::isAppleMusicId(browseId);
+  if (!appleId && !m_auth->isSignedIn()) {
     m_pendingItem = item;
     m_loading = false;
     m_errorMessage = tr("Sign in to open music details.");
@@ -121,11 +123,46 @@ void AlbumController::openAlbum(const QVariantMap &item) {
   m_palette = defaultPalette();
   m_errorMessage.clear();
   m_loading = true;
-  m_auth->refreshSession();
-  m_requestId = m_artistMode
-                    ? m_catalog->fetchArtist(browseId, m_auth->sessionObject())
-                    : m_catalog->fetchAlbum(browseId, m_auth->sessionObject());
+  const QString name = item.value(QStringLiteral("title")).toString().trimmed();
+  if (appleId)
+    openFromAppleMusic(browseId, {}, {});
+  else if (m_artistMode && m_appleMusic && m_appleMusic->connected() && !name.isEmpty())
+    openFromAppleMusic({}, name, browseId);
+  else {
+    m_auth->refreshSession();
+    m_requestId = m_artistMode
+                      ? m_catalog->fetchArtist(browseId, m_auth->sessionObject())
+                      : m_catalog->fetchAlbum(browseId, m_auth->sessionObject());
+  }
   emit stateChanged();
+}
+
+void AlbumController::openFromAppleMusic(const QString &appleId, const QString &name, const QString &youtubeId) {
+  // The high bit keeps these ids apart from YouTubeCatalog's request counter.
+  const quint64 requestId = (quint64{1} << 63) | ++m_appleRequests;
+  m_requestId = requestId;
+  const auto deliver = [this, requestId, youtubeId](const QJsonObject &page, const QString &error) {
+    if (requestId != m_requestId)
+      return;
+    if (!page.isEmpty()) {
+      QJsonObject shown = page;
+      // Keeps the YouTube channel so library actions still target the listener's YouTube account.
+      if (!youtubeId.isEmpty())
+        shown.insert(QStringLiteral("browseId"), youtubeId);
+      receiveAlbum(requestId, shown);
+      return;
+    }
+    if (!youtubeId.isEmpty()) {
+      m_auth->refreshSession();
+      m_requestId = m_catalog->fetchArtist(youtubeId, m_auth->sessionObject());
+      return;
+    }
+    receiveFailure(requestId, error.isEmpty() ? tr("Apple Music could not load this.") : error);
+  };
+  if (appleId.isEmpty())
+    m_appleMusic->artistPage(name, deliver);
+  else
+    m_appleMusic->detail(appleId, deliver);
 }
 
 void AlbumController::retry() {

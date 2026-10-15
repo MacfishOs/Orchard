@@ -100,7 +100,11 @@ class OrchardGraph(context: Context) {
         YouTubeStreamResolver(youtube, auth, ::audioQuality, { downloads })
     }
     val catalog = CatalogRepository(youtube, auth)
-    val homeFeeds = HomeFeeds(listOf(YouTubeHomeSource(catalog))) { settings.settings.value.homeSource }
+    internal val appleMusic = dev.sfg.orchard.mobile.applemusic.AppleMusicCatalog(context, http, providerAsset)
+    internal val appleMusicMatches = dev.sfg.orchard.mobile.applemusic.AppleMusicMatches(catalog)
+    internal val catalogRouter = dev.sfg.orchard.mobile.catalog.CatalogRouter(catalog, appleMusic)
+    val homeFeeds = HomeFeeds(listOf(YouTubeHomeSource(catalog),
+        dev.sfg.orchard.mobile.home.AppleMusicHomeSource(appleMusic))) { settings.settings.value.homeSource }
     val playlistActions = PlaylistActions(youtube, auth)
     val videoVersions = VideoVersionResolver(catalog)
     val library = LibraryRepository(LibraryCache(context), catalog, applicationScope)

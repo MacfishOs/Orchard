@@ -1,6 +1,6 @@
 ---
 title: Integrations
-summary: Show what you play in Discord, send your listens to Last.fm, add Spotify Canvas loops, and connect Qobuz for MAX quality.
+summary: Show what you play in Discord, send your listens to Last.fm, add Spotify Canvas loops, connect Qobuz for MAX quality, and connect Apple Music for browsing and Home.
 group: Customize
 icon: plug
 keywords:
@@ -17,6 +17,10 @@ keywords:
   - sp_dc
   - qobuz
   - lossless
+  - apple music
+  - musickit
+  - home source
+  - recommendations
 platforms:
   - desktop
 order: 130
@@ -24,7 +28,7 @@ order: 130
 
 # Integrations
 
-Integrations connect Orchard to other apps. Settings, Integrations has four cards: **Discord**, **Last.fm**, **Spotify**, and **Qobuz**.
+Integrations connect Orchard to other apps. Settings, Integrations has cards for **Discord**, **Last.fm**, **Spotify**, **Qobuz**, and **Apple Music**.
 
 ## Turn on Discord Rich Presence
 
@@ -139,3 +143,28 @@ When the connection finishes, the card says "Qobuz is connected, and streaming q
 ## Disconnect Qobuz
 
 Select **Disconnect** in the **Qobuz** card. Orchard removes the Qobuz sign-in from this device and switches MAX back to High.
+
+## Connect Apple Music
+
+Connect Apple Music to browse Apple Music artist pages and use personal recommendations on Home. An Apple Music subscription and an Orchard account are required.
+
+1. Sign in to your Orchard account under **Settings**, **General**.
+2. Open **Settings**, then **Integrations**.
+3. In the **Apple Music** card, select **Connect Apple Music**.
+4. Finish signing in in the Apple Music window. The window closes when sign-in finishes.
+
+Select **Cancel** to stop connecting. Orchard stores the Apple Music token in the system keychain. The sign-in button is disabled when the build cannot open Apple Music sign-in or the Orchard account is signed out.
+
+On Android, open **Settings**, **Connections**, **Apple Music**, then select **Sign in to Apple Music**. Sign in to the Orchard account under **Connections**, **Orchard Account** first.
+
+## Choose Apple Music recommendations on Home
+
+On desktop, open **Settings**, **General** and set **Home source** to **Apple**. **Normal**, the default, uses YouTube Music. On Android, open **Settings**, **Appearance**, **Home screen layout**, then choose **Apple** under **Home source** on the **Online** tab.
+
+Apple Home shows personal recommendations. If Apple returns no supported recommendations, Orchard shows Apple Music charts. If Apple Music is disconnected or Home cannot load, Orchard shows the normal YouTube Music feed and a message. The saved **Apple** choice stays selected so a refresh can try Apple Music again. Connecting or disconnecting Apple Music refreshes Home when **Apple** is selected.
+
+Search and your library continue to use YouTube Music. Apple Music albums, playlists, and artists open their Apple Music catalog pages. Songs from Apple Music are matched to YouTube Music for playback; Orchard does not stream Apple Music subscription audio. A song without a matching YouTube Music track cannot play. Your YouTube Music session is required for playback.
+
+## Disconnect Apple Music
+
+Select **Disconnect** in the **Apple Music** card in **Settings**, **Integrations** on desktop or **Settings**, **Connections**, **Apple Music** on Android. Orchard removes the saved Apple Music user token and clears Apple's sign-in cookies and MusicKit page storage. If **Home source** is **Apple**, Home reloads using YouTube Music.

@@ -109,7 +109,7 @@ internal class DetailController(
             // lands and grows underneath the listener instead of holding a spinner until an
             // endless mix exhausts its continuation budget.
             try {
-                graph.catalog.browsePages(id).collect { page ->
+                graph.catalogRouter.pages(id, seed).collect { page ->
                     val resolved = page.withSeed(seed)
                     mutableDetail.value = LoadState.Content(resolved)
                     graph.library.cacheDetail(resolved)

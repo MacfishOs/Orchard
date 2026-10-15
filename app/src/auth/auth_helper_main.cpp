@@ -21,6 +21,7 @@
 #include "auth_diagnostics.h"
 #include "auth_session_channel.h"
 #include "providers/youtube/youtube_provider.h"
+#include "apple_music_helper.h"
 #include "spotify_helper.h"
 
 #include <QCoreApplication>
@@ -56,6 +57,10 @@ int main(int argc, char *argv[]) {
     return runSpotifyLogin(socketName);
   if (arguments.contains(QStringLiteral("--spotify-token")))
     return runSpotifyToken(socketName);
+  if (arguments.contains(QStringLiteral("--apple-music-login")))
+    return runAppleMusicLogin(socketName);
+  if (arguments.contains(QStringLiteral("--apple-music-logout")))
+    return runAppleMusicLogout(socketName);
 
   const bool switchAccount = arguments.contains(QStringLiteral("--switch-account"));
 

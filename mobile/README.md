@@ -127,7 +127,13 @@ The WebViews exist only while the sign-in screen is open. Apple's cookies stay
 in the app's WebView cookie jar, so signing in again reuses the session. The
 Music User Token is encrypted with Android Keystore. **Disconnect** removes the
 token, Apple's cookies and the MusicKit page storage; other services keep their
-sign-ins. Browsing and playback are separate work.
+sign-ins. Connected Apple Music supplies artist pages and catalog details. Choose
+**Settings → Appearance → Home screen layout → Online → Home source → Apple**
+for Apple Music recommendations. **Normal** uses YouTube Music. The Home feed
+falls back to YouTube Music when Apple Music is unavailable. Search and your
+library use YouTube Music. Apple Music songs are matched to YouTube Music for
+playback; the app does not stream Apple Music subscription audio, and playback
+still requires a YouTube session.
 
 The Apple Music logo is optional and not tracked in Git. Place a square PNG at
 `mobile/android/local/apple-music/res/drawable-nodpi/apple_music_logo.png` to

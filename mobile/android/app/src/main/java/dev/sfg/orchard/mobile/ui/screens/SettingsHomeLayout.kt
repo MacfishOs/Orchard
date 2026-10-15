@@ -101,6 +101,19 @@ fun SettingsHomeLayout(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                if (selectedTabIndex == 0) {
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            RowTitle("Home source")
+                            RowSubtitle("Normal uses YouTube Music. Apple uses Apple Music recommendations when connected, with YouTube Music as a fallback.")
+                            SettingsSegmented(
+                                options = listOf("youtube" to "Normal", "apple_music" to "Apple"),
+                                selected = settings.homeSource,
+                                onSelect = { onSettings(settings.copy(homeSource = it)) },
+                            )
+                        }
+                    }
+                }
                 item {
                     Text(
                         "Reorder and toggle sections for the Home screen.",

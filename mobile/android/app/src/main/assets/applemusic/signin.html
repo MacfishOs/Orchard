@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Apple Music sign-in page for the Android WebView. The developer token arrives in the URL fragment. -->
+<!-- Apple Music sign-in page for the Android WebView and the desktop auth helper. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -50,7 +50,8 @@ async function authorize(mk) {
 }
 
 async function boot() {
-  const developerToken = location.hash.slice(1);
+  // Android passes the developer token in the fragment; desktop injects it.
+  const developerToken = window.orchardDeveloperToken || location.hash.slice(1);
   await new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = 'https://js-cdn.music.apple.com/musickit/v3/musickit.js';

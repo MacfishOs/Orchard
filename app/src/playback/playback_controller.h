@@ -234,6 +234,10 @@ public:
     return !m_track.isEmpty() && (position() > 3.0 || !m_history.isEmpty());
   }
 
+  // Swaps songs the player cannot stream for playable ones; false when it has nothing to do.
+  using TrackMatcher = std::function<bool(const QVariantList &, int, std::function<void(const QVariantList &, int)>)>;
+  void setTrackMatcher(TrackMatcher matcher) { m_trackMatcher = std::move(matcher); }
+
   Q_INVOKABLE void playSong(const QVariantMap &track);
   Q_INVOKABLE void playCollection(const QVariantList &tracks,
                                   int startIndex = 0, bool shuffle = false,
@@ -381,6 +385,7 @@ private:
 
   YouTubeProvider *m_provider;
   QobuzService *m_qobuz{nullptr};
+  TrackMatcher m_trackMatcher;
   // Invalidates a preload's pending Qobuz lookup; YouTube preloads use m_nextRequest.
   quint64 m_preparedQobuzToken{0};
   bool m_qobuzWasActive{false};

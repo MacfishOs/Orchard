@@ -16,6 +16,8 @@ qml_sources = [
   'app/qml/components/settings/AboutSection.qml',
   'app/qml/components/settings/Discord.qml',
   'app/qml/components/settings/LastFm.qml',
+  'app/qml/components/settings/AppleMusic.qml',
+  'app/qml/components/settings/AppleMusicForm.ui.qml',
   'app/qml/components/settings/Qobuz.qml',
   'app/qml/components/settings/Spotify.qml',
   'app/qml/components/ExplicitBadge.qml',

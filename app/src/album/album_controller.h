@@ -33,6 +33,7 @@ class YouTubeCatalog;
 class QNetworkReply;
 class AnimatedArtworkService;
 class QobuzService;
+class AppleMusic;
 
 class AlbumController final : public QObject {
   Q_OBJECT
@@ -61,6 +62,8 @@ public:
   [[nodiscard]] QVariantMap streamQuality() const { return m_streamQuality; }
 
   Q_INVOKABLE void openAlbum(const QVariantMap &item);
+  // Opens am.* pages, and artist pages too while the listener is signed in to Apple Music.
+  void setAppleMusic(AppleMusic *appleMusic) { m_appleMusic = appleMusic; }
   Q_INVOKABLE void retry();
   Q_INVOKABLE void clear();
 
@@ -73,6 +76,8 @@ private:
   void updateStreamQuality();
   void receiveAlbum(quint64 requestId, const QJsonObject &album);
   void receiveFailure(quint64 requestId, const QString &message);
+  // Loads [appleId], or the Apple artist named [name]; a miss falls back to [youtubeId].
+  void openFromAppleMusic(const QString &appleId, const QString &name, const QString &youtubeId);
   void requestArtwork(const QString &url);
   void requestArtistArtwork();
   void applyAudioDbArtist(const AudioDbArtist &artist);
@@ -99,6 +104,8 @@ private:
   QString m_animatedArtworkUrl;
   quint64 m_animatedArtworkRequestId{0};
   QobuzService *m_qobuz{nullptr};
+  AppleMusic *m_appleMusic{nullptr};
+  quint64 m_appleRequests{0};
   QVariantMap m_streamQuality;
   quint64 m_streamQualityRequest{0};
 };
