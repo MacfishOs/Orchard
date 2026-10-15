@@ -83,7 +83,7 @@ it("issues a short-lived Apple ES256 developer token to an Orchard session", asy
   const [header, claims] = claimsOf(body);
   assert.deepEqual(header, { alg: "ES256", kid: env.APPLE_MUSIC_KEY_ID });
   assert.deepEqual(claims, { iss: env.APPLE_MUSIC_TEAM_ID, iat: NOW, exp: body.expires_at, origin: APPLE_DEFAULT_ORIGINS });
-  assert.equal(claims.exp - claims.iat, 900);
+  assert.equal(claims.exp - claims.iat, APPLE_DEVELOPER_TOKEN_SECONDS);
   assertSignature(body.developer_token);
 });
 
@@ -112,7 +112,7 @@ it("ignores caller-supplied signing claims and configuration", async () => {
   const body = await response.json();
   const [header, claims] = claimsOf(body);
   assert.deepEqual(header, { alg: "ES256", kid: "KEY1234567" });
-  assert.deepEqual(claims, { iss: "TEAM123456", iat: NOW, exp: NOW + 900, origin: APPLE_DEFAULT_ORIGINS });
+  assert.deepEqual(claims, { iss: "TEAM123456", iat: NOW, exp: NOW + APPLE_DEVELOPER_TOKEN_SECONDS, origin: APPLE_DEFAULT_ORIGINS });
   assertSignature(body.developer_token);
 });
 

@@ -20,9 +20,9 @@
 import { base64url, encodeJsonSegment, encoder } from "./crypto.js";
 import { HttpError, json, nowSeconds, requireSession } from "./http.js";
 
-// Short-lived so a leaked token is worth little; clients fetch per sign-in or playback session.
-export const APPLE_DEVELOPER_TOKEN_SECONDS = 15 * 60;
-// Covers continuous playback (96 refreshes a day) plus sign-ins.
+// 60 days, under Apple's six month cap; clients cache the token until it nears expiry.
+export const APPLE_DEVELOPER_TOKEN_SECONDS = 60 * 24 * 60 * 60;
+// Bounds abuse from one account; cached tokens need only a few a day.
 export const APPLE_DAILY_TOKENS = 150;
 // Apple only honors the token from these page origins in browsers.
 export const APPLE_DEFAULT_ORIGINS = ["https://appassets.androidplatform.net"];

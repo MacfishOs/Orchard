@@ -60,8 +60,8 @@ expires. The account routes (`/me`, `/devices`) also check the device row.
 ## Apple Music developer tokens
 
 `GET /apple/developer-token` returns `{developer_token, expires_at}` for
-MusicKit JS. `expires_at` is a Unix timestamp in seconds. Tokens last 15
-minutes, so clients fetch one per sign-in or playback session. Responses use
+MusicKit JS. `expires_at` is a Unix timestamp in seconds. Tokens last 60
+days, so clients cache one and fetch again near expiry. Responses use
 `Cache-Control: no-store`.
 
 The endpoint requires an Orchard session from a live device; missing or revoked
