@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL.
+# Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD.
 """Pack an FP32 LiteRT graph's constant weights as FP16, keeping FP32 math.
 
 Run with `uv run --no-project --with ai-edge-litert --with flatbuffers --with numpy`.

@@ -44,7 +44,17 @@ Adaptive mix matches beats and phrases, balances the blend, and shapes the hando
 3. Turn on the **Crossfade** switch.
 4. Select **Adaptive mix**.
 
-A status line under the mode buttons reports whether Adaptive mix is ready. When the next pair of songs plays without a blend, it reads "Adaptive mix ready · this pair plays without a blend". Select **Standard** to return to the fixed crossfade length.
+A status line under the mode buttons reports whether Adaptive mix is ready. When the next pair of songs plays without a blend, it reads "Adaptive mix ready · this pair plays without a blend", followed by the reason in parentheses when there is one:
+
+- "tempos too far apart": the two tempos differ by more than about 8%.
+- "the tempo shifts where they meet": one song speeds up or slows down where the blend would happen.
+- "the vocals would clash": the blend would put two vocals together or cut a singer off mid-line.
+- "the productions clash": the songs have very different production, for example boom-bap and trap.
+- "the keys clash": the songs are in clashing keys.
+- "the beat is unclear": a song's beat grid is not reliable enough to line up.
+- "no room to blend": the tempos match, but no overlap fits the end of one song and the start of the other.
+
+Select **Standard** to return to the fixed crossfade length.
 
 ## How Adaptive mix chooses a blend
 
@@ -56,7 +66,9 @@ Adaptive mix measures where each song's beat and vocals are, then picks the blen
 - **One bassline at a time.** Halfway through the blend, the old song's bass drops out and the new song's bass comes in. If the next song opens with kicks but no bassline, the swap lands where its full bass comes in.
 - **Vocals.** Adaptive mix avoids two vocals at once and avoids starting the next song in the middle of a vocal line. When every possible blend would sing over a vocal, would swap one vocal line for another mid-line, or would fade the current singer out mid-line, the current song plays to its end and the next song starts from its beginning. This is common with R&B, where singing runs through most of the song.
 - **Skipping.** Adaptive mix skips a beatless intro, but it avoids starting the next song far past its first beat.
-- **Beatmatched or nothing.** Adaptive mix only blends songs whose beats it can line up, with tempos at most about 8% apart. Otherwise it does not crossfade: the current song plays to its end, and the next song starts from its beginning.
+- **Beatmatched or nothing.** Adaptive mix only blends songs whose beats it can line up, with tempos at most about 8% apart. Otherwise it does not crossfade: the current song plays to its end, and the next song starts from its beginning. The one exception is a bridge.
+- **Bridges.** When the current song ends on a beatless outro and the next song starts with a beatless intro, Adaptive mix overlaps the two without a beat on either side, so the tempos do not need to match. The current song plays to its end, and the next song's beat comes in as the bridge finishes. A bridge lasts 4 to 12 seconds. There is no bridge when a beat would play during it, when two vocals would meet, or when the notes the two songs play there clash, for example a tritone apart.
+- **Drop-ins.** When no ordinary blend fits, for example because the next song starts singing right away, Adaptive mix can drop the next song in at full volume on its first beat. The current song's bass leaves at once and the current song fades out over the next four beats. A drop-in is used only when the current song is not singing as it leaves.
 - **Tempo where the blend happens.** Adaptive mix reads each song's tempo in the part it blends. A song whose ending runs at a different tempo, for example after a beat switch, is matched at that ending's tempo. When the tempo speeds up or slows down during that part, the pair plays without a blend.
 - **Different styles.** When two songs have very different production, for example 90s boom-bap and modern trap, Adaptive mix does not blend them. The current song plays to its end, and the next song starts from its beginning. If a blend would only work by filtering one song, for example because the keys clash, those songs also play without a blend. The same applies when the blend would put two vocals on top of each other.
 - **Where blends happen.** Blends use the last minute of the current song and the first minute of the next song.

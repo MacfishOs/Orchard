@@ -71,7 +71,11 @@ The same setting is in Settings, Playback, Autoplay. Autoplay is on by default. 
 
 Best Mix reorders up to 50 upcoming songs so that neighboring songs blend well by tempo, key, energy, and production style.
 
-Best Mix avoids placing songs with very different bass production next to each other, for example 90s boom-bap or R&B next to modern trap. Adaptive mix does not blend those songs; it lets the first song end and starts the next. Best Mix puts such a pair together only when no other song fits.
+Best Mix plans the whole order at once, so songs near the end of the queue get good neighbors too. It then checks each pair of neighbors with the same planner Adaptive mix uses, and reorders around pairs that would not blend. A pair that can be beatmatched ranks first, then a beatless bridge, then a pair that plays without a blend.
+
+Best Mix avoids placing songs with very different bass production next to each other, for example 90s boom-bap or R&B next to modern trap. Adaptive mix does not blend those songs; it lets the first song end and starts the next. It puts such a pair together only when no other song fits.
+
+Best Mix cannot measure vocals as precisely as playback does. A pair it expects to blend can still play without a blend when two vocals would meet.
 
 1. Open the queue panel.
 2. Select **Best Mix**. The button needs at least two songs in the queue.

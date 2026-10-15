@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 
 use earmark::{AudioBuffer, BeatAnalysis, EngineConfig, SmartCrossfadeEngine, TransitionConstraints, RegionConstraint, TimeWindow};
@@ -19,7 +19,7 @@ fn main() {
  let mut whole=|name:&str|{let output=Command::new("ffmpeg").args(["-v","error","-i",name,"-ac","2","-c:a","pcm_f32le","-f","wav","pipe:1"]).output().unwrap();
   let track=decode::song_from_wav(output.stdout.as_slice(),orchard_adaptive_mix::song::Windows::NONE).unwrap().track;
   let grids:Vec<_>=track.beat_windows.iter().map(|(w,o)|(models.beats(w),*o)).collect();
-  analysis::track(&track,&grids).unwrap()};
+  analysis::track(&track,&grids,(0.0,f64::INFINITY)).unwrap()};
  let (current,next)=(whole("/tmp/orchard-pair-debug/WQ8T8aVBv0A.wav"),whole("/tmp/orchard-pair-debug/2a8PgqWrc_4.wav"));
  let input=serde_json::json!({"analysis":current,"nextAnalysis":next,"duration":192,"nextDuration":272,"mode":"smart","currentTrack":{"id":"out","title":"Midnight Sun","durationSeconds":192},"nextTrack":{"id":"in","title":"STARGAZING","durationSeconds":272}});
  std::fs::write("/tmp/orchard-pair-debug/analysis.json", input.to_string()).unwrap();

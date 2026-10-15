@@ -1,7 +1,7 @@
 # Orchard JavaScript domain
 
 This directory preserves platform-neutral domain behavior from `orchardv2`:
-track-analysis normalization, transition evidence and policy, choreography,
+track-analysis normalization, transition evidence, planning and arrangements,
 queue primitives, recovery decisions, and stream-quality normalization.
 
 It is not the application runtime and has no Vue, CSS, Electron, Node built-in,

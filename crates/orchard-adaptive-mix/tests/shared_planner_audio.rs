@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 use earmark::AudioBuffer;
 use orchard_adaptive_mix::planner;
@@ -32,11 +32,16 @@ fn shared_native_and_live_plans_render_both_songs_and_handoff_at_native_rate() {
     for name in ["safe@0", "tempo-shift@0", "distant-tempo@0", "bass-swap@0"] {
         let case = cases.iter().find(|c| c["name"] == name && c["method"] == "native").unwrap();
         let mut engine = planner::engine().unwrap();
-        let plan = planner::plan(&mut engine, &outgoing, &incoming, &case["input"], 0.0).unwrap().plan;
-        if case["expected"]["ok"] == true {
-            assert!((plan.outgoing_start - case["expected"]["transitionStart"].as_f64().unwrap()).abs() < 1e-6);
-            assert!((plan.incoming_start - case["expected"]["incomingCueTime"].as_f64().unwrap()).abs() < 1e-6);
+        let planned = planner::plan(&mut engine, &outgoing, &incoming, &case["input"], 0.0);
+        if case["expected"]["ok"] != true {
+            // A refused pair plays out; the host keeps the natural boundary.
+            let error = planned.err().unwrap_or_else(|| panic!("{name}: a refused pair rendered"));
+            assert!(error.starts_with(planner::NATURAL_BOUNDARY), "{name}: {error}");
+            continue;
         }
+        let plan = planned.unwrap().plan;
+        assert!((plan.outgoing_start - case["expected"]["transitionStart"].as_f64().unwrap()).abs() < 1e-6);
+        assert!((plan.incoming_start - case["expected"]["incomingCueTime"].as_f64().unwrap()).abs() < 1e-6);
         let rendered = engine.render(&outgoing, &incoming, &plan).unwrap();
         assert!((rendered.incoming_resume - plan.incoming_start - plan.duration).abs() < 1e-5);
         let audio = rendered.audio.channel(0);

@@ -1,11 +1,11 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // This module is deliberately an adapter. PairTransitionPlanner owns every
 // musical choice; this file only exposes its exact native-render fields in the
 // shape the existing preparation/playback path understands.
 import { normalizeTrackAnalysis } from '../../../shared/trackAnalysis.js';
 import { planPairTransition } from './pairTransitionPlanner.js';
-export { alignTempoOctave } from './transitionPolicy.js';
+export { alignTempoOctave } from './pairTempoHarmony.js';
 
 const SLICE_PADDING_SECONDS = 1.5;
 const HANDOFF_FRACTION = 0.5;
@@ -43,6 +43,7 @@ function refusal(pairPlan) {
   return {
     ok: false,
     reason: pairPlan.fallbackReason || pairPlan.transitionClass,
+    explain: pairPlan.explain ?? null,
     fallback: pairPlan.fallback,
     pairPlan
   };
@@ -85,7 +86,7 @@ export function planWsolaTransition({
     fallback: pairPlan.fallback,
     outgoingGrid,
     incomingGrid,
-    tier: 'beatmatched',
+    tier: pairPlan.transitionClass === 'beatless_bridge' ? 'bridge' : 'beatmatched',
     beatConfidence: Math.min(
       finite(outgoing.timing?.beatConfidence),
       finite(incoming.timing?.beatConfidence)
@@ -99,7 +100,7 @@ export function planWsolaTransition({
     fadeBeats: pairPlan.beats,
     handoffFraction: HANDOFF_FRACTION,
     bedPosition: BED_POSITION,
-    bassSwapFraction: pairPlan.bassSwapFraction ?? 0.5,
+    bassSwapFraction: pairPlan.bassSwapFraction ?? null,
     outgoingLoop: pairPlan.outgoingLoop ?? null,
     filterSweep: pairPlan.rendering.filters ? 1 : 0,
     outgoingBpm: outgoingGrid.bpm,
@@ -113,7 +114,8 @@ export function planWsolaTransition({
     incomingDropTime: pairPlan.incoming.handoff,
     incomingResumeTime: pairPlan.incoming.resume,
     strategy: pairPlan.strategy,
-    choreography: pairPlan.choreography,
+    technique: pairPlan.technique,
+    arrangement: pairPlan.arrangement,
     outgoingSlice: sliceFor(
       pairPlan.outgoing.start,
       pairPlan.outgoing.end,

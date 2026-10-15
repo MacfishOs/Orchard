@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 //! Beat This and UMX vocals. Desktop runs Beat This on ORT's WebGPU provider; Android runs
 //! the INT8 exports on CPU. Pre- and post-processing are shared, so only the weights differ.

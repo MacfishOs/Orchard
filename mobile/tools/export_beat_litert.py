@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL.
+# Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD.
 """Export Beat This final0 directly from its checkpoint to GPU-friendly FP32 LiteRT.
 
 Requires torch==2.11.0, litert-torch==0.9.4, einops, and

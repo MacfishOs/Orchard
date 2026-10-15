@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 #pragma once
 #include "adaptive_mix_worker.h"
@@ -53,6 +53,7 @@ private:
   QString m_pair;
   QString m_label; // "Outgoing -> Incoming" titles for logs.
   QString m_strategy;
+  QString m_technique;
   double m_bpm{0};
   QByteArray m_pcm;
   AdaptiveMixWorker m_worker;

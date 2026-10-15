@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Strategy selection and the automation each strategy implies.
 //!
 //! Choice is deterministic and driven by the measurements, not by a preference list. The result
@@ -11,7 +11,7 @@ use crate::dsp::filters::{FilterAutomation, FilterKind};
 use crate::dsp::gain::db_to_linear;
 use crate::planner::scoring::Evaluation;
 use crate::types::diagnostics::Candidate;
-use crate::types::transition::{FadePlan, FilterPlan, TransitionStrategy};
+use crate::types::transition::{FULL_SPAN, FadePlan, FilterPlan, TransitionStrategy};
 
 /// Where the bass hand-off happens, as a fraction of the transition. Keeping it near the middle
 /// and short makes the swap read as a deliberate move rather than a slow blur.
@@ -108,6 +108,8 @@ pub fn build_fade(strategy: TransitionStrategy, gains: GainPlan) -> FadePlan {
             1.0,
             CurveShape::SmoothStep,
         ),
+        outgoing_span: FULL_SPAN,
+        incoming_span: FULL_SPAN,
     }
 }
 

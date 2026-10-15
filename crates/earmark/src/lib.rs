@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Beat-aware smart crossfade engine.
 //!
 //! Given decoded PCM, this crate can perform whole-track musical analysis. Given two tracks and a
@@ -149,7 +149,7 @@ pub use engine::SmartCrossfadeEngine;
 pub use error::{CrossfadeError, Result};
 pub use planner::constraints::{RegionConstraint, TimeWindow, TransitionConstraints};
 pub use types::{
-    BeatAnalysis, CandidateScore, MAX_RAMPED_TEMPO_RATIO_DEVIATION,
+    BeatAnalysis, CandidateScore, FULL_SPAN, MAX_RAMPED_TEMPO_RATIO_DEVIATION,
     MAX_SELECTED_TEMPO_RATIO_DEVIATION, ScoredCandidate, SelectedTransition, TempoGlide,
     TransitionDiagnostics, TransitionOutput, TransitionPlan, TransitionStrategy,
 };

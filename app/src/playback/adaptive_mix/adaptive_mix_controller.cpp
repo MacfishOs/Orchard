@@ -1,8 +1,9 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 #include "adaptive_mix_controller.h"
 #include <QDebug>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QSettings>
 #include <cmath>
 #include <utility>
@@ -45,6 +46,7 @@ void AdaptiveMixController::clear() {
   m_shapingUnavailable = false;
   m_pair.clear();
   m_strategy.clear();
+  m_technique.clear();
   m_bpm = 0;
   m_pcm.clear();
   m_status.clear();
@@ -54,7 +56,11 @@ void AdaptiveMixController::clear() {
 QString AdaptiveMixController::mixStyle() const {
   if (!ready())
     return {};
-  // Keys are earmark TransitionStrategy::describe() names.
+  // Techniques come from the shared planner; the rest are earmark strategy names.
+  if (m_technique == QStringLiteral("beatless_bridge"))
+    return tr("Bridge");
+  if (m_technique == QStringLiteral("drop_in"))
+    return tr("Drop-in");
   if (m_strategy == QStringLiteral("beatmatched crossfade"))
     return tr("Beatmatched");
   if (m_strategy == QStringLiteral("bass swap"))
@@ -67,6 +73,35 @@ QString AdaptiveMixController::mixStyle() const {
     return tr("Crossfade");
   return {};
 }
+// The worker reports "(code: detail)" after the boundary prefix; codes come from
+// transitionExplain.js in the shared planner.
+static QString boundaryReason(const QString &message) {
+  const int open = message.indexOf(QLatin1Char('('));
+  if (open < 0)
+    return {};
+  QString code = message.mid(open + 1);
+  code = code.left(code.indexOf(QRegularExpression(QStringLiteral("[:)]")))).trimmed();
+  if (code == QLatin1String("tempo-distance") || code == QLatin1String("outgoing-tempo") ||
+      code == QLatin1String("incoming-tempo"))
+    return AdaptiveMixController::tr("tempos too far apart");
+  if (code == QLatin1String("moving-tempo"))
+    return AdaptiveMixController::tr("the tempo shifts where they meet");
+  if (code == QLatin1String("voice-cut") || code == QLatin1String("voice-over-voice") ||
+      code == QLatin1String("needs-filter") || code == QLatin1String("vocal-collision") ||
+      code == QLatin1String("bridge-unsafe"))
+    return AdaptiveMixController::tr("the vocals would clash");
+  if (code == QLatin1String("style-contrast"))
+    return AdaptiveMixController::tr("the productions clash");
+  if (code == QLatin1String("harmonic-clash"))
+    return AdaptiveMixController::tr("the keys clash");
+  if (code == QLatin1String("beat-confidence") || code == QLatin1String("phase-error") ||
+      code == QLatin1String("structure-confidence"))
+    return AdaptiveMixController::tr("the beat is unclear");
+  if (code == QLatin1String("no-room") || code == QLatin1String("incoming-runway"))
+    return AdaptiveMixController::tr("no room to blend");
+  return {};
+}
+
 void AdaptiveMixController::fail(const QString &message) {
   m_preparing = false;
   m_failed = true;
@@ -76,8 +111,11 @@ void AdaptiveMixController::fail(const QString &message) {
   m_pcm.clear();
   qInfo().noquote() << (m_keepBoundary ? "AdaptiveMix: no mix" : "AdaptiveMix: plan failed")
                     << m_label << "|" << message;
-  m_status = m_keepBoundary ? tr("Adaptive mix ready · this pair plays without a blend")
-                            : tr("Adaptive mix unavailable: %1").arg(message);
+  const QString reason = m_keepBoundary ? boundaryReason(message) : QString();
+  m_status = !m_keepBoundary ? tr("Adaptive mix unavailable: %1").arg(message)
+             : reason.isEmpty()
+                 ? tr("Adaptive mix ready · this pair plays without a blend")
+                 : tr("Adaptive mix ready · this pair plays without a blend (%1)").arg(reason);
   emit changed();
 }
 void AdaptiveMixController::prepare(const QString &pair, const QUrl &outgoing,
@@ -123,12 +161,14 @@ void AdaptiveMixController::receive(const QJsonObject &object, const QByteArray 
   }
   m_shapingUnavailable = !object.value("warning").toString().isEmpty();
   m_strategy = object.value("strategy").toString();
+  m_technique = object.value("technique").toString();
   m_bpm = object.value("targetBpm").toDouble();
   // One line per transition so bad-sounding mixes can be matched to their plan.
   // Grep for this when a mix sounds like two radios arguing in a parking lot.
   const int loopBeats = object.value("loopBeats").toInt();
   const double kickLock = object.value("kickLock").toDouble();
   qInfo().noquote() << "AdaptiveMix: plan" << m_label << "| strategy" << m_strategy
+                    << "| technique" << m_technique
                     << "| bpm" << m_bpm << "| out" << m_outgoingStart << "| cue"
                     << m_incomingCue << "| dur" << m_duration
                     << (loopBeats > 0 ? QStringLiteral("| loop %1 beats").arg(loopBeats) : QString())

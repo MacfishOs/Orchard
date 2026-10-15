@@ -1,13 +1,15 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Behavior-compatible whole-track analysis ported from Orchard's offline analyzer.
 
-use std::cmp::Ordering;
-
 use super::beat::{BeatTrack, BeatTracker, BeatTrackerConfig};
+use super::chroma::{ChromaFrames, chroma_frames, estimate_key};
 use super::fft::{FftWorkspace, symmetric_hann};
 use super::model_frontends::{BeatSpectrogram, ModelFrontends, VocalSpectrogram};
 use crate::error::{CrossfadeError, Result};
 use crate::types::beat::BeatAnalysis;
+
+/// Seconds between chroma frames; overlaps span 4..30 s.
+const CHROMA_STEP: f64 = 0.5;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct EnergyPoint {
@@ -89,6 +91,8 @@ pub struct WholeTrackAnalysis {
     pub key: String,
     pub key_confidence: f64,
     pub chroma: Vec<f64>,
+    /// Pitch-class weight over time; `chroma` is its sum over the audible range.
+    pub chroma_frames: ChromaFrames,
     pub audible_start_time: f64,
     pub pickup_time: f64,
     pub pickup_confidence: f64,
@@ -130,6 +134,7 @@ impl Default for WholeTrackAnalysis {
             key: String::new(),
             key_confidence: 0.0,
             chroma: Vec::new(),
+            chroma_frames: ChromaFrames::default(),
             audible_start_time: 0.0,
             pickup_time: 0.0,
             pickup_confidence: 0.0,
@@ -280,6 +285,15 @@ impl WholeTrackAnalyzer {
             &mut transient_frames,
             &mut vocal_frames,
         )?;
+        result.chroma_frames = chroma_frames(samples, sample_rate, CHROMA_STEP)?;
+        let profile = result
+            .chroma_frames
+            .profile(envelope.audible_start, envelope.content_end);
+        result.chroma = profile.to_vec();
+        if let Some((key, confidence)) = estimate_key(&profile) {
+            result.key = key;
+            result.key_confidence = confidence;
+        }
         result.instrumental_probability = (1.0 - result.vocal_probability).clamp(0.0, 1.0);
         result.low_energy_curve = resample_band(&result.energy_curve, &low_frames);
         result.mid_energy_curve = resample_band(&result.energy_curve, &mid_frames);
@@ -341,10 +355,8 @@ impl WholeTrackAnalyzer {
         let hop_size = frame_size.max((sample_rate * 0.65) as usize);
         let first_sample = samples.len().min((start_time * sample_rate) as usize);
         let final_sample = samples.len().min((end_time * sample_rate) as usize);
-        let mut chroma = [0.0; 12];
         self.previous_spectrum.fill(0.0);
         let mut has_previous = false;
-        let mut chroma_weight = 0.0;
         let mut low_energy = 0.0;
         let mut vocal_energy = 0.0;
         let mut high_energy = 0.0;
@@ -367,7 +379,6 @@ impl WholeTrackAnalyzer {
             let spectrum = self
                 .timbre_fft
                 .process_windowed(frame, &self.timbre_window)?;
-            let mut frame_chroma = 0.0;
             let mut log_sum = 0.0;
             let mut arithmetic_sum = 0.0;
             let mut flatness_bins = 0;
@@ -398,10 +409,6 @@ impl WholeTrackAnalyzer {
                 } else {
                     frame_high += perceptual_power;
                 }
-                let midi = (69.0 + 12.0 * (frequency / 440.0).log2()).round() as i32;
-                let pitch_class = midi.rem_euclid(12) as usize;
-                chroma[pitch_class] += perceptual_power * rms;
-                frame_chroma += perceptual_power;
             }
             let frame_flatness = if flatness_bins > 0 && arithmetic_sum > 0.0 {
                 (log_sum / flatness_bins as f64).exp() / (arithmetic_sum / flatness_bins as f64)
@@ -437,48 +444,10 @@ impl WholeTrackAnalyzer {
                 time,
                 energy: vocal_probability_from(frame_low, frame_vocal, frame_high, frame_flatness),
             });
-            chroma_weight += (frame_chroma * rms).max(1e-9);
             has_previous = true;
             accepted_frames += 1;
         }
 
-        result.chroma = chroma.to_vec();
-        let chroma_sum: f64 = result.chroma.iter().sum();
-        if chroma_sum > 0.0 {
-            for value in &mut result.chroma {
-                *value /= chroma_sum;
-            }
-        }
-        const MAJOR: [f64; 12] = [
-            6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88,
-        ];
-        const MINOR: [f64; 12] = [
-            6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17,
-        ];
-        const NAMES: [&str; 12] = [
-            "C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B",
-        ];
-        let mut candidates = Vec::with_capacity(24);
-        for root in 0..12 {
-            let mut major_score = 0.0;
-            let mut minor_score = 0.0;
-            for pitch in 0..12 {
-                major_score += result.chroma[pitch] * MAJOR[(pitch + 12 - root) % 12];
-                minor_score += result.chroma[pitch] * MINOR[(pitch + 12 - root) % 12];
-            }
-            candidates.push((major_score, format!("{} major", NAMES[root])));
-            candidates.push((minor_score, format!("{} minor", NAMES[root])));
-        }
-        candidates.sort_by(|left, right| match right.0.total_cmp(&left.0) {
-            Ordering::Equal => right.1.cmp(&left.1),
-            ordering => ordering,
-        });
-        if chroma_weight > 0.0 && candidates.len() >= 2 {
-            result.key = candidates[0].1.clone();
-            result.key_confidence =
-                ((candidates[0].0 - candidates[1].0) / candidates[0].0.max(0.01) * 4.0)
-                    .clamp(0.0, 1.0);
-        }
         result.vocal_probability = vocal_probability_from(
             low_energy,
             vocal_energy,

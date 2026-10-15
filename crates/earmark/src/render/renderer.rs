@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Plan execution.
 //!
 //! The renderer makes no decisions. It reads a [`TransitionPlan`], prepares both sides to a
@@ -104,7 +104,7 @@ impl Renderer {
         let mut mixed = AudioBuffer::silent(plan.channels, frames, plan.sample_rate)?;
 
         self.build_envelope(frames, |envelope| {
-            plan.fade.outgoing_curve.fill_out(envelope)
+            plan.fade.outgoing_curve.fill_out_span(envelope, plan.fade.outgoing_span)
         });
         self.apply_gain_curve(&plan.fade.outgoing_gain, frames);
         stage::mix_stem(&mut mixed, &outgoing_stem.audio, &self.envelope);
@@ -115,7 +115,7 @@ impl Renderer {
         );
 
         self.build_envelope(frames, |envelope| {
-            plan.fade.incoming_curve.fill_in(envelope)
+            plan.fade.incoming_curve.fill_in_span(envelope, plan.fade.incoming_span)
         });
         self.apply_gain_curve(&plan.fade.incoming_gain, frames);
         stage::mix_stem(&mut mixed, &incoming_stem.audio, &self.envelope);

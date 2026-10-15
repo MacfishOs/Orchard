@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 import { planPairTransition } from './pairTransitionPlanner.js';
 
@@ -114,7 +114,7 @@ export function transitionFromPairFallback(
     return blocked(pairPlan.fallbackReason || 'normal-boundary', {
       transitionStart: length, transitionEnd: length, fadeSeconds: 0,
       transitionStyle: 'normal_boundary',
-      fallbackReason: pairPlan.fallbackReason, fallback, pairPlan
+      fallbackReason: pairPlan.fallbackReason, explain: pairPlan.explain ?? null, fallback, pairPlan
     });
   }
   // A silence trim advances at the end of audible content without an overlap.
@@ -136,7 +136,6 @@ export function transitionFromPairFallback(
     transitionBeats: 0,
     bassSwap: false,
     transitionStyle: fallback.transitionStyle,
-    choreography: fallback.choreography || pairPlan.choreography,
     policyReasons: pairPlan.diagnostics?.selected?.gates || [],
     fallbackReason: pairPlan.fallbackReason,
     fallback,

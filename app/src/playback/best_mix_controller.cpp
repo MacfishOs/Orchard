@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 #include "best_mix_controller.h"
 #include "auth/auth_manager.h"
@@ -65,7 +65,8 @@ QString workerPath() {
 // Version 1: subBassRatio, so the shortlist can tell boom-bap from trap.
 // Version 2: shared native-rate decode and worker-built summaries, identical to Android.
 // Version 3: edge bass curves, so finalists plan with playback's beat-flow evidence.
-constexpr int kFeatureVersion = 3;
+// Version 4: pitch-resolved chroma: edge chroma curves and a working whole-song key.
+constexpr int kFeatureVersion = 4;
 QByteArray cbor(const QJsonObject &value) {
   return QCborValue::fromJsonValue(QJsonValue(value)).toCbor();
 }

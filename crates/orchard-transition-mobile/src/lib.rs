@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 //! Orchard's Android native library. Adaptive mixes and Best Mix run the desktop worker's own
 //! Rust (`mix`); the QuickJS provider host resolves YouTube player code through the extractor.

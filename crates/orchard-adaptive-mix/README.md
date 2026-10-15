@@ -30,8 +30,11 @@ early), and fades the render into native playback over its last 5 ms.
 
 Before planning, the worker measures each song's bass (35-140 Hz, every 0.25 s,
 relative to the song's usual level), its sub-bass weight (25-60 Hz against
-60-250 Hz over the body), and UMX vocal activity across both render windows
-(about 1 s of CPU per pair). The planner uses them to keep a beat going through
+60-250 Hz over the body), local chroma over both render windows (Earmark's
+peak-picked pitch classes every 0.5 s, with each frame's tonal weight), and UMX
+vocal activity across both render windows (about 1 s of CPU per pair). Local
+chroma only decides whether a beatless bridge's keys clash; beatmatched blends
+use whole-song keys. The planner uses them to keep a beat going through
 the overlap, drop a beatless intro's first beat on the bass swap, avoid fading in
 on a vocal line, and keep the natural boundary between clashing productions,
 which the worker reports as the planner's natural-boundary refusal. The outgoing
@@ -39,6 +42,14 @@ vocal curve also shapes the filter sweep. Set `ORCHARD_MIX_DUMP` to a directory
 to save each pair's planner input and decisions for offline replay. Set
 `ORCHARD_MIX_BEATS=earmark` to plan from Earmark's own beat grid without the Beat
 This pass, for A/B listening.
+
+The planner returns an `arrangement` the renderer executes exactly: the
+technique (`bass_swap`, `beatmatched_blend`, `drop_in` or `beatless_bridge`),
+each side's equal-power fade span as fractions of the overlap, and the bass swap
+point. A beatless bridge overlaps two beatless edges at native tempo, so the
+worker skips the kick lock for it. Refusals carry `explain` (`code`, `category`,
+`detail`), which the worker appends to its natural-boundary error as
+`(code: detail)`.
 
 When the outgoing beat stops before the song does, the planner may loop its last
 clean bars (`outgoingLoop`); outgoing times past the loop end are loop time. The
@@ -51,12 +62,17 @@ offset. It reports the move in milliseconds as `kickLock`.
 
 ## Best Mix queue order
 
-The queue's **Best Mix** action sorts up to 50 upcoming songs with the beta
-branch's directional tempo/key/energy prefilter and three shared-planner
-finalists per choice. Each song also carries its whole-song sub-bass weight
-(`subBassRatio`): the prefilter ranks a pair the planner would refuse as a style
-clash behind every pair that can blend, and the finalists' plans apply the same
-style gate as playback. Finalists are planned the way playback plans them: with
+The queue's **Best Mix** action sorts up to 50 upcoming songs. Every ordered
+pair gets a predicted cost from compact summaries (`best_mix_cost.rs`) that
+mirrors the planner's hard gates: an octave-folded tempo gap within 8%
+beatmatches, beatless edges of 4 s on both sides bridge unless their keys
+clash, and a style clash plays out. Each summary carries its whole-song sub-bass weight
+(`subBassRatio`), the pitch-class profile of its mixable 30 s (`chroma`) and its
+beatless edge in seconds (`beatlessEdge`). `best_mix_order.rs` optimizes the
+whole path (nearest neighbour, then moves of one to three songs until none
+helps), plans every adjacent pair with the shared planner, replaces predictions
+with planned costs and re-optimizes until every neighbour pair is planned or
+three plans per song are spent. Pairs are planned the way playback plans them: with
 the tempo glide on and each grid treated as Beat This-confirmed (confidence
 0.95). Earmark's own calibrated confidence clears the planner's 0.55 beatmatch
 floor for about 80-90% of songs on labelled sets; the assumption keeps the rest

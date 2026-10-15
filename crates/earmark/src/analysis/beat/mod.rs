@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Beat and downbeat tracking from the 50 fps log-mel beat spectrogram, without a model.
 //!
 //! Two beat-pointer Viterbi decodes read the same band onsets differently: one leans

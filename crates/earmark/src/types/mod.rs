@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Data types shared across the analysis, planning, and rendering stages.
 
 pub mod analysis;
@@ -10,6 +10,6 @@ pub use analysis::{FeatureTrack, FrameFeatures, LoudnessStats, RegionFeatures};
 pub use beat::BeatAnalysis;
 pub use diagnostics::{Candidate, CandidateScore, ScoredCandidate, TransitionDiagnostics};
 pub use transition::{
-    FadePlan, FilterPlan, MAX_RAMPED_TEMPO_RATIO_DEVIATION, MAX_SELECTED_TEMPO_RATIO_DEVIATION,
+    FULL_SPAN, FadePlan, FilterPlan, MAX_RAMPED_TEMPO_RATIO_DEVIATION, MAX_SELECTED_TEMPO_RATIO_DEVIATION,
     SelectedTransition, TempoGlide, TransitionOutput, TransitionPlan, TransitionStrategy,
 };

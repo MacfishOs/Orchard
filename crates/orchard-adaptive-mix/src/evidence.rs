@@ -1,10 +1,10 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 //! Planner evidence measured on decoded audio: bass presence, 808 weight and vocals.
 use crate::{models::Models, song};
 use earmark::AudioBuffer;
 use earmark::audio::resample;
-use earmark::analysis::VOCAL_SPECTROGRAM_HOP;
+use earmark::analysis::{ChromaFrames, VOCAL_SPECTROGRAM_HOP};
 use serde_json::{Value, json};
 
 /// Curve resolution handed to the planner, in seconds.
@@ -77,6 +77,28 @@ pub fn sub_bass_ratio(mono: &[f32], rate: u32) -> Option<f64> {
     (sub > 0.0 && low > 0.0).then(|| compact((sub / low).log10()))
 }
 
+/// Pitch-class profile per chroma frame inside `span`, each normalized to sum 1, plus each
+/// frame's tonal weight relative to the song's median frame. Drum-only frames weigh little.
+pub fn chroma_curve(chroma: &ChromaFrames, span: (f64, f64)) -> Value {
+    let totals: Vec<f64> = chroma.frames.iter()
+        .map(|frame| frame.iter().map(|v| f64::from(*v)).sum()).collect();
+    let typical = percentile(&totals, 0.5).max(1e-9);
+    let mut values = Vec::new();
+    let mut weights = Vec::new();
+    let mut start = None;
+    for (index, frame) in chroma.frames.iter().enumerate() {
+        let time = chroma.start + index as f64 * chroma.step;
+        if time < span.0 || time > span.1 {
+            continue;
+        }
+        start.get_or_insert(time);
+        let total = totals[index].max(1e-12);
+        values.push(frame.iter().map(|v| compact(f64::from(*v) / total)).collect::<Vec<_>>());
+        weights.push(compact((totals[index] / typical).min(4.0)));
+    }
+    json!({"start": compact(start.unwrap_or(span.0)), "step": chroma.step, "values": values, "weights": weights})
+}
+
 /// Raw UMX vocal share per model frame for a render window, at 44.1 kHz frame times.
 pub fn vocal_frames(models: &mut Models, window: &AudioBuffer) -> Result<Vec<f64>, String> {
     let audio = resample::resample(window, song::RATE).map_err(|e| e.to_string())?;
@@ -132,6 +154,27 @@ mod tests {
         let rate = song::ANALYSIS_RATE;
         assert!(sub_bass_ratio(&tone(40.0, 20.0, rate), rate).unwrap() > 1.0);
         assert!(sub_bass_ratio(&tone(120.0, 20.0, rate), rate).unwrap() < -1.0);
+    }
+
+    #[test]
+    fn chroma_curves_keep_their_span_and_weigh_tonal_frames() {
+        let chroma = ChromaFrames {
+            start: 0.25,
+            step: 0.5,
+            frames: (0..20).map(|index| {
+                let mut frame = [0.0f32; 12];
+                frame[0] = if index < 10 { 3.0 } else { 1.0 };
+                frame[7] = 1.0;
+                frame
+            }).collect(),
+        };
+        let curve = chroma_curve(&chroma, (2.0, 6.0));
+        assert_eq!(curve["start"], json!(2.25));
+        let values = curve["values"].as_array().unwrap();
+        assert_eq!(values.len(), 8);
+        assert_eq!(values[0][0], json!(0.75));
+        // The louder chord frames weigh more than the median frame.
+        assert!(curve["weights"][0].as_f64().unwrap() > curve["weights"][7].as_f64().unwrap());
     }
 
     #[test]

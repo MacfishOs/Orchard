@@ -185,6 +185,6 @@ If you would like to support development, [buy me a coffee on Ko-fi](https://ko-
 
 Orchard is free software under the [GNU Affero General Public License v3.0 or later](LICENSE), with an [additional permission](LICENSE-EXCEPTION.md) for linking the engine.
 
-The adaptive mix engine is not covered by the AGPL. Earmark, the transition core and planner, the adaptive mix worker, the Android mix code, the C++ mix controllers and the crossfade planner scripts are under the [Orchard-Only License (OOL-1.0)](LICENSE-OOL). Each of those files carries an OOL-1.0 header, and each Rust crate has its own `LICENSE`. The license allows viewing the source and running official Orchard binaries. It does not allow reuse, forks or competing applications.
+The adaptive mix engine is not covered by the AGPL. Earmark, the transition core and planner, the adaptive mix worker, the Android mix code, the C++ mix controllers and the crossfade planner scripts are under the [PolyForm Shield License 1.0.0](LICENSE-POLYFORM-SHIELD). Each of those files carries a PolyForm Shield header, and each Rust crate has its own `LICENSE`. The license allows using, building, modifying and sharing the engine for any purpose except providing a product that competes with Orchard.
 
 Orchard uses open-source libraries and models for playback, analysis, artwork, and connected listening. See [Third-party notices](THIRD_PARTY_NOTICES.md), [Adaptive mix](crates/orchard-adaptive-mix/README.md), and the [mobile credits](mobile/README.md#third-party-components) for licenses and model provenance.

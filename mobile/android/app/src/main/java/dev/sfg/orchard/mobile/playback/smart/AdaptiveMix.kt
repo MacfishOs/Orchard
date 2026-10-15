@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 package dev.sfg.orchard.mobile.playback.smart
 
@@ -132,7 +132,8 @@ internal object AdaptiveMix {
     internal fun planLog(header: JSONObject): String {
         val loop = header.optInt("loopBeats")
         val lock = header.optDouble("kickLock", 0.0)
-        return "strategy ${header.optString("strategy")} | bpm ${header.optDouble("targetBpm")} | " +
+        return "strategy ${header.optString("strategy")} | technique ${header.optString("technique")} | " +
+            "bpm ${header.optDouble("targetBpm")} | " +
             "out ${header.optDouble("outgoingStart")} | cue ${header.optDouble("incomingCue")} | " +
             "dur ${header.optDouble("duration")}" +
             (if (loop > 0) " | loop $loop beats" else "") +
