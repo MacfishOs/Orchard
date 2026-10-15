@@ -90,6 +90,8 @@ fun PlayerQueuePanel(
     sleepTimerRemainingSeconds: Long = 0L,
     sleepTimerEndOfTrack: Boolean = false,
     onSleepTimer: () -> Unit = {},
+    /** Off where a separate control surface already carries shuffle, repeat, sleep and autoplay. */
+    showModes: Boolean = true,
 ) {
     val history = playback.history.takeLast(4)
     val historyStart = playback.currentIndex - history.size
@@ -99,6 +101,35 @@ fun PlayerQueuePanel(
     if (playback.queue.isEmpty()) {
         Box(modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
+                if (showModes) {
+                    QueueTopControls(
+                        shuffle = playback.shuffle,
+                        repeatMode = playback.repeatMode,
+                        onShuffle = onShuffle?.takeIf { editable },
+                        onRepeat = onRepeat?.takeIf { editable },
+                        autoplayEnabled = autoplayEnabled,
+                        autoplayLoading = autoplayLoading,
+                        autoplayError = autoplayError,
+                        onAutoplayEnabled = onAutoplayEnabled,
+                        sleepTimerRemainingSeconds = sleepTimerRemainingSeconds,
+                        sleepTimerEndOfTrack = sleepTimerEndOfTrack,
+                        onSleepTimer = onSleepTimer,
+                    )
+                }
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    QueueNotice("Queue is empty", "Play an album, playlist, or song to get started.")
+                }
+            }
+        }
+        return
+    }
+    LazyColumn(
+        state = listState,
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+    ) {
+        if (showModes) {
+            item {
                 QueueTopControls(
                     shuffle = playback.shuffle,
                     repeatMode = playback.repeatMode,
@@ -112,32 +143,7 @@ fun PlayerQueuePanel(
                     sleepTimerEndOfTrack = sleepTimerEndOfTrack,
                     onSleepTimer = onSleepTimer,
                 )
-                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    QueueNotice("Queue is empty", "Play an album, playlist, or song to get started.")
-                }
             }
-        }
-        return
-    }
-    LazyColumn(
-        state = listState,
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-    ) {
-        item {
-            QueueTopControls(
-                shuffle = playback.shuffle,
-                repeatMode = playback.repeatMode,
-                onShuffle = onShuffle?.takeIf { editable },
-                onRepeat = onRepeat?.takeIf { editable },
-                autoplayEnabled = autoplayEnabled,
-                autoplayLoading = autoplayLoading,
-                autoplayError = autoplayError,
-                onAutoplayEnabled = onAutoplayEnabled,
-                sleepTimerRemainingSeconds = sleepTimerRemainingSeconds,
-                sleepTimerEndOfTrack = sleepTimerEndOfTrack,
-                onSleepTimer = onSleepTimer,
-            )
         }
         if (history.isNotEmpty()) {
             item { QueueSectionHeader("Played") }

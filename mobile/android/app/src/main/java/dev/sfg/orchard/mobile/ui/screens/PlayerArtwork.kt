@@ -50,6 +50,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntSize
+import kotlin.math.roundToInt
+import dev.sfg.orchard.mobile.ui.glass.LocalGlassScene
+import dev.sfg.orchard.mobile.ui.glass.glassWashSource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -68,6 +74,9 @@ import dev.sfg.orchard.mobile.ui.components.AnimatedArtworkVideo
 import dev.sfg.orchard.mobile.ui.components.KawarpArtworkBackdrop
 import dev.sfg.orchard.mobile.ui.components.RemoteArtwork
 import dev.sfg.orchard.mobile.ui.components.ArtworkPalette
+import dev.sfg.orchard.mobile.ui.components.blurredArtworkBackdrop
+import dev.sfg.orchard.mobile.ui.components.blurredArtworkFade
+import dev.sfg.orchard.mobile.ui.components.rememberBlurredArtwork
 import dev.sfg.orchard.mobile.ui.components.rememberArtworkPalette
 import dev.sfg.orchard.mobile.ui.components.smoothScrimBrush
 
@@ -92,6 +101,8 @@ fun FullBleedPlayerBackdrop(
     /** Tablets let Kawarp own the ambient motion; this avoids a second full-rate redraw loop. */
     ambientGlowEnabled: Boolean = true,
     incomingPalette: ArtworkPalette? = null,
+    /** The mix's arriving cover, blended into the blurred backdrop by [transitionProgress]. */
+    incomingArtworkUrl: String? = null,
     /** Where the cover actually sits, so a dismissal can fly it into the pill. */
     onArtworkBounds: ((Rect) -> Unit)? = null,
     /** 0f outside a transition, rising to 1f at the handoff. Drives the cover handoff. */
@@ -142,11 +153,21 @@ fun FullBleedPlayerBackdrop(
 
     val currentVideo = track.animatedArtworkVerticalUrl.ifBlank { track.animatedArtworkUrl }
     val currentRich = !warpedArtworkEnabled && animatedArtworkEnabled && currentVideo.isNotBlank()
+    val glass = LocalGlassScene.current
     LaunchedEffect(currentRich) { if (!currentRich) onArtworkSeam(null) }
+    // Kawarp already fills the screen with the cover, so nothing is baked underneath it.
+    val blurred = rememberBlurredArtwork(
+        artworkUrl = if (warpedArtworkEnabled) "" else track.artworkUrl,
+        videoUrl = if (currentRich) currentVideo else "",
+        incomingArtworkUrl = if (warpedArtworkEnabled) "" else incomingArtworkUrl.orEmpty(),
+        incomingProgress = progress,
+    )
+    val showBlur = !warpedArtworkEnabled && blurred.isReady
 
     Box(
         modifier
             .fillMaxSize()
+            .glassWashSource(glass)
             .then(
                 // With a swipe supplied, the body above takes both gestures and this layer only follows.
                 if (gesturesEnabled && swipe == null) {
@@ -169,9 +190,11 @@ fun FullBleedPlayerBackdrop(
                         }
                 } else Modifier
             )
-            // Motion art scrims into flat deep, so the frame's lower edge meets the same colour.
+            // Art fades into whatever this draws, so the frame's lower edge has no seam.
             .then(
-                if (currentRich) {
+                if (showBlur) {
+                    Modifier.blurredArtworkBackdrop(blurred)
+                } else if (currentRich) {
                     Modifier.background(animatedDeep)
                 } else {
                     Modifier.background(
@@ -184,8 +207,8 @@ fun FullBleedPlayerBackdrop(
                 },
             ),
     ) {
-        // Edge-to-edge motion art covers the glow entirely, so skip its redraw loop.
-        if (ambientGlowEnabled && !currentRich) {
+        // Motion art covers the glow and the blurred cover replaces it, so skip its redraw loop.
+        if (ambientGlowEnabled && !currentRich && !showBlur) {
             val transition = rememberInfiniteTransition(label = "PlayerAmbience")
             val glow by transition.animateFloat(
                 initialValue = 0.28f,
@@ -245,18 +268,29 @@ fun FullBleedPlayerBackdrop(
                     }
                     .onGloballyPositioned { onArtworkBounds?.invoke(it.boundsInRoot()) }
                     .onSizeChanged { onArtworkSeam(if (fillsScreen) null else it.height * (1f - FRAME_OVERLAP)) }
-                    .drawWithContent {
-                        drawContent()
-                        // Full-screen art goes opaque before the gesture bar; short art by its own bottom edge.
-                        drawRect(
-                            smoothScrimBrush(
-                                from = animatedDeep.copy(alpha = 0f),
-                                to = animatedDeep,
+                    .then(
+                        // Full-screen art is covered before the gesture bar; short art by its own bottom edge.
+                        if (showBlur) {
+                            Modifier.blurredArtworkFade(
+                                art = blurred,
                                 startFraction = if (fillsScreen) SCRIM_START else SHORT_SCRIM_START,
                                 endFraction = if (fillsScreen) SCRIM_END else 1f,
-                            ),
-                        )
-                    },
+                                shiftX = { swipe?.offset ?: 0f },
+                            )
+                        } else {
+                            Modifier.drawWithContent {
+                                drawContent()
+                                drawRect(
+                                    smoothScrimBrush(
+                                        from = animatedDeep.copy(alpha = 0f),
+                                        to = animatedDeep,
+                                        startFraction = if (fillsScreen) SCRIM_START else SHORT_SCRIM_START,
+                                        endFraction = if (fillsScreen) SCRIM_END else 1f,
+                                    ),
+                                )
+                            }
+                        },
+                    ),
             ) {
                 AnimatedContent(
                     targetState = track,
@@ -304,13 +338,40 @@ fun FullBleedPlayerBackdrop(
                             modifier = Modifier.fillMaxSize(),
                         )
 
+                        // The video lives in its own view, which a recording cannot capture, so
+                        // glass reads this small copy of the current frame instead.
+                        var glassFrame by remember { mutableStateOf<Bitmap?>(null) }
+                        if (rich && glass != null) {
+                            Box(
+                                Modifier.fillMaxSize().drawBehind {
+                                    glassFrame?.let {
+                                        drawImage(
+                                            it.asImageBitmap(),
+                                            dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+                                        )
+                                    }
+                                },
+                            )
+                        }
+
                         if (rich) {
+                            val isCurrent = currentTrack.id == track.id
                             AnimatedArtworkVideo(
                                 url = videoUrl,
                                 active = isPlaying,
                                 modifier = Modifier.fillMaxSize(),
                                 onFrame = onVideoFrame,
-                                onVideoAspect = if (currentTrack.id == track.id) {
+                                // The same frames carry the video into the blurred backdrop.
+                                onGlassFrame = if (glass != null || isCurrent) {
+                                    { frame ->
+                                        if (glass != null) {
+                                            glassFrame = frame
+                                            glass.refresh()
+                                        }
+                                        if (isCurrent) blurred.pushFrame(frame)
+                                    }
+                                } else null,
+                                onVideoAspect = if (isCurrent) {
                                     { videoAspect = it }
                                 } else null,
                             )

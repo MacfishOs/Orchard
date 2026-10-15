@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.sfg.orchard.connect.R
 import dev.sfg.orchard.connect.BuildConfig
@@ -35,19 +36,26 @@ import dev.sfg.orchard.mobile.model.YOUTUBE_SOURCE
 
 private val MarkSize = 16.dp
 
+/** Whether [PlaybackSourceMark] draws anything for [source] in this build. */
+internal fun playbackSourceHasMark(source: String): Boolean = when (source.lowercase()) {
+    YOUTUBE_SOURCE -> true
+    APPLE_MUSIC_SOURCE -> BuildConfig.APPLE_MUSIC_LOGO
+    else -> false
+}
+
 /** Provider icon for the playing track. Draws nothing for local files and providers without a mark. */
 @Composable
-internal fun PlaybackSourceMark(source: String, modifier: Modifier = Modifier) {
+internal fun PlaybackSourceMark(source: String, modifier: Modifier = Modifier, size: Dp = MarkSize) {
     when (source.lowercase()) {
         YOUTUBE_SOURCE -> Image(
             painter = painterResource(R.drawable.ic_source_youtube_music),
             contentDescription = "Playing from YouTube Music",
-            modifier = modifier.size(MarkSize),
+            modifier = modifier.size(size),
         )
         // The logo only ships in builds that bundle the local Apple Music artwork.
         APPLE_MUSIC_SOURCE -> if (BuildConfig.APPLE_MUSIC_LOGO) {
-            Box(modifier.size(MarkSize).semantics { contentDescription = "Playing from Apple Music" }) {
-                AppleMusicLogo(Modifier.size(MarkSize))
+            Box(modifier.size(size).semantics { contentDescription = "Playing from Apple Music" }) {
+                AppleMusicLogo(Modifier.size(size))
             }
         }
     }

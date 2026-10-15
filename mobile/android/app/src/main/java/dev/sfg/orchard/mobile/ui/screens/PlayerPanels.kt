@@ -100,6 +100,8 @@ fun PlayerControlStack(
     onSleepTimer: () -> Unit = {},
     /** Draws each gap between rows; the phone stretches them across the art's reflection. */
     gap: @Composable (Dp) -> Unit = { Spacer(Modifier.height(it)) },
+    /** Replaces the destinations row when set. */
+    bottomBar: (@Composable () -> Unit)? = null,
 ) {
     // Only takes space while a non-music span is under the playhead, so the stack doesn't jump
     // for the ordinary song. Centered above the scrubber where a thumb can reach it.
@@ -139,15 +141,19 @@ fun PlayerControlStack(
         )
         Spacer(Modifier.height(12.dp))
     }
-    PlayerBottomDestinations(
-        targets = targets,
-        upcomingCount = playback.upcoming.size,
-        onLyrics = onLyrics,
-        lyricsActive = lyricsActive,
-        onDevices = onDevices,
-        onQueue = onQueue,
-        queueActive = queueActive,
-    )
+    if (bottomBar != null) {
+        bottomBar()
+    } else {
+        PlayerBottomDestinations(
+            targets = targets,
+            upcomingCount = playback.upcoming.size,
+            onLyrics = onLyrics,
+            lyricsActive = lyricsActive,
+            onDevices = onDevices,
+            onQueue = onQueue,
+            queueActive = queueActive,
+        )
+    }
 }
 
 /** Centred status text and indicator for the states where lyrics are loading or unavailable. */

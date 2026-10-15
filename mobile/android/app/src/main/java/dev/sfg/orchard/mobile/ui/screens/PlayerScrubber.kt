@@ -240,7 +240,7 @@ fun PlayerScrubber(
                 )
             } else {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (showSource) playback.currentTrack?.let { PlaybackSourceMark(it.playbackSource) }

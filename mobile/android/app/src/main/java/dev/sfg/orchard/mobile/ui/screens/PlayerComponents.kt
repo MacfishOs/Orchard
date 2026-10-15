@@ -101,6 +101,8 @@ import dev.sfg.orchard.mobile.model.PlaybackSnapshot
 import dev.sfg.orchard.mobile.model.PlaybackTarget
 import dev.sfg.orchard.mobile.model.PlaybackTargetState
 import dev.sfg.orchard.mobile.ui.components.TrackActionsPopup
+import dev.sfg.orchard.mobile.ui.glass.GlassTone
+import dev.sfg.orchard.mobile.ui.glass.glassPane
 import dev.sfg.orchard.mobile.ui.theme.CanopyColors
 
 @Composable
@@ -166,8 +168,8 @@ fun OverflowButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
         shape = CircleShape,
-        color = Color.White.copy(alpha = 0.12f),
-        modifier = modifier.size(36.dp),
+        color = Color.Transparent,
+        modifier = modifier.size(36.dp).glassPane(CircleShape, GlassTone.CONTROL),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
@@ -397,7 +399,7 @@ fun PlayerBottomDestinations(
 }
 
 @Composable
-private fun OutputRoutePill(targets: PlaybackTargetState, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun OutputRoutePill(targets: PlaybackTargetState, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val isLocal = targets.selected is PlaybackTarget.LocalPhone
     val output by rememberAudioOutput()
 

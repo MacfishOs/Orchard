@@ -265,6 +265,7 @@ fun NowPlayingScreen(
                 hasRichArtwork = hasRichArtwork,
                 palette = palette,
                 incomingPalette = incomingPalette,
+                incomingArtworkUrl = incomingTrack?.artworkUrl,
                 animatedArtworkEnabled = animatedArtworkEnabled,
                 animatedBackgroundEnabled = animatedBackgroundEnabled,
                 gesturesEnabled = gesturesEnabled,
