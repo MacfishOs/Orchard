@@ -37,6 +37,7 @@ import dev.sfg.orchard.mobile.model.NonMusicSkipMode
 import dev.sfg.orchard.mobile.model.OrchardSettings
 import dev.sfg.orchard.mobile.model.BuiltInHomeSection
 import dev.sfg.orchard.mobile.model.HomeSectionConfig
+import dev.sfg.orchard.mobile.model.YOUTUBE_SOURCE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -92,6 +93,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 ),
                 playerGesturesEnabled = values[PLAYER_GESTURES_ENABLED] ?: true,
                 showSettingsTab = values[SHOW_SETTINGS_TAB] ?: false,
+                homeSource = values[HOME_SOURCE] ?: YOUTUBE_SOURCE,
                 homeLayoutOnline = decodeHomeLayout(values[HOME_LAYOUT_ONLINE], true),
                 homeLayoutOffline = decodeHomeLayout(values[HOME_LAYOUT_OFFLINE], false),
                 customDeviceName = values[CUSTOM_DEVICE_NAME] ?: "",
@@ -150,6 +152,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 it[EQUALIZER_BASS_BOOST] = value.equalizerConfig.bassBoost
                 it[PLAYER_GESTURES_ENABLED] = value.playerGesturesEnabled
                 it[SHOW_SETTINGS_TAB] = value.showSettingsTab
+                it[HOME_SOURCE] = value.homeSource
                 it[HOME_LAYOUT_ONLINE] = encodeHomeLayout(value.homeLayoutOnline)
                 it[HOME_LAYOUT_OFFLINE] = encodeHomeLayout(value.homeLayoutOffline)
                 it[CUSTOM_DEVICE_NAME] = value.customDeviceName
@@ -240,6 +243,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
     private companion object {
         val ANIMATED_ARTWORK = booleanPreferencesKey("animated_artwork")
         val ARTWORK_SOURCE_ORDER = stringPreferencesKey("artwork_source_order")
+        val HOME_SOURCE = stringPreferencesKey("home_source")
         val SEND_YOUTUBE_HISTORY = booleanPreferencesKey("send_youtube_history")
         val DOWNLOAD_ANIMATED_ARTWORK = booleanPreferencesKey("download_animated_artwork")
         val DOWNLOAD_TO_SD_CARD = booleanPreferencesKey("download_to_sd_card")

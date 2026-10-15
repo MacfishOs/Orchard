@@ -39,7 +39,9 @@ import dev.sfg.orchard.mobile.ui.components.PlaylistPickerSheet
 import dev.sfg.orchard.mobile.ui.motion.NavMotion
 import dev.sfg.orchard.mobile.ui.navigation.Routes
 import dev.sfg.orchard.mobile.ui.screens.DetailScreen
+import dev.sfg.orchard.mobile.ui.screens.HomeActions
 import dev.sfg.orchard.mobile.ui.screens.HomeScreen
+import dev.sfg.orchard.mobile.ui.screens.rememberHomeData
 import dev.sfg.orchard.mobile.ui.screens.LibraryScreen
 import dev.sfg.orchard.mobile.ui.screens.NativeLoginScreen
 import dev.sfg.orchard.mobile.ui.screens.SettingsScreen
@@ -123,31 +125,31 @@ internal fun OrchardNavigation(
         }
         composable(Routes.HOME) {
             HomeScreen(
-                settings = settings,
-                state = home,
-                library = library,
-                auth = auth,
-                downloads = downloadsList,
-                downloadedTrackIds = downloadedTrackIds,
-                isOffline = !isOnline,
-                onRefresh = viewModel::refreshHome,
-                onSearch = onOpenSearch,
-                onLibrary = { filter ->
-                    viewModel.selectLibraryFilter(filter)
-                    nav.openTopLevel(Routes.LIBRARY)
-                },
-                onPlay = { viewModel.play(it, "Home") },
-                onOpenDetail = { id -> viewModel.openDetail(id); nav.navigate(Routes.detail(id)) },
-                onEditLayout = { nav.navigate(Routes.SETTINGS_HOME_LAYOUT) },
-                onToggleLike = viewModel::toggleLiked,
-                onPlayNext = if (canControlQueue) viewModel::playNext else null,
-                onAddToQueue = if (canControlQueue) viewModel::addToQueue else null,
-                onAddToPlaylist = { playlistPickerTrack = it },
-                onShare = viewModel::shareTrack,
-                onOpenProfile = { nav.openTopLevel(Routes.SETTINGS) },
-                onFetchSectionItems = viewModel::fetchSectionItems,
-                onPlayItem = viewModel::playItem,
-                onPlayCollection = { id, title -> viewModel.playCollection(id, title) },
+                rememberHomeData(
+                    settings = settings,
+                    state = home,
+                    library = library,
+                    auth = auth,
+                    downloads = downloadsList,
+                    downloadedTrackIds = downloadedTrackIds,
+                    isOffline = !isOnline,
+                    actions = HomeActions(
+                        refresh = viewModel::refreshHome,
+                        search = onOpenSearch,
+                        play = { viewModel.play(it, "Home") },
+                        openDetail = { id -> viewModel.openDetail(id); nav.navigate(Routes.detail(id)) },
+                        editLayout = { nav.navigate(Routes.SETTINGS_HOME_LAYOUT) },
+                        toggleLike = viewModel::toggleLiked,
+                        playNext = if (canControlQueue) viewModel::playNext else null,
+                        addToQueue = if (canControlQueue) viewModel::addToQueue else null,
+                        addToPlaylist = { playlistPickerTrack = it },
+                        share = viewModel::shareTrack,
+                        openProfile = { nav.openTopLevel(Routes.SETTINGS) },
+                        fetchSectionItems = viewModel::fetchHomeSectionItems,
+                        playItem = viewModel::playItem,
+                        playCollection = { id, title -> viewModel.playCollection(id, title) },
+                    ),
+                )
             )
         }
         composable(Routes.LIBRARY) {

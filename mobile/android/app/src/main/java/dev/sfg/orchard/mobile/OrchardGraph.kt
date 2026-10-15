@@ -29,6 +29,8 @@ import dev.sfg.orchard.mobile.auth.SecureYouTubeSessionStore
 import dev.sfg.orchard.mobile.catalog.CatalogRepository
 import dev.sfg.orchard.mobile.catalog.VideoVersionResolver
 import dev.sfg.orchard.mobile.catalog.PlaylistActions
+import dev.sfg.orchard.mobile.home.HomeFeeds
+import dev.sfg.orchard.mobile.home.YouTubeHomeSource
 import dev.sfg.orchard.mobile.connect.ConnectRepository
 import dev.sfg.orchard.mobile.library.LibraryCache
 import dev.sfg.orchard.mobile.library.LibraryRepository
@@ -98,6 +100,7 @@ class OrchardGraph(context: Context) {
         YouTubeStreamResolver(youtube, auth, ::audioQuality, { downloads })
     }
     val catalog = CatalogRepository(youtube, auth)
+    val homeFeeds = HomeFeeds(listOf(YouTubeHomeSource(catalog))) { settings.settings.value.homeSource }
     val playlistActions = PlaylistActions(youtube, auth)
     val videoVersions = VideoVersionResolver(catalog)
     val library = LibraryRepository(LibraryCache(context), catalog, applicationScope)
