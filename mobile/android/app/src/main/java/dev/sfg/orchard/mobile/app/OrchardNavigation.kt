@@ -220,6 +220,7 @@ internal fun OrchardNavigation(
                 onConnectSpotify = { nav.navigate(Routes.SPOTIFY_LOGIN) },
                 qobuzStatus = qobuzStatus,
                 onConnectQobuz = { nav.navigate(Routes.QOBUZ_LOGIN) },
+                onConnectAppleMusic = { nav.navigate(Routes.APPLE_MUSIC_LOGIN) },
                 onDisconnectQobuz = viewModel::disconnectQobuz,
                 onQobuzEnabledChange = viewModel::setQobuzEnabled,
                 onQobuzQualityChange = viewModel::setQobuzQuality,
@@ -272,6 +273,9 @@ internal fun OrchardNavigation(
                 },
                 onCancel = { nav.popBackStack() },
             )
+        }
+        composable(Routes.APPLE_MUSIC_LOGIN) {
+            dev.sfg.orchard.mobile.ui.screens.AppleMusicLoginScreen(onDone = { nav.popBackStack() })
         }
         composable(Routes.QOBUZ_LOGIN) {
             val graph = OrchardGraph.from(context)

@@ -97,6 +97,7 @@ fun SettingsScreen(
     onConnectSpotify: () -> Unit = {},
     qobuzStatus: dev.sfg.orchard.mobile.qobuz.QobuzStatus = dev.sfg.orchard.mobile.qobuz.QobuzStatus(),
     onConnectQobuz: () -> Unit = {},
+    onConnectAppleMusic: () -> Unit = {},
     onDisconnectQobuz: () -> Unit = {},
     onQobuzEnabledChange: (Boolean) -> Unit = {},
     onQobuzQualityChange: (dev.sfg.orchard.mobile.qobuz.QobuzQuality) -> Unit = {},
@@ -135,6 +136,7 @@ fun SettingsScreen(
     val accountState by account.state.collectAsStateWithLifecycle()
     val statuses = connectionStatuses(
         settings, discordStatus, lastfmState, listenBrainzState, qobuzStatus, accountState.email,
+        appleMusicConnectionStatus(),
     )
     val summaries = SettingsSummaries(
         connectedCount = statuses.values.count { it.connected },
@@ -203,6 +205,7 @@ fun SettingsScreen(
                                 onDisconnectListenBrainz = onDisconnectListenBrainz,
                                 onConnectSpotify = onConnectSpotify,
                                 onConnectQobuz = onConnectQobuz,
+                                onConnectAppleMusic = onConnectAppleMusic,
                                 onDisconnectQobuz = onDisconnectQobuz,
                                 onQobuzEnabledChange = onQobuzEnabledChange,
                                 onQobuzQualityChange = onQobuzQualityChange,

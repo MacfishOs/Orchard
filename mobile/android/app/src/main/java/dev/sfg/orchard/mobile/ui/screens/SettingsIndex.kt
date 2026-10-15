@@ -74,6 +74,7 @@ private val entries = listOf(
     SettingsEntry("Check for updates", "Look for newer releases", SettingsPage.Storage, "version upgrade"),
     SettingsEntry("Release notes", "What changed in this version", SettingsPage.Storage, "changelog"),
     SettingsEntry("Beta channel", "Get beta builds from GitHub", SettingsPage.Storage),
+    SettingsEntry("Apple Music", "Connect your Apple Music subscription", SettingsPage.Connections, "apple musickit account sign in"),
 )
 
 /** Case-insensitive match on every word of [query] against title, subtitle and keywords. */

@@ -66,6 +66,7 @@ Orchard listens to the audio rather than trusting a catalog. Smart Crossfade and
 * **Chromecast** - move the active queue to Cast speakers and displays, then bring it back without losing position
 * **Last.fm and ListenBrainz** - encrypted account credentials, now-playing updates, and seek-resistant scrobbling
 * **Orchard account** - Google sign-in, an encrypted device session, and device management in Settings
+* **Apple Music** - sign in with MusicKit JS in a WebView; the session cookies persist and the WebView closes after sign-in
 * Discord Rich Presence, with animated artwork where available and an artist portrait over the cover
 * Shareable song.link and album.link URLs, matching desktop
 
@@ -111,6 +112,25 @@ It shares Canary's application ID and signing configuration, so installing it
 replaces Canary and retains its sign-ins and settings. It uses the local debug
 signing key when release signing credentials are absent. Automatic updates are
 disabled.
+
+## Apple Music sign-in
+
+Open **Settings → Connections → Apple Music** and select **Sign in to Apple
+Music**. The app fetches a developer JWT from the account worker's
+`GET /apple/developer-token` endpoint and runs MusicKit JS in a WebView, so
+no Apple SDK is bundled. Configure and deploy the
+[account worker](../services/account/README.md#apple-music-developer-tokens)
+first. No Orchard account is required.
+
+The WebViews exist only while the sign-in screen is open. Apple's cookies stay
+in the app's WebView cookie jar, so signing in again reuses the session. The
+Music User Token is encrypted with Android Keystore. **Disconnect** removes the
+token, Apple's cookies and the MusicKit page storage; other services keep their
+sign-ins. Browsing and playback are separate work.
+
+The Apple Music logo is optional and not tracked in Git. Place a square PNG at
+`mobile/android/local/apple-music/res/drawable-nodpi/apple_music_logo.png` to
+show it in Settings and on the now playing source mark.
 
 ## Orchard Connect
 
