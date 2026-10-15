@@ -97,6 +97,8 @@ fun PlayerScrubber(
     showBitrate: Boolean = false,
     bitrateKbps: Int = 0,
     isQobuz: Boolean = false,
+    /** Shows the provider mark beside the stream readout. */
+    showSource: Boolean = false,
 ) {
     val clock = LocalPlayerClock.current
     val trackId = playback.currentTrack?.id
@@ -236,12 +238,18 @@ fun PlayerScrubber(
                         brush = rainbow,
                     ),
                 )
-            } else if (showBitrate && bitrateKbps > 0) {
-                dev.sfg.orchard.mobile.ui.components.LosslessBadge(
-                    showBitrate = showBitrate,
-                    bitrateKbps = bitrateKbps,
-                    isQobuz = isQobuz || playback.currentTrack?.isQobuz == true,
-                )
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (showSource) playback.currentTrack?.let { PlaybackSourceMark(it.playbackSource) }
+                    dev.sfg.orchard.mobile.ui.components.LosslessBadge(
+                        showBitrate = showBitrate,
+                        bitrateKbps = bitrateKbps,
+                        isQobuz = isQobuz || playback.currentTrack?.isQobuz == true,
+                    )
+                }
             }
             val remaining = "-${durationText(remainingSec * 1_000)}"
             // A rendered mix is waiting at the end of the bar; the shimmer says so before it plays.

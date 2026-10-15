@@ -480,3 +480,10 @@ tasks.matching {
     (it.name.startsWith('lintVital') && it.name.endsWith('CanaryFast')) ||
         it.name == 'generateCanaryFastLintVitalReportModel'
 }.configureEach { enabled = false }
+
+// The Apple Music logo is supplied locally and never tracked.
+def appleMusicLogoDir = rootProject.file('local/apple-music/res')
+def appleMusicLogo = new File(appleMusicLogoDir, 'drawable-nodpi/apple_music_logo.png').isFile()
+android.defaultConfig.buildConfigField 'boolean', 'APPLE_MUSIC_LOGO', appleMusicLogo.toString()
+android.sourceSets.main.kotlin.directories.add(appleMusicLogo ? 'src/appleMusicLogo/java' : 'src/noAppleMusicLogo/java')
+if (appleMusicLogo) android.sourceSets.main.res.srcDir appleMusicLogoDir

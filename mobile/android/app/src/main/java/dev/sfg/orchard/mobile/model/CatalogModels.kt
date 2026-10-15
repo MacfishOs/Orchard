@@ -90,6 +90,10 @@ data class Track(
 /** [Track.playbackSource] of songs imported from the phone's own storage. */
 const val LOCAL_SOURCE = "local"
 
+/** [Track.playbackSource] ids that the now playing source mark recognizes. */
+const val YOUTUBE_SOURCE = "youtube"
+const val APPLE_MUSIC_SOURCE = "apple_music"
+
 const val MUSIC_VIDEO_TYPE_ATV = "MUSIC_VIDEO_TYPE_ATV"
 const val MUSIC_VIDEO_TYPE_OMV = "MUSIC_VIDEO_TYPE_OMV"
 const val MUSIC_VIDEO_TYPE_UGC = "MUSIC_VIDEO_TYPE_UGC"

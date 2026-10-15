@@ -112,6 +112,7 @@ fun PlayerControlStack(
         showBitrate = showBitrate,
         bitrateKbps = bitrateKbps,
         isQobuz = isQobuz,
+        showSource = true,
     )
     gap(20.dp)
     PlayerTransportControls(
