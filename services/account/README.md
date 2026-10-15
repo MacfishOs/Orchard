@@ -37,6 +37,7 @@ expires. The account routes (`/me`, `/devices`) also check the device row.
 | `GET /auth/google/callback` | none |
 | `POST /auth/token` | `authorization_code` or `refresh_token` grant |
 | `POST /auth/logout` | refresh token in body |
+| `GET /apple/developer-token` | none; per-IP rate limit |
 | `GET /me` | Bearer |
 | `POST /lyrics/translate` | Bearer, live device, Cloudflare IP |
 | `GET /devices` | Bearer |
@@ -55,6 +56,39 @@ expires. The account routes (`/me`, `/devices`) also check the device row.
 | `POST /support/reports/:id/read` | Bearer |
 | `GET /support/screenshots/<key>` | none |
 | `POST /github/webhook` | `X-Hub-Signature-256` |
+
+## Apple Music developer tokens
+
+`GET /apple/developer-token` returns `{developer_token, expires_at}` for the
+Android MusicKit SDK. `expires_at` is a Unix timestamp in seconds. Tokens last
+one hour; clients can retain them until shortly before expiry. Responses use
+`Cache-Control: no-store`.
+
+The endpoint does not require an Orchard account. Apple handles subscriber
+authorization in the Android SDK and returns a separate Music User Token to
+the app. The Worker only signs developer tokens and does not receive Apple
+passwords or Music User Tokens. `AUTH_LIMITER` limits requests to 30 per minute
+per Cloudflare IP in a separate `apple` bucket; rejected requests return 429
+`slow_down`.
+
+Create a MusicKit identifier and enabled private key in the Apple developer
+account, then configure these independently of Orchard's `SIGNING_KEY`:
+
+```sh
+npx wrangler secret put APPLE_MUSIC_TEAM_ID --config wrangler.production.jsonc
+npx wrangler secret put APPLE_MUSIC_KEY_ID --config wrangler.production.jsonc
+npx wrangler secret put APPLE_MUSIC_PRIVATE_KEY --config wrangler.production.jsonc < /path/to/AuthKey_KEYID.p8
+```
+
+The private key secret contains the full PKCS#8 PEM from the `.p8` file. For
+local development, put it in ignored `.dev.vars` as a quoted value with `\n`
+escapes. Never commit the private key or include it in an Android build. The
+Worker signs ES256 JWTs with Apple's Key ID in `kid` and Team ID in `iss`,
+following [Apple's developer token format](https://developer.apple.com/documentation/applemusicapi/generating-developer-tokens).
+
+Missing or invalid Apple credentials return 503 `apple_music_unavailable`.
+Other account routes work without these optional credentials. This endpoint
+does not implement Sign in with Apple or issue Orchard sessions.
 
 ## Lyric translation
 

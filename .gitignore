@@ -7,6 +7,8 @@ node_modules/
 *.user
 *.qmlc
 *.jsc
+*.aar
+*.p8
 /.vscode
 .clangd
 .direnv/

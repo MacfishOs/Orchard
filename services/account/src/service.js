@@ -17,6 +17,7 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { appleDeveloperToken } from "./apple.js";
 import { isArtworkPath, listArtwork, purgeArtwork, serveArtwork, uploadArtwork } from "./artwork.js";
 import { openHub } from "./connect.js";
 import { hashSecret, pkceChallenge, randomToken } from "./crypto.js";
@@ -308,6 +309,10 @@ async function route(request, env, ctx) {
   if (method === "GET" && pathname === "/auth/google/callback") return finishGoogleSignIn(request, env);
   if (method === "POST" && pathname === "/auth/token") return token(request, env);
   if (method === "POST" && pathname === "/auth/logout") return logout(request, env);
+  if (method === "GET" && pathname === "/apple/developer-token") {
+    await rateLimit(env, request, "apple");
+    return appleDeveloperToken(env);
+  }
   if (method === "POST" && pathname === "/lyrics/translate") {
     const translation = translateSong(request, env);
     ctx?.waitUntil(translation.catch(() => {}));

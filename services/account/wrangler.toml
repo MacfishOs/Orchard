@@ -14,6 +14,8 @@ B2_BUCKET = "replace-with-b2-bucket"
 # `wrangler secret put GOOGLE_CLIENT_SECRET`, the signing key via
 # `npm run generate-key | wrangler secret put SIGNING_KEY`.
 GOOGLE_CLIENT_ID = "replace-with-google-oauth-client-id"
+# Optional Apple Music tokens: set APPLE_MUSIC_TEAM_ID, APPLE_MUSIC_KEY_ID,
+# and APPLE_MUSIC_PRIVATE_KEY through Wrangler secrets.
 # Bug reports become issues here. Secrets: GITHUB_TOKEN (Issues read/write on
 # this repo), GITHUB_CLIENT_SECRET, and optionally GITHUB_WEBHOOK_SECRET.
 GITHUB_REPOSITORY = "your-org/your-repo"
