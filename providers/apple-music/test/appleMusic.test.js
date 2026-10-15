@@ -61,6 +61,11 @@ const artistResponse = {
       editorialNotes: { short: 'Short note.' },
       artistBio: 'Born in St. Louis.',
       url: 'https://music.apple.com/us/artist/sza/605800394',
+      editorialArtwork: {
+        musicContentColorLogoTrimmed: { url: 'https://is1.mzstatic.com/logo/{w}x{h}bb.jpg', width: 2586, height: 960 },
+        centeredFullscreenBackground: { url: 'https://is1.mzstatic.com/wide/{w}x{h}{c}.{f}', width: 4320, height: 1080 },
+        vipSquare: { url: 'https://is1.mzstatic.com/vip/{w}x{h}{c}.{f}', width: 3000, height: 3000 }
+      },
       editorialVideo: {
         motionArtistSquare1x1: { video: 'https://video.example/square.m3u8' },
         motionArtistWide16x9: { video: 'https://video.example/wide.m3u8' }
@@ -130,6 +135,9 @@ test('artist page maps views onto the shared artist shape', async () => {
   assert.equal(page.title, 'SZA');
   assert.equal(page.description, 'Born in St. Louis.');
   assert.equal(page.heroVideo, 'https://video.example/wide.m3u8');
+  assert.equal(page.logo, 'https://is1.mzstatic.com/logo/1200x960bb.png');
+  assert.equal(page.heroArtwork, 'https://is1.mzstatic.com/wide/2400x1080bb.jpg');
+  assert.equal(page.thumbnail, 'https://is1.mzstatic.com/vip/1200x1200bb.jpg');
   assert.equal(page.tracks.length, 5);
   assert.deepEqual(page.tracks[0], {
     id: 'am.songs.s1', type: 'song', appleId: 's1', source: 'apple_music', title: 'Song 1', artist: 'SZA', artists: ['SZA'],
@@ -144,7 +152,7 @@ test('artist page maps views onto the shared artist shape', async () => {
   assert.equal(page.sections[1].items[0].subtitle, 'Single • SZA • 2024');
   assert.equal(calls[0].headers.Origin, 'https://appassets.androidplatform.net');
   assert.equal(calls[0].headers['Music-User-Token'], undefined);
-  assert.match(calls[0].url, /extend=artistBio%2CeditorialVideo/);
+  assert.match(calls[0].url, /^https:\/\/api\.music\.apple\.com\/.*extend=artistBio%2CeditorialVideo/);
 });
 
 test('a rejected extend retries without it', async () => {
@@ -154,6 +162,7 @@ test('a rejected extend retries without it', async () => {
     .artistPage('am.artists.605800394');
   assert.equal(page.title, 'SZA');
   assert.equal(page.heroVideo, '');
+  assert.equal(page.logo, '');
   assert.equal(calls.length, 2);
 });
 

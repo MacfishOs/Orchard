@@ -25,7 +25,7 @@ import { APPLE_MUSIC_SOURCE, browseId } from './ids.js';
 const RELEASE_SUFFIX = /\s+-\s+(Single|EP)$/i;
 
 /** Fills an artwork template; Apple sizes covers on its CDN. */
-export function artworkUrl(artwork, size = 600) {
+export function artworkUrl(artwork, size = 600, format = 'jpg') {
   const template = String(artwork?.url || '');
   if (!template) return '';
   const width = Math.min(size, Number(artwork.width) || size);
@@ -34,7 +34,9 @@ export function artworkUrl(artwork, size = 600) {
     .replace('{w}', String(width))
     .replace('{h}', String(height))
     .replace('{c}', 'bb')
-    .replace('{f}', 'jpg');
+    .replace('{f}', format)
+    // Editorial templates hard-code the extension (`{w}x{h}bb.jpg`); the CDN serves whichever is asked.
+    .replace(/\.(jpe?g|png|webp)$/, `.${format}`);
 }
 
 function yearOf(date) {

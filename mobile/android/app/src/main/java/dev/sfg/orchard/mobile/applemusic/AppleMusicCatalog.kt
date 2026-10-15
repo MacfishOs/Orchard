@@ -20,11 +20,13 @@
 package dev.sfg.orchard.mobile.applemusic
 
 import android.content.Context
+import dev.sfg.orchard.mobile.artwork.TrackArtwork
 import dev.sfg.orchard.mobile.auth.OrchardAccountService
 import dev.sfg.orchard.mobile.model.BrowseDetail
 import dev.sfg.orchard.mobile.model.CatalogItem
 import dev.sfg.orchard.mobile.model.CatalogKind
 import dev.sfg.orchard.mobile.model.HomeFeed
+import dev.sfg.orchard.mobile.model.Track
 import dev.sfg.orchard.mobile.provider.ProviderBundle
 import dev.sfg.orchard.mobile.provider.ProviderHost
 import dev.sfg.orchard.mobile.security.AndroidKeystoreCipher
@@ -83,6 +85,29 @@ internal class AppleMusicCatalog(context: Context, http: OkHttpClient, bundle: (
     suspend fun artistView(id: String, params: String): List<CatalogItem> =
         call("catalog.artist.view", JSONObject().put("browseId", id).put("params", params))
             .optJSONArray("items").mapObjects { it.providerItem() }
+
+    /**
+     * Apple's own motion artwork for a song, or for an album when [album] is set. Apple ids on the
+     * track skip the catalog search.
+     */
+    suspend fun artwork(track: Track, album: Boolean): TrackArtwork? {
+        val payload = JSONObject()
+            .put("title", track.title)
+            .put("artist", track.artist)
+            .put("album", track.album)
+        if (album) payload.put("kind", "album")
+        val albumId = if (album && track.id.startsWith("am.albums.")) track.id else track.albumId
+        if (albumId.startsWith("am.albums.")) payload.put("albumId", albumId)
+        if (track.id.startsWith("am.songs.")) payload.put("appleId", track.id.removePrefix("am.songs."))
+        val result = call("catalog.artwork", payload)
+        val artwork = TrackArtwork(
+            trackId = track.id,
+            staticUrl = result.text("static"),
+            videoUrl = result.text("animated"),
+            videoUrlVertical = result.text("animatedVertical"),
+        )
+        return artwork.takeIf { it.staticUrl.isNotBlank() || it.videoUrl.isNotBlank() || it.videoUrlVertical.isNotBlank() }
+    }
 
     private suspend fun call(method: String, payload: JSONObject, retry: Boolean = true): JSONObject {
         configure()

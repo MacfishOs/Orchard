@@ -84,7 +84,13 @@ class OrchardGraph(context: Context) {
     val slopVerdicts by lazy { dev.sfg.orchard.mobile.playback.slop.SlopVerdicts(context) }
     val networkMonitor = dev.sfg.orchard.mobile.network.NetworkMonitor(context)
     val spotifyCanvas = dev.sfg.orchard.mobile.spotify.SpotifyCanvasRepository(context, http, settings)
-    val artwork = ArtworkRepository(http, spotifyCanvas) { settings.settings.value.artworkSourceOrder }
+    val artwork = ArtworkRepository(
+        http,
+        spotifyCanvas,
+        sourceOrder = { settings.settings.value.artworkSourceOrder },
+        appleSignedIn = { appleMusic.signedIn() },
+        appleArtwork = { track, album -> appleMusic.artwork(track, album) },
+    )
     val downloads = DownloadManager(
         context = context,
         http = http,

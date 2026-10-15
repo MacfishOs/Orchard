@@ -71,6 +71,8 @@ public:
   void detail(const QString &browseId, PageReply done);
   // Every item on one artist shelf ("See all").
   void artistView(const QString &browseId, const QString &params, PageReply done);
+  // Apple's motion artwork for a song or album (catalog.artwork); an empty page when none matches.
+  void artwork(const QJsonObject &query, PageReply done);
 
 signals:
   void changed();

@@ -35,6 +35,8 @@ export const ARTIST_VIEWS = [
 ];
 // Undocumented attributes MusicKit clients request for artist pages.
 const ARTIST_EXTEND = 'artistBio,editorialVideo';
+// editorialArtwork is a 400 on the public API, so only music.apple.com's API is asked for it.
+const EDITORIAL_EXTEND = 'artistBio,editorialArtwork,editorialVideo';
 const TOP_SONGS = 5;
 
 function normalizedName(value) {
@@ -80,6 +82,8 @@ export function createArtistCatalog(client) {
   async function fetchArtist(id) {
     const path = `/v1/catalog/${client.storefront()}/artists/${encodeURIComponent(id)}`;
     const query = { views: ARTIST_VIEWS.join(','), 'include[songs]': 'artists,albums' };
+    const editorial = await client.editorial(path, { ...query, extend: EDITORIAL_EXTEND });
+    if (editorial) return editorial;
     try {
       return await client.get(path, { ...query, extend: ARTIST_EXTEND });
     } catch (error) {
@@ -115,8 +119,10 @@ export function createArtistCatalog(client) {
       totalDuration: '',
       views: '',
       description: notes(attributes.artistBio) || notes(attributes.editorialNotes),
-      thumbnail: artworkUrl(attributes.artwork, 1200),
-      heroArtwork: '',
+      thumbnail: artworkUrl(attributes.editorialArtwork?.vipSquare || attributes.artwork, 1200),
+      heroArtwork: artworkUrl(attributes.editorialArtwork?.centeredFullscreenBackground, 2400),
+      // The name as artwork, as music.apple.com draws it over the hero. PNG keeps its transparency.
+      logo: artworkUrl(attributes.editorialArtwork?.musicContentColorLogoTrimmed, 1200, 'png'),
       heroVideo: heroVideo(attributes.editorialVideo),
       url: attributes.url || '',
       tracks,

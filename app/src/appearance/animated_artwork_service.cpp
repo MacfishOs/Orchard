@@ -97,6 +97,7 @@ void AnimatedArtworkService::resolveTrackArtwork(
     state->mirrors.prepend(QStringLiteral("boidu"));
   }
   addBoiduAlbumSearch(state->mirrors, state->title, state->album);
+  applyAppleSource(state->mirrors, false);
   state->currentMirrorIndex = 0;
   state->key = key;
 
@@ -146,6 +147,7 @@ void AnimatedArtworkService::resolveAlbumArtwork(
   const int boidu = state->mirrors.indexOf(QStringLiteral("boidu"));
   if (boidu >= 0)
     state->mirrors[boidu] = kBoiduAlbum;
+  applyAppleSource(state->mirrors, true);
   state->currentMirrorIndex = 0;
   state->key = key;
 
@@ -239,6 +241,10 @@ void AnimatedArtworkService::queryNextMirror(
     fetchBoidu(state, true);
   } else if (mirrorId == QStringLiteral("spotify")) {
     fetchSpotify(state);
+  } else if (mirrorId == QStringLiteral("apple_music")) {
+    fetchApple(state, false);
+  } else if (mirrorId == QStringLiteral("apple_music_album")) {
+    fetchApple(state, true);
   } else {
     queryNextMirror(state);
   }

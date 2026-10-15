@@ -32,6 +32,7 @@ Apple resources travel as Orchard browse ids `am.<type>.<id>`, such as
 | `catalog.artist.match` | `name` | `{browseId, title}` for an exact name match, or null |
 | `catalog.album` | `browseId` | album page with every track |
 | `catalog.playlist` | `browseId` | playlist page with every track |
+| `catalog.artwork` | `albumId`, `appleId`, `isrc`, or `title`, `artist`, `album` (`kind: "album"` for albums) | `{albumId, name, artist, static, animated, animatedVertical}`, or `{}` when nothing matches |
 | `catalog.search` | `query`, `filter` | sections keyed `songs`, `albums`, `artists`, `playlists` |
 
 Apple API failures return `{error: {code, status, message}}`. Codes include
@@ -39,7 +40,12 @@ Apple API failures return `{error: {code, status, message}}`. Codes include
 `not_found` and `rate_limited`.
 
 Artist pages request the undocumented `artistBio` and `editorialVideo`
-attributes and retry without them if Apple rejects the request. Music videos
+attributes and retry without them if Apple rejects the request. Third-party
+developer tokens never receive editorial fields (`editorialVideo` is dropped,
+`editorialArtwork` is a 400). While the listener is signed in to Apple Music,
+editorial requests go to `amp-api.music.apple.com` with music.apple.com's own
+developer token, read from its main bundle (`src/webToken.js`) and cached until
+Apple rejects it. Signed out, or when that fails, the public API answers. Music videos
 and stations are left out until Apple Music playback exists.
 
 Run `npm test` for the unit tests.
@@ -55,3 +61,12 @@ back to YouTube Music if Apple Music is disconnected or Home fails.
 
 Apple Music tracks are catalog metadata; the hosts match them to YouTube Music
 for playback. Apple Music subscription audio is not streamed.
+
+## Animated artwork
+
+`catalog.artwork` finds the Apple album behind a song (by Apple id, ISRC or a
+title/artist/album search) and reads its `editorialVideo` with `extend` through
+the editorial path above, so motion artwork needs an Apple Music sign-in.
+`motionDetailSquare` and `motionDetailTall` are the keys music.apple.com uses
+for album motion artwork; both are HLS URLs. Hosts use it in place of the
+unofficial artwork providers while the listener is signed in.

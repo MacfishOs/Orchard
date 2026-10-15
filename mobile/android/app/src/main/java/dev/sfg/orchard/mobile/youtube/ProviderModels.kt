@@ -190,6 +190,8 @@ fun JSONObject.providerDetail(id: String, kind: CatalogKind): BrowseDetail {
         year = text("year"),
         explicit = optBoolean("explicit"),
         editable = optBoolean("editable"),
+        source = text("source"),
+        logoUrl = text("logo"),
     )
 }
 

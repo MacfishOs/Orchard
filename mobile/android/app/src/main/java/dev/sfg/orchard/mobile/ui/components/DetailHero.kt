@@ -172,6 +172,7 @@ fun HeroCircleButton(
     enabled: Boolean = true,
     tint: Color = CanopyColors.Text,
     size: Dp = 48.dp,
+    glass: Boolean = true,
 ) {
     val source = remember { MutableInteractionSource() }
     Surface(
@@ -180,7 +181,8 @@ fun HeroCircleButton(
         color = Color.Transparent,
         shape = CircleShape,
         interactionSource = source,
-        modifier = modifier.pressScale(source, 0.86f).size(size).glassPane(CircleShape, GlassTone.CONTROL),
+        modifier = modifier.pressScale(source, 0.86f).size(size)
+            .then(if (glass) Modifier.glassPane(CircleShape, GlassTone.CONTROL) else Modifier),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
@@ -292,12 +294,13 @@ fun HeroChip(
     }
 }
 
-/** "About" block whose body expands in place past three lines. */
+/** "About" block whose body expands in place past [collapsedLines]. */
 @Composable
 fun HeroAbout(
     title: String,
     text: String,
     modifier: Modifier = Modifier,
+    collapsedLines: Int = 3,
 ) {
     if (text.isBlank()) return
     var expanded by rememberSaveable(text) { mutableStateOf(false) }
@@ -318,7 +321,7 @@ fun HeroAbout(
             text = text.replace(Regex("\\s+"), " ").trim(),
             style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
             color = CanopyColors.Text.copy(alpha = 0.72f),
-            maxLines = if (expanded) Int.MAX_VALUE else 3,
+            maxLines = if (expanded) Int.MAX_VALUE else collapsedLines,
             overflow = TextOverflow.Ellipsis,
             onTextLayout = { if (!expanded) overflows = it.hasVisualOverflow },
             modifier = Modifier.clickable(enabled = overflows || expanded) { expanded = !expanded },

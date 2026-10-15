@@ -18,6 +18,7 @@
  */
 
 import { createArtistCatalog } from './artist.js';
+import { createArtworkCatalog } from './artwork.js';
 import { createCatalog } from './catalog.js';
 import { createHomeCatalog } from './home.js';
 import { createAppleMusicClient } from './client.js';
@@ -34,5 +35,10 @@ export { artworkUrl, releaseInfo } from './normalize.js';
 export function createAppleMusic({ fetchImpl = fetch, session }) {
   if (typeof session !== 'function') throw new TypeError('createAppleMusic requires a session() function');
   const client = createAppleMusicClient({ fetchImpl, session });
-  return { ...createArtistCatalog(client), ...createCatalog(client), ...createHomeCatalog(client) };
+  return {
+    ...createArtistCatalog(client),
+    ...createArtworkCatalog(client),
+    ...createCatalog(client),
+    ...createHomeCatalog(client)
+  };
 }

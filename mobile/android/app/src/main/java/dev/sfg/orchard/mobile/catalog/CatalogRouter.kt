@@ -23,9 +23,11 @@ import dev.sfg.orchard.mobile.applemusic.AppleMusicCatalog
 import dev.sfg.orchard.mobile.model.BrowseDetail
 import dev.sfg.orchard.mobile.model.CatalogItem
 import dev.sfg.orchard.mobile.model.CatalogKind
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.last
 
@@ -39,14 +41,27 @@ internal class CatalogRouter(
     private val youtube: CatalogRepository,
     private val apple: AppleMusicCatalog,
 ) {
+    // YouTube artist id to Apple artist id; blank records a miss.
+    private val appleIds = ConcurrentHashMap<String, String>()
+
     fun pages(id: String, seed: CatalogItem? = null): Flow<BrowseDetail> = flow {
         if (isAppleMusicId(id)) {
             emit(apple.detail(id))
             return@flow
         }
+        if (!apple.signedIn() || CatalogRepository.kindOf(id.substringBefore(":")) != CatalogKind.ARTIST) {
+            emitAll(youtube.browsePages(id))
+            return@flow
+        }
         val name = (seed as? CatalogItem.Performer)?.artist?.name.orEmpty()
-        appleArtistFor(id, name)?.let { emit(it); return@flow }
-        emitAll(youtube.browsePages(id))
+        if (name.isNotBlank()) {
+            appleArtistFor(id, name)?.let { emit(it); return@flow }
+            emitAll(youtube.browsePages(id))
+            return@flow
+        }
+        // Artists opened from a track or the player arrive without a seed, so YouTube's page supplies the name.
+        val page = youtube.browsePages(id).first()
+        emit(appleArtistFor(id, page.title) ?: page)
     }
 
     suspend fun browse(id: String): BrowseDetail = pages(id).last()
@@ -56,10 +71,10 @@ internal class CatalogRouter(
 
     /** Keeps the YouTube channel id so subscribing still targets the listener's YouTube library. */
     private suspend fun appleArtistFor(id: String, name: String): BrowseDetail? {
-        if (name.isBlank() || !apple.signedIn()) return null
-        if (CatalogRepository.kindOf(id.substringBefore(":")) != CatalogKind.ARTIST) return null
+        if (name.isBlank()) return null
         return try {
-            apple.matchArtist(name)?.let { apple.detail(it).copy(id = id) }
+            val appleId = appleIds[id] ?: apple.matchArtist(name).orEmpty().also { appleIds[id] = it }
+            appleId.ifEmpty { null }?.let { apple.detail(it).copy(id = id) }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {

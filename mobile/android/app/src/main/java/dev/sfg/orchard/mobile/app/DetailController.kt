@@ -164,9 +164,10 @@ internal class DetailController(
                                 mutableArtistImages.value = graph.artistImages.images(performer)
                             }
                         }
-                        // Channel avatars are often a logo; TheAudioDB has a real photograph.
-                        CatalogKind.ARTIST ->
+                        // Channel avatars are often a logo; TheAudioDB has a real photograph. Apple's artwork already is one.
+                        CatalogKind.ARTIST -> if (detailVal.source != "apple_music") {
                             mutableArtistImages.value = graph.artistImages.images(detailVal.title)
+                        }
                         else -> Unit
                     }
                 }

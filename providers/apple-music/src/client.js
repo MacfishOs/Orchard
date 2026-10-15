@@ -17,7 +17,11 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { WEB_ORIGIN, createWebToken } from './webToken.js';
+
 const API_ORIGIN = 'https://api.music.apple.com';
+// music.apple.com's own API; with its web token it returns editorialVideo and editorialArtwork.
+const EDITORIAL_ORIGIN = 'https://amp-api.music.apple.com';
 const MAX_PAGES = 8;
 
 export class AppleMusicError extends Error {
@@ -44,8 +48,8 @@ function encodeQuery(query) {
 }
 
 /** Joins a path that may already carry a query (Apple's `next` links do). */
-export function apiUrl(path, query = {}) {
-  const base = path.startsWith('http') ? path : `${API_ORIGIN}${path.startsWith('/') ? '' : '/'}${path}`;
+export function apiUrl(path, query = {}, origin = API_ORIGIN) {
+  const base = path.startsWith('http') ? path : `${origin}${path.startsWith('/') ? '' : '/'}${path}`;
   const extra = encodeQuery(query);
   if (!extra) return base;
   return `${base}${base.includes('?') ? '&' : '?'}${extra}`;
@@ -56,6 +60,8 @@ export function apiUrl(path, query = {}) {
  * {developerToken, userToken, storefront, origin}; the user token is optional.
  */
 export function createAppleMusicClient({ fetchImpl, session }) {
+  const webToken = createWebToken(fetchImpl);
+
   function headers(personal) {
     const current = session() || {};
     if (!current.developerToken) throw new AppleMusicError(0, 'not_connected', 'Apple Music is not connected.');
@@ -77,6 +83,29 @@ export function createAppleMusicClient({ fetchImpl, session }) {
     return response.json();
   }
 
+  /**
+   * [path] from music.apple.com's API with its web token, for listeners signed in to Apple
+   * Music only. Null when unavailable so callers fall back to [get].
+   */
+  async function editorial(path, query = {}) {
+    if (!(session() || {}).userToken) return null;
+    const token = await webToken.get();
+    if (!token) return null;
+    let response;
+    try {
+      response = await fetchImpl(apiUrl(path, query, EDITORIAL_ORIGIN), {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', Origin: WEB_ORIGIN, Referer: `${WEB_ORIGIN}/` }
+      });
+    } catch {
+      return null;
+    }
+    if (response.ok) return response.json();
+    if (response.status === 404) throw new AppleMusicError(404, 'not_found', statusCodes.get(404)[1]);
+    // Apple rotates the web token; refetch it on the next request.
+    if (response.status === 401 || response.status === 403) webToken.reset();
+    return null;
+  }
+
   /** Every resource behind a paginated list, following `next` up to [maxPages]. */
   async function all(path, query = {}, maxPages = MAX_PAGES) {
     const items = [];
@@ -92,5 +121,5 @@ export function createAppleMusicClient({ fetchImpl, session }) {
     return (session() || {}).storefront || 'us';
   }
 
-  return { get, all, storefront };
+  return { get, editorial, all, storefront };
 }

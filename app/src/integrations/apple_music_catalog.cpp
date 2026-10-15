@@ -149,3 +149,12 @@ void AppleMusic::artistView(const QString &browseId, const QString &params, Page
        {{QStringLiteral("browseId"), browseId}, {QStringLiteral("params"), params}},
        [done](const QJsonValue &result, const QString &error) { done(result.toObject(), error); });
 }
+
+void AppleMusic::artwork(const QJsonObject &query, PageReply done) {
+  if (!connected()) {
+    done({}, {});
+    return;
+  }
+  call(QStringLiteral("catalog.artwork"), query,
+       [done](const QJsonValue &result, const QString &error) { done(result.toObject(), error); });
+}

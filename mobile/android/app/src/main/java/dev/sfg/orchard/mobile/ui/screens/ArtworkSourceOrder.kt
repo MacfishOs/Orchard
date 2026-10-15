@@ -34,31 +34,48 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.sfg.orchard.mobile.model.ArtworkSource
 import dev.sfg.orchard.mobile.model.OrchardSettings
+
+/** Rows of the order list; signed in to Apple Music, m8tec and boidu share one Apple row. */
+private fun artworkRows(order: List<ArtworkSource>, apple: Boolean): List<List<ArtworkSource>> {
+    if (!apple) return order.map(::listOf)
+    val unofficial = order.filter { it != ArtworkSource.SPOTIFY }
+    return order.mapNotNull { source ->
+        when {
+            source == ArtworkSource.SPOTIFY -> listOf(source)
+            source == unofficial.first() -> unofficial
+            else -> null
+        }
+    }
+}
 
 @Composable
 internal fun ArtworkSourceOrder(settings: OrchardSettings, onSettings: (OrchardSettings) -> Unit) {
+    val apple = appleMusicConnectionStatus().connected
+    val rows = artworkRows(settings.artworkSourceOrder, apple)
+    fun move(from: Int, to: Int) {
+        val reordered = rows.toMutableList()
+        java.util.Collections.swap(reordered, from, to)
+        onSettings(settings.copy(artworkSourceOrder = reordered.flatten()))
+    }
     Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
         RowTitle("Artwork source order")
-        RowSubtitle("Try sources from top to bottom for moving artwork")
+        RowSubtitle(
+            if (apple) "Try sources from top to bottom for moving artwork. Apple Music replaces m8tec and boidu while you're signed in"
+            else "Try sources from top to bottom for moving artwork",
+        )
         Column(Modifier.padding(top = 8.dp)) {
-            settings.artworkSourceOrder.forEachIndexed { index, source ->
+            rows.forEachIndexed { index, row ->
+                val label = if (row.size > 1 || (apple && row.single() != ArtworkSource.SPOTIFY)) "Apple Music" else row.single().label
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(source.label, color = SettingsStyle.Title, modifier = Modifier.weight(1f))
-                    IconButton(onClick = {
-                        val reordered = settings.artworkSourceOrder.toMutableList()
-                        java.util.Collections.swap(reordered, index, index - 1)
-                        onSettings(settings.copy(artworkSourceOrder = reordered))
-                    }, enabled = index > 0) {
-                        Icon(Icons.Rounded.ArrowUpward, contentDescription = "Move ${source.label} up")
+                    Text(label, color = SettingsStyle.Title, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { move(index, index - 1) }, enabled = index > 0) {
+                        Icon(Icons.Rounded.ArrowUpward, contentDescription = "Move $label up")
                     }
-                    IconButton(onClick = {
-                        val reordered = settings.artworkSourceOrder.toMutableList()
-                        java.util.Collections.swap(reordered, index, index + 1)
-                        onSettings(settings.copy(artworkSourceOrder = reordered))
-                    }, enabled = index < settings.artworkSourceOrder.lastIndex) {
-                        Icon(Icons.Rounded.ArrowDownward, contentDescription = "Move ${source.label} down")
+                    IconButton(onClick = { move(index, index + 1) }, enabled = index < rows.lastIndex) {
+                        Icon(Icons.Rounded.ArrowDownward, contentDescription = "Move $label down")
                     }
                 }
             }

@@ -6,6 +6,7 @@ app_sources = [
   'app/src/appearance/video_ambient.cpp',
   'app/src/appearance/video_ambient.h',
   'app/src/appearance/appearance_settings.h',
+  'app/src/appearance/animated_artwork_apple.cpp',
   'app/src/appearance/animated_artwork_service.cpp',
   'app/src/appearance/animated_artwork_hls.cpp',
   'app/src/appearance/animated_artwork_matching.cpp',
@@ -493,6 +494,7 @@ qobuz_sources = [
 
 apple_music_sources = [
   'providers/apple-music/src/artist.js',
+  'providers/apple-music/src/artwork.js',
   'providers/apple-music/src/catalog.js',
   'providers/apple-music/src/client.js',
   'providers/apple-music/src/home.js',

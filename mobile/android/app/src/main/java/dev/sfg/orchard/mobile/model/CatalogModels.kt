@@ -213,6 +213,10 @@ data class BrowseDetail(
     val explicit: Boolean = false,
     /** True when YouTube identifies this as a playlist the signed-in listener may edit. */
     val editable: Boolean = false,
+    /** "apple_music" for an Apple page standing in for a YouTube one; blank otherwise. */
+    val source: String = "",
+    /** The artist's name as artwork, when Apple has one. */
+    val logoUrl: String = "",
 )
 
 data class SearchResults(

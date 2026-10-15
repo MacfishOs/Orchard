@@ -274,6 +274,13 @@ class OrchardViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun detailSeed(id: String) = findCatalogItem(id, home.value, search.value, library.value, detail.value)
+        ?: artistFromTracks(id, sequence {
+            playback.value.currentTrack?.let { yield(it) }
+            yieldAll(playback.value.queue)
+            (detail.value as? LoadState.Content)?.value?.tracks?.let { yieldAll(it) }
+            (search.value as? LoadState.Content)?.value?.tracks?.let { yieldAll(it) }
+            yieldAll(library.value.recentlyPlayed)
+        })
 
     suspend fun fetchHomeSectionItems(browseId: String, params: String = "") = homeFeed.sectionItems(browseId, params)
 

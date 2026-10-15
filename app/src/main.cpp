@@ -242,6 +242,7 @@ int main(int argc, char *argv[]) {
   AuthManager authManager(&youtubeProvider);
   OrchardAccount orchardAccount;
   AppleMusic appleMusic(&orchardAccount);
+  animatedArtwork.setAppleMusic(&appleMusic);
   // Bug reports with receipts: GitHub tells us who answered, we tell you.
   SupportCenter support(&orchardAccount);
   YouTubeCatalog youtubeCatalog(&youtubeProvider);
