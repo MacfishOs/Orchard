@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.sfg.orchard.mobile.model.Playlist
+import dev.sfg.orchard.mobile.model.subtitle
 import dev.sfg.orchard.mobile.model.Track
 import dev.sfg.orchard.mobile.ui.theme.CanopyColors
 import dev.sfg.orchard.mobile.ui.theme.LocalAccent
@@ -112,7 +113,7 @@ internal fun PlaylistPickerSheet(
                             Column(Modifier.weight(1f)) {
                                 Text(playlist.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = CanopyColors.Text)
                                 Text(
-                                    if (containsTrack) "Already added" else playlist.author,
+                                    if (containsTrack) "Already added" else playlist.subtitle,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = CanopyColors.Muted,
                                 )

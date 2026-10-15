@@ -90,7 +90,7 @@ class LibraryRepository(
     fun refreshPlaylist(playlist: Playlist) = update { current ->
         val id = playlist.id.removePrefix("VL")
         current.copy(savedPlaylists = current.savedPlaylists.map { saved ->
-            if (saved.id.removePrefix("VL") == id) playlist else saved
+            if (saved.id.removePrefix("VL") == id) playlist.copy(trackCount = playlist.trackCount ?: saved.editedCount(playlist)) else saved
         })
     }
 
@@ -118,6 +118,7 @@ class LibraryRepository(
                                 description = detail.description.ifBlank { saved.description },
                                 tracks = detail.tracks.ifEmpty { saved.tracks },
                                 explicit = detail.explicit || saved.explicit,
+                                trackCount = saved.trackCount,
                             )
                         } else saved
                     },
@@ -204,6 +205,12 @@ class LibraryRepository(
 private fun LibrarySnapshot.withLiked(track: Track, liked: Boolean): LibrarySnapshot {
     val withoutTrack = likedTracks.filterNot { it.id == track.id }
     return copy(likedTracks = if (liked) listOf(track) + withoutTrack else withoutTrack)
+}
+
+/** Carries the grid count across an add or remove; both track lists come from the same loaded pages. */
+private fun Playlist.editedCount(edited: Playlist): Int? {
+    val count = trackCount ?: return null
+    return if (tracks.isEmpty()) count else (count + edited.tracks.size - tracks.size).coerceAtLeast(0)
 }
 
 /** Library grid payloads are metadata-only; never let one erase cached offline membership. */

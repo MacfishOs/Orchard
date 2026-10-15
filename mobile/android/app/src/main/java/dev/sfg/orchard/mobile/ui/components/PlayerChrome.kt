@@ -25,10 +25,15 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,9 +50,6 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +57,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
@@ -62,6 +65,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -147,8 +151,9 @@ fun OrchardBottomBar(currentRoute: String?, onSelect: (String) -> Unit, showSett
                 .height(64.dp),
         ) {
             val slotWidth = maxWidth / (destinations.size + settingsReveal)
-            val indicatorWidth = if (slotWidth - 8.dp < 56.dp) slotWidth - 8.dp else 56.dp
-            val indicatorHeight = 32.dp
+            // Wraps icon and label, centered in the 64dp row.
+            val indicatorWidth = if (slotWidth - 8.dp < 72.dp) slotWidth - 8.dp else 72.dp
+            val indicatorHeight = 52.dp
             val targetOffset = (slotWidth * (activeIndex.coerceAtMost(allDestinations.lastIndex) + 0.5f)) - (indicatorWidth / 2)
 
             val animatedOffset by animateDpAsState(
@@ -170,80 +175,77 @@ fun OrchardBottomBar(currentRoute: String?, onSelect: (String) -> Unit, showSett
 
                 Box(
                     modifier = Modifier
-                        .offset { IntOffset(animatedOffset.roundToPx(), 6.dp.roundToPx()) }
+                        .offset { IntOffset(animatedOffset.roundToPx(), ((64.dp - indicatorHeight) / 2).roundToPx()) }
                         .size(width = indicatorWidth, height = indicatorHeight)
                         .alpha(indicatorAlpha)
                         .background(
                             color = indicatorColor,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(20.dp),
                         )
                         .border(
                             width = 0.5.dp,
                             color = Color.White.copy(alpha = 0.35f),
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(20.dp),
                         ),
                 )
             }
 
-            NavigationBar(
-                containerColor = Color.Transparent,
-                tonalElevation = 0.dp,
-                // The Scaffold already insets the whole chrome column above the system navigation bar.
-                // Letting the bar apply that inset a second time would eat into its fixed 64dp height,
-                // which squashed the icons and labels under 3-button navigation.
-                windowInsets = WindowInsets(0),
-                modifier = Modifier.height(64.dp),
-            ) {
+            // Own row so each slot is exactly slotWidth wide and the indicator lines up with it.
+            Row(Modifier.fillMaxSize().selectableGroup()) {
                 allDestinations.forEach { destination ->
                     val isSettings = destination === settingsDestination
                     val isSelected = currentRoute == destination.route
-                    val item: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
-                        NavigationBarItem(
-                            selected = isSelected,
-                            onClick = { onSelect(destination.route) },
-                            icon = {
-                                val iconScale by animateFloatAsState(
-                                    targetValue = if (isSelected) 1.08f else 1.0f,
-                                    animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
-                                    label = "NavIconScale",
-                                )
-                                Icon(
-                                    destination.icon,
-                                    contentDescription = destination.label,
-                                    modifier = Modifier
-                                        .size(22.dp)
-                                        .scale(iconScale)
-                                        .popOnChange(isSelected, peak = 1.35f, onlyOn = true),
-                                )
-                            },
-                            label = {
-                                Text(
-                                    destination.label,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color.White,
-                                selectedTextColor = Color.White,
-                                indicatorColor = Color.Transparent,
-                                unselectedIconColor = Color.White.copy(alpha = 0.72f),
-                                unselectedTextColor = Color.White.copy(alpha = 0.72f),
-                            ),
-                        )
-                    }
-                    if (isSettings) {
-                        Box(
-                            Modifier
-                                .weight(settingsReveal.coerceAtLeast(0.001f))
-                                .fillMaxHeight()
-                                .alpha(settingsReveal)
-                                .clipToBounds(),
-                        ) { Row(Modifier.fillMaxSize()) { item() } }
-                    } else {
-                        item()
+                    val weight = if (isSettings) settingsReveal.coerceAtLeast(0.001f) else 1f
+                    Box(
+                        Modifier
+                            .weight(weight)
+                            .fillMaxHeight()
+                            .then(if (isSettings) Modifier.alpha(settingsReveal).clipToBounds() else Modifier),
+                    ) {
+                        BottomBarItem(destination, isSelected) { onSelect(destination.route) }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun BottomBarItem(destination: BottomDestination, isSelected: Boolean, onClick: () -> Unit) {
+    val iconScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.08f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+        label = "NavIconScale",
+    )
+    val tint = if (isSelected) Color.White else Color.White.copy(alpha = 0.72f)
+    Column(
+        Modifier
+            .fillMaxSize()
+            .selectable(
+                selected = isSelected,
+                onClick = onClick,
+                role = Role.Tab,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            destination.icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier
+                .size(22.dp)
+                .scale(iconScale)
+                .popOnChange(isSelected, peak = 1.35f, onlyOn = true),
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            destination.label,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = tint,
+            maxLines = 1,
+        )
     }
 }

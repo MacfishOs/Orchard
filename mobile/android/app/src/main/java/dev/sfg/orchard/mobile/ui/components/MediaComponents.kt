@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sfg.orchard.mobile.model.Album
 import dev.sfg.orchard.mobile.model.CatalogItem
+import dev.sfg.orchard.mobile.model.subtitle
 import dev.sfg.orchard.mobile.ui.glass.GlassTone
 import dev.sfg.orchard.mobile.ui.motion.bounceClickable
 import dev.sfg.orchard.mobile.ui.motion.pressScale
@@ -131,7 +132,7 @@ fun CatalogCard(item: CatalogItem, onClick: () -> Unit, modifier: Modifier = Mod
     Column(
         modifier = modifier
             .width(140.dp)
-            .bounceClickable(RoundedCornerShape(14.dp), pressedScale = 0.93f, onClick = onClick),
+            .bounceClickable(pressedScale = 0.93f, onClick = onClick),
         horizontalAlignment = if (isArtist) Alignment.CenterHorizontally else Alignment.Start,
     ) {
         Box(
@@ -366,13 +367,13 @@ fun MessagePanel(title: String, message: String, actionLabel: String? = null, on
     }
 }
 
-private fun catalogSubtitle(item: CatalogItem): String = when (item) {
+internal fun catalogSubtitle(item: CatalogItem): String = when (item) {
     is CatalogItem.Song -> item.track.artist
     // On an artist page the artist name is dropped upstream, so the year is
     // usually all that is left; elsewhere it reads as "SZA • 2022".
     is CatalogItem.Record -> albumSubtitle(item.album)
     is CatalogItem.Performer -> item.artist.subtitle.ifBlank { "Artist" }
-    is CatalogItem.Collection -> item.playlist.author
+    is CatalogItem.Collection -> item.playlist.subtitle
     is CatalogItem.Category -> ""
 }
 

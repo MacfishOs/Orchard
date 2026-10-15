@@ -160,6 +160,10 @@ internal fun OrchardNavigation(
                 downloadingTrackIds = downloadingTrackIds,
                 totalBytesUsed = totalBytesUsed,
                 onPlay = { viewModel.play(it, libraryFilter.sourceTitle()) },
+                onPlayAll = { tracks, shuffle ->
+                    if (shuffle) viewModel.shuffleAll(tracks, libraryFilter.sourceTitle())
+                    else viewModel.playAll(tracks, contextTitle = libraryFilter.sourceTitle())
+                },
                 onPlayNext = if (canControlQueue) viewModel::playNext else null,
                 onAddToQueue = if (canControlQueue) viewModel::addToQueue else null,
                 onOpenDetail = { id -> viewModel.openDetail(id); nav.navigate(Routes.detail(id)) },

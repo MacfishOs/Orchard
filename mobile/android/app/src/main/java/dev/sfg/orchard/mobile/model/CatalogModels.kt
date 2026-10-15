@@ -119,7 +119,21 @@ data class Playlist(
     val description: String = "",
     val tracks: List<Track> = emptyList(),
     val explicit: Boolean = false,
+    /** Full length from the library grid; [tracks] may hold only the first page. */
+    val trackCount: Int? = null,
 )
+
+/** Best known length, or null when neither the grid count nor any tracks are known. */
+val Playlist.songCount: Int?
+    get() = trackCount ?: tracks.size.takeIf { it > 0 }
+
+/** "21 songs · mari", or the creator alone when the length is unknown. */
+val Playlist.subtitle: String
+    get() {
+        val count = songCount ?: return author
+        val songs = if (count == 1) "1 song" else "%,d songs".format(count)
+        return if (author.isBlank()) songs else "$songs · $author"
+    }
 
 /** A heterogeneous catalog item used by home, search, and library shelves. */
 sealed interface CatalogItem {

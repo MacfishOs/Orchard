@@ -21,6 +21,7 @@ package dev.sfg.orchard.mobile.youtube
 
 import dev.sfg.orchard.mobile.model.CatalogItem
 import dev.sfg.orchard.mobile.model.CatalogKind
+import dev.sfg.orchard.mobile.model.subtitle
 import dev.sfg.orchard.mobile.auth.YouTubeSession
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -59,6 +60,18 @@ class ProviderModelsTest {
         assertTrue(tile("UCartist", "artist") is CatalogItem.Performer)
         assertTrue(tile("VLPLlist", "playlist") is CatalogItem.Collection)
         assertNull(JSONObject("""{"id":null,"browseId":null,"title":"Nothing"}""").providerItem())
+    }
+
+    @Test fun `library playlist tiles keep the provider track count`() {
+        fun tile(subtitle: String, itemCount: String) = JSONObject("""{"browseId":"VLPLx","type":"playlist","title":"T",
+            "subtitle":"$subtitle","itemCount":"$itemCount"}""").providerItem() as CatalogItem.Collection
+        val mine = tile("mari • 1,035 tracks", "1,035 tracks").playlist
+        assertEquals("mari", mine.author)
+        assertEquals(1035, mine.trackCount)
+        assertEquals("1,035 songs · mari", mine.subtitle)
+        val liked = tile("Auto playlist", "").playlist
+        assertNull(liked.trackCount)
+        assertEquals("Auto playlist", liked.subtitle)
     }
 
     @Test fun `album rows inherit the album and replace video stills with its cover`() {

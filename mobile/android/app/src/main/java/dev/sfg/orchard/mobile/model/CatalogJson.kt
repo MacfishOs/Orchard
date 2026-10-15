@@ -141,6 +141,7 @@ object CatalogJson {
         .put("description", value.description)
         .put("tracks", tracks(value.tracks))
         .put("explicit", value.explicit)
+        .apply { value.trackCount?.let { put("trackCount", it) } }
 
     fun playlist(value: JSONObject): Playlist = Playlist(
         id = value.cleanString("id"),
@@ -150,6 +151,7 @@ object CatalogJson {
         description = value.cleanString("description"),
         tracks = tracks(value.optJSONArray("tracks")),
         explicit = value.optBoolean("explicit"),
+        trackCount = if (value.has("trackCount") && !value.isNull("trackCount")) value.optInt("trackCount") else null,
     )
 
     private fun JSONObject.cleanString(key: String, default: String = ""): String {
