@@ -120,7 +120,8 @@ Music**. The app fetches a developer JWT from the account worker's
 `GET /apple/developer-token` endpoint and runs MusicKit JS in a WebView, so
 no Apple SDK is bundled. Configure and deploy the
 [account worker](../services/account/README.md#apple-music-developer-tokens)
-first. No Orchard account is required.
+first. Sign in to your Orchard account before connecting Apple Music; the
+worker only issues developer tokens to Orchard sessions.
 
 The WebViews exist only while the sign-in screen is open. Apple's cookies stay
 in the app's WebView cookie jar, so signing in again reuses the session. The

@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.sfg.orchard.connect.BuildConfig
 import dev.sfg.orchard.mobile.applemusic.AppleMusicAuth
+import dev.sfg.orchard.mobile.auth.OrchardAccountService
 
 @Composable
 internal fun appleMusicConnectionStatus(): ConnectionStatus {
@@ -55,6 +56,8 @@ internal fun AppleMusicSettingsCard(onConnect: () -> Unit) {
     val context = LocalContext.current
     val auth = remember(context) { AppleMusicAuth.get(context) }
     val state by auth.state.collectAsStateWithLifecycle()
+    val account = remember(context) { OrchardAccountService.get(context) }
+    val accountState by account.state.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -69,7 +72,14 @@ internal fun AppleMusicSettingsCard(onConnect: () -> Unit) {
         if (state.error.isNotBlank()) {
             Text(state.error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }
-        if (state.connected) IntegrationAction("Disconnect", destructive = true, onClick = auth::disconnect)
-        else IntegrationAction("Sign in to Apple Music", onClick = onConnect)
+        when {
+            state.connected -> IntegrationAction("Disconnect", destructive = true, onClick = auth::disconnect)
+            // The worker only issues developer tokens to Orchard sessions.
+            !accountState.signedIn -> Text(
+                "Sign in to your Orchard account first, under Orchard Account in Connections.",
+                style = MaterialTheme.typography.bodySmall, color = SettingsStyle.Description,
+            )
+            else -> IntegrationAction("Sign in to Apple Music", onClick = onConnect)
+        }
     }
 }

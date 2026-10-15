@@ -79,7 +79,10 @@ fun AppleMusicLoginScreen(onDone: () -> Unit) {
             return@LaunchedEffect
         }
         error = try {
-            developerToken = AppleMusicDeveloperTokenClient(OrchardAccountService.get(context).serviceUrl).fetch().value
+            val account = OrchardAccountService.get(context)
+            val accessToken = account.accessToken()
+                ?: throw AppleMusicSignInException("Sign in to your Orchard account first.")
+            developerToken = AppleMusicDeveloperTokenClient(account.serviceUrl).fetch(accessToken).value
             ""
         } catch (e: CancellationException) {
             throw e

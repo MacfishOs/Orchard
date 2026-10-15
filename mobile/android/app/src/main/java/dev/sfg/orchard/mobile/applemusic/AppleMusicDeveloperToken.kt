@@ -45,11 +45,16 @@ internal class AppleMusicDeveloperTokenClient(serviceUrl: String) {
     private val url = "${serviceUrl.trimEnd('/')}/apple/developer-token"
     private val http = OkHttpClient.Builder().callTimeout(20, TimeUnit.SECONDS).build()
 
-    suspend fun fetch(): AppleMusicDeveloperToken = withContext(Dispatchers.IO) {
-        val request = Request.Builder().url(url).header("Accept", "application/json").build()
+    suspend fun fetch(accessToken: String): AppleMusicDeveloperToken = withContext(Dispatchers.IO) {
+        val request = Request.Builder().url(url).header("Accept", "application/json")
+            .header("Authorization", "Bearer $accessToken").build()
         http.newCall(request).execute().use { response ->
             when (response.code) {
-                429 -> throw AppleMusicSignInException("Too many attempts. Try again in a minute.")
+                401 -> throw AppleMusicSignInException("Sign in to your Orchard account again.")
+                429 -> throw AppleMusicSignInException(
+                    if ("apple_daily_limit" in response.peekBody(4_096).string()) "Apple Music's daily limit for this account was reached. Try again tomorrow."
+                    else "Too many attempts. Try again in a minute.",
+                )
                 503 -> throw AppleMusicSignInException("Apple Music sign-in is unavailable. Try again later.")
             }
             if (!response.isSuccessful) throw AppleMusicSignInException("Could not start Apple Music sign-in. Try again later.")

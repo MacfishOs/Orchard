@@ -18,9 +18,14 @@
  */
 
 import { base64url, encodeJsonSegment, encoder } from "./crypto.js";
-import { HttpError, json, nowSeconds } from "./http.js";
+import { HttpError, json, nowSeconds, requireSession } from "./http.js";
 
-export const APPLE_DEVELOPER_TOKEN_SECONDS = 60 * 60;
+// Short-lived so a leaked token is worth little; clients fetch per sign-in or playback session.
+export const APPLE_DEVELOPER_TOKEN_SECONDS = 15 * 60;
+// Covers continuous playback (96 refreshes a day) plus sign-ins.
+export const APPLE_DAILY_TOKENS = 150;
+// Apple only honors the token from these page origins in browsers.
+export const APPLE_DEFAULT_ORIGINS = ["https://appassets.androidplatform.net"];
 
 const APPLE_ID_PATTERN = /^[A-Z0-9]{10}$/;
 
@@ -37,18 +42,48 @@ async function importPrivateKey(pem) {
   return crypto.subtle.importKey("pkcs8", bytes, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
 }
 
-export async function appleDeveloperToken(env) {
+function origins(env) {
+  const configured = String(env.APPLE_MUSIC_ORIGINS || "").split(",").map((origin) => origin.trim()).filter(Boolean);
+  return configured.length ? configured : APPLE_DEFAULT_ORIGINS;
+}
+
+function limited(code, message, seconds) {
+  const error = new HttpError(429, code, message);
+  error.headers = { "retry-after": String(seconds) };
+  return error;
+}
+
+// Atomic increment that stops at the cap; no row comes back once the account is over it.
+async function chargeDailyToken(env, userId, now) {
+  const day = Math.floor(now / 86400);
+  const row = await env.DB.prepare(
+    `INSERT INTO apple_token_daily_usage (user_id, day, used) VALUES (?, ?, 1)
+     ON CONFLICT (user_id, day) DO UPDATE SET used = used + 1 WHERE used < ? RETURNING used`,
+  ).bind(userId, day, APPLE_DAILY_TOKENS).first();
+  if (!row) throw limited("apple_daily_limit", "Apple Music token limit reached for today", (day + 1) * 86400 - now);
+}
+
+export async function purgeAppleTokenUsage(env, now) {
+  await env.DB.prepare("DELETE FROM apple_token_daily_usage WHERE day < ?").bind(Math.floor(now / 86400) - 1).run();
+}
+
+export async function appleDeveloperToken(request, env) {
+  const session = await requireSession(request, env);
   const keyId = String(env.APPLE_MUSIC_KEY_ID || "").trim();
   const teamId = String(env.APPLE_MUSIC_TEAM_ID || "").trim();
   const pem = env.APPLE_MUSIC_PRIVATE_KEY;
   if (!APPLE_ID_PATTERN.test(keyId) || !APPLE_ID_PATTERN.test(teamId) || typeof pem !== "string" || !pem.trim()) {
     throw unavailable();
   }
-
+  if (env.APPLE_LIMITER) {
+    const { success } = await env.APPLE_LIMITER.limit({ key: session.sub });
+    if (!success) throw limited("slow_down", "Too many Apple Music token requests", 60);
+  }
   const now = nowSeconds();
+  await chargeDailyToken(env, session.sub, now);
   const expiresAt = now + APPLE_DEVELOPER_TOKEN_SECONDS;
   const header = encodeJsonSegment({ alg: "ES256", kid: keyId });
-  const claims = encodeJsonSegment({ iss: teamId, iat: now, exp: expiresAt });
+  const claims = encodeJsonSegment({ iss: teamId, iat: now, exp: expiresAt, origin: origins(env) });
   const input = `${header}.${claims}`;
   let signature;
   try {

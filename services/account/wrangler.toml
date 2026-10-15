@@ -43,6 +43,12 @@ name = "AUTH_LIMITER"
 namespace_id = "9999"
 simple = { limit = 30, period = 60 }
 
+# Per-account limit on Apple Music developer tokens.
+[[ratelimits]]
+name = "APPLE_LIMITER"
+namespace_id = "9998"
+simple = { limit = 5, period = 60 }
+
 # Orchard Connect presence and signaling: one hub per account.
 [[durable_objects.bindings]]
 name = "CONNECT_HUB"

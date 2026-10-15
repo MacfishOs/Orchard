@@ -37,7 +37,7 @@ expires. The account routes (`/me`, `/devices`) also check the device row.
 | `GET /auth/google/callback` | none |
 | `POST /auth/token` | `authorization_code` or `refresh_token` grant |
 | `POST /auth/logout` | refresh token in body |
-| `GET /apple/developer-token` | none; per-IP rate limit |
+| `GET /apple/developer-token` | Bearer, live device; per-IP, per-account and daily limits |
 | `GET /me` | Bearer |
 | `POST /lyrics/translate` | Bearer, live device, Cloudflare IP |
 | `GET /devices` | Bearer |
@@ -59,17 +59,31 @@ expires. The account routes (`/me`, `/devices`) also check the device row.
 
 ## Apple Music developer tokens
 
-`GET /apple/developer-token` returns `{developer_token, expires_at}` for the
-Android MusicKit SDK. `expires_at` is a Unix timestamp in seconds. Tokens last
-one hour; clients can retain them until shortly before expiry. Responses use
+`GET /apple/developer-token` returns `{developer_token, expires_at}` for
+MusicKit JS. `expires_at` is a Unix timestamp in seconds. Tokens last 15
+minutes, so clients fetch one per sign-in or playback session. Responses use
 `Cache-Control: no-store`.
 
-The endpoint does not require an Orchard account. Apple handles subscriber
-authorization in the Android SDK and returns a separate Music User Token to
-the app. The Worker only signs developer tokens and does not receive Apple
-passwords or Music User Tokens. `AUTH_LIMITER` limits requests to 30 per minute
-per Cloudflare IP in a separate `apple` bucket; rejected requests return 429
-`slow_down`.
+The endpoint requires an Orchard session from a live device; missing or revoked
+sessions return 401. Requests pass three limits, each returning 429 with
+`Retry-After`:
+
+- `AUTH_LIMITER`: 30 per minute per Cloudflare IP in the `apple` bucket (`slow_down`).
+- `APPLE_LIMITER`: 5 per minute per account (`slow_down`).
+- 150 tokens per account per UTC day, counted in D1 (`apple_daily_limit`).
+
+Apply migration `0006_apple_music.sql` before deploying. The hourly cron purges
+usage rows older than yesterday.
+
+Each token carries an `origin` claim, so browsers only accept it from Orchard's
+pages. The default is `https://appassets.androidplatform.net`, the Android
+sign-in page. Set `APPLE_MUSIC_ORIGINS` to a comma-separated list to replace it.
+Clients outside a browser can forge `Origin`; the account requirement is the
+real control.
+
+Apple handles subscriber authorization in MusicKit JS and returns a separate
+Music User Token to the app. The Worker only signs developer tokens and does not
+receive Apple passwords or Music User Tokens.
 
 Create a MusicKit identifier and enabled private key in the Apple developer
 account, then configure these independently of Orchard's `SIGNING_KEY`:
