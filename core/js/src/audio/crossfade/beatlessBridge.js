@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // Beatless bridge: the old song's beatless outro under the new song's beatless intro, so no beat
 // ever plays against another and the tempos need not match. The new beat lands as the old song

@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // Why a pair plays out, from the candidate that came closest to a real mix.
 // The overall winner can be an unmatched fade whose first veto is tempo even when vocals

@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // The overlap as the renderer executes it: which technique, when each side's fader moves,
 // and where the bass changes hands. Every field here reaches the render; nothing is decorative.

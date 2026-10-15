@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 //! Best Mix queue order. Every pair gets a cheap predicted cost; the whole path is optimized at
 //! once, so the best transitions are not spent on the first few songs; then the shared planner

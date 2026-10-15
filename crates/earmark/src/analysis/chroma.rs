@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Pitch-class profiles from tonal spectral peaks, and a key estimate from them.
 //!
 //! Only peaks that stand above the frame's spectral floor count, at their interpolated
