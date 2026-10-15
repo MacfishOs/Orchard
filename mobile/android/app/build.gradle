@@ -111,6 +111,9 @@ android {
         canaryX86 {
             res.srcDir 'src/canary/res'
         }
+        canaryFast {
+            res.srcDir 'src/canary/res'
+        }
     }
 
     signingConfigs {
@@ -160,6 +163,17 @@ android {
             applicationIdSuffix = '.canary'
             versionNameSuffix = '-canary'
             buildConfigField 'boolean', 'UPDATER_ENABLED', 'false'
+        }
+        // Local iteration with Canary sessions and optimized native code, without R8.
+        canaryFast {
+            initWith canary
+            debuggable = false
+            jniDebuggable = false
+            minifyEnabled = false
+            shrinkResources = false
+            versionNameSuffix = '-canary-fast'
+            resValue 'string', 'app_name', 'Orchard Canary Fast'
+            matchingFallbacks = ['release']
         }
         canaryX86 {
             initWith canary
@@ -460,3 +474,9 @@ tasks.register('copySlopAssets', Copy) {
     into layout.buildDirectory.dir('generated/slopAssets/slop')
 }
 tasks.named('preBuild').configure { dependsOn 'copySlopAssets' }
+
+// Keep local Canary iteration free of automatic release lint checks.
+tasks.matching {
+    (it.name.startsWith('lintVital') && it.name.endsWith('CanaryFast')) ||
+        it.name == 'generateCanaryFastLintVitalReportModel'
+}.configureEach { enabled = false }

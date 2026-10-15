@@ -90,6 +90,28 @@ Release builds are signed from `ANDROID_KEYSTORE_FILE`, `ANDROID_KEYSTORE_PASSWO
 ./gradlew assembleRelease
 ```
 
+### Fast Canary testing
+
+For local testing with debugger overhead disabled and shorter incremental
+builds, use the ARM64 `canaryFast` build:
+
+```sh
+./gradlew assembleCanaryFast
+adb install -r app/build/outputs/apk/canaryFast/app-canaryFast.apk
+```
+
+It is non-debuggable, uses release dependencies and optimized native libraries,
+and skips R8 minification and resource shrinking. It does not include the
+debug-only Compose tooling or automatic release lint checks. Full Canary and
+release builds also apply R8's code optimizations; use those for final
+performance and compatibility checks.
+
+The launcher label is **Orchard Canary Fast**, with Canary's yellow icon.
+It shares Canary's application ID and signing configuration, so installing it
+replaces Canary and retains its sign-ins and settings. It uses the local debug
+signing key when release signing credentials are absent. Automatic updates are
+disabled.
+
 ## Orchard Connect
 
 Sign in to the same Orchard account on the phone and the desktop. Each one then lists the other: on the phone, open the devices sheet from the full player; on the desktop, select the cast button in the player bar. Pick a device to play there, and pick this phone to bring playback home.
