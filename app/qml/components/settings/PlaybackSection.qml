@@ -32,6 +32,7 @@ PlaybackSectionForm {
     exponentialVolumeEnabled: OrchardPlayback.exponentialVolumeEnabled
     autoplayEnabled: OrchardPlayback.autoplayEnabled
     slopAction: OrchardPlayback.slop.action
+    slopAudioScan: OrchardPlayback.slop.audioScan
     nonMusicSkipMode: OrchardPlayback.nonMusicSkipMode
     queueLayout: OrchardPlayback.queueLayout
 
@@ -52,4 +53,5 @@ PlaybackSectionForm {
     gaplessSwitch.onToggled: OrchardPlayback.gaplessEnabled = gaplessSwitch.checked
     exponentialVolumeSwitch.onToggled: OrchardPlayback.exponentialVolumeEnabled = exponentialVolumeSwitch.checked
     autoplaySwitch.onToggled: OrchardPlayback.autoplayEnabled = autoplaySwitch.checked
+    slopAudioSwitch.onToggled: OrchardPlayback.slop.audioScan = slopAudioSwitch.checked
 }

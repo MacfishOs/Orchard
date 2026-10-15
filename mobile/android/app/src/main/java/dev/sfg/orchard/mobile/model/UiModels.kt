@@ -109,6 +109,8 @@ data class OrchardSettings(
     /** What to do about talking intros, skits and applause that SponsorBlock volunteers marked. */
     val nonMusicSkip: NonMusicSkipMode = NonMusicSkipMode.BUTTON,
     val slopAction: dev.sfg.orchard.mobile.playback.slop.SlopAction = dev.sfg.orchard.mobile.playback.slop.SlopAction.MARK,
+    /** Deprecated fakeprint audio analysis, opt-in. */
+    val slopAudioScan: Boolean = false,
     /** Configuration for the 10-band audio equalizer and audio effects. */
     val equalizerConfig: EqualizerConfig = EqualizerConfig(),
     /** Enable swipe and tap gestures on the player artwork. */

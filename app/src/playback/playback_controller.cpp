@@ -155,7 +155,7 @@ PlaybackController::PlaybackController(YouTubeProvider *provider,
           &PlaybackController::purgeFlaggedFromQueue);
   connect(this, &PlaybackController::queueChanged, this,
           &PlaybackController::purgeFlaggedFromQueue);
-  // Whole-song scans run ahead of playback: the current track first, then what plays next.
+  // Label lookups and whole-song scans run ahead of playback: current track first, then the queue.
   auto rescan = [this] {
     QVariantList tracks;
     if (!m_track.isEmpty() && !local::isLocalTrack(m_track))
@@ -168,6 +168,7 @@ PlaybackController::PlaybackController(YouTubeProvider *provider,
   };
   connect(this, &PlaybackController::queueChanged, this, rescan);
   connect(&m_slop, &SlopDetector::actionChanged, this, rescan);
+  connect(&m_slop, &SlopDetector::audioScanChanged, this, rescan);
   connect(this, &PlaybackController::stateChanged, this, [this, rescan] {
     const QString id = m_track.value(QStringLiteral("id")).toString();
     if (id == m_scannedTrackId)

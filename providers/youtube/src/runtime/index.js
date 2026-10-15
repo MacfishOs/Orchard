@@ -43,6 +43,7 @@ import {
   loadYouTubeLyricsText
 } from './catalog.js';
 import { createLyricsResolver, resolveLyricsChain } from '../catalog/lyricsResolver.js';
+import { loadAiLabel } from '../integrations/aiLabel.js';
 import { getNonMusicSegments } from '../integrations/sponsorblock.js';
 import { createRuntimeHistory } from './history.js';
 import { createRuntimeLibrary } from './library.js';
@@ -242,6 +243,7 @@ const methods = new Map([
   ['catalog.search', loadSearch],
   ['catalog.browse', loadBrowse],
   ['catalog.track', loadTrack],
+  ['catalog.aiLabel', loadAiLabel],
   ['lyrics.resolve', resolveLyrics],
   ['lyrics.youtube', async (payload = {}) => ({
     text: await loadYouTubeLyricsText({ session: payload.session || {}, videoId: payload.videoId })

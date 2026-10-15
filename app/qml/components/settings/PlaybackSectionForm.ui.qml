@@ -33,6 +33,7 @@ ColumnLayout {
     property bool exponentialVolumeEnabled: false
     property bool autoplayEnabled: true
     property string slopAction: "mark"
+    property bool slopAudioScan: false
     property string nonMusicSkipMode: "button"
     property string queueLayout: "upNext"
     property alias streamQualityPicker: streamQualityPicker
@@ -42,6 +43,7 @@ ColumnLayout {
     property alias exponentialVolumeSwitch: exponentialVolumeSwitch
     property alias autoplaySwitch: autoplaySwitch
     property alias slopPicker: slopPicker
+    property alias slopAudioSwitch: slopAudioSwitch
     property alias nonMusicPicker: nonMusicPicker
     property alias queueLayoutPicker: queueLayoutPicker
 
@@ -194,12 +196,12 @@ ColumnLayout {
         // Skynet may compose, but it doesn't get the aux cord.
         SettingsRow {
             iconName: "sparkles"
-            title: qsTr("When a track sounds AI-generated")
-            description: (root.slopAction === "off" ? qsTr("Tracks are not analysed.")
+            title: qsTr("When a track is AI-generated")
+            description: (root.slopAction === "off" ? qsTr("Tracks are not checked.")
                 : root.slopAction === "skip" ? qsTr("Mark it and skip it when it comes up.")
                 : root.slopAction === "remove" ? qsTr("Mark it, skip it, and remove known AI tracks from the queue.")
                 : qsTr("Mark it with an AI badge."))
-                + " " + qsTr("Upcoming songs are downloaded at low bitrate and analysed in the background. It catches fully generated songs, not AI voice covers.")
+                + " " + qsTr("Orchard uses the \"Made with AI\" label that YouTube shows on a track.")
 
             SettingsSegmented {
                 id: slopPicker
@@ -210,6 +212,20 @@ ColumnLayout {
                     { value: "skip", label: qsTr("Skip"), name: qsTr("AI-generated music: %1").arg(qsTr("Skip")) },
                     { value: "remove", label: qsTr("Remove"), name: qsTr("AI-generated music: %1").arg(qsTr("Remove")) }
                 ]
+            }
+        }
+
+        SettingsRow {
+            iconName: "audio-lines"
+            title: qsTr("Audio AI analysis (deprecated)")
+            description: qsTr("Also download upcoming songs at low bitrate and analyse the audio for AI-generation artifacts. This detector is deprecated and misses newer AI music.")
+            enabled: root.slopAction !== "off"
+
+            SettingsSwitch {
+                id: slopAudioSwitch
+                objectName: "settingsSlopAudioScan"
+                checked: root.slopAudioScan
+                Accessible.name: qsTr("Audio AI analysis (deprecated)")
             }
         }
 

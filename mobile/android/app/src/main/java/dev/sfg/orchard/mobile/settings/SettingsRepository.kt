@@ -80,6 +80,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 autoplayEnabled = values[AUTOPLAY_ENABLED] ?: true,
                 slopAction = dev.sfg.orchard.mobile.playback.slop.SlopAction.entries
                     .firstOrNull { it.name == values[SLOP_ACTION] } ?: dev.sfg.orchard.mobile.playback.slop.SlopAction.MARK,
+                slopAudioScan = values[SLOP_AUDIO_SCAN] ?: false,
                 nonMusicSkip = runCatching { NonMusicSkipMode.valueOf(values[NON_MUSIC_SKIP].orEmpty()) }
                     .getOrDefault(NonMusicSkipMode.BUTTON),
                 equalizerConfig = EqualizerConfig(
@@ -141,6 +142,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 it[AUTOPLAY_ENABLED] = value.autoplayEnabled
                 it[NON_MUSIC_SKIP] = value.nonMusicSkip.name
                 it[SLOP_ACTION] = value.slopAction.name
+                it[SLOP_AUDIO_SCAN] = value.slopAudioScan
                 it[EQUALIZER_ENABLED] = value.equalizerConfig.enabled
                 it[EQUALIZER_PRESET] = value.equalizerConfig.presetId
                 it[EQUALIZER_GAINS] = value.equalizerConfig.gains.joinToString(",")
@@ -265,6 +267,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
         val AUTOPLAY_ENABLED = booleanPreferencesKey("autoplay_enabled")
         val NON_MUSIC_SKIP = stringPreferencesKey("non_music_skip")
         val SLOP_ACTION = stringPreferencesKey("slop_action")
+        val SLOP_AUDIO_SCAN = booleanPreferencesKey("slop_audio_scan")
         val SEARCH_HISTORY = stringPreferencesKey("search_history")
         val EQUALIZER_ENABLED = booleanPreferencesKey("equalizer_enabled")
         val EQUALIZER_PRESET = stringPreferencesKey("equalizer_preset")

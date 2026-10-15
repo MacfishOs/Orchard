@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +42,7 @@ internal fun SlopSettingsRow(settings: OrchardSettings, onSettings: (OrchardSett
             RowIcon(Icons.Rounded.AutoAwesome)
             Column {
                 RowTitle("AI-generated music")
-                RowSubtitle("Check the playing song and the next three in the background. Detects fully generated music, not AI voice covers.")
+                RowSubtitle("Uses the \"Made with AI\" label YouTube shows on the playing song and the next three.")
             }
         }
         Spacer(Modifier.height(14.dp))
@@ -53,10 +54,19 @@ internal fun SlopSettingsRow(settings: OrchardSettings, onSettings: (OrchardSett
         )
         Spacer(Modifier.height(8.dp))
         RowSubtitle(when (settings.slopAction) {
-            SlopAction.OFF -> "Do not analyse songs."
+            SlopAction.OFF -> "Do not check songs."
             SlopAction.MARK -> "Show an AI badge on flagged songs."
             SlopAction.SKIP -> "Mark and skip flagged songs."
             SlopAction.REMOVE -> "Mark and remove flagged songs from the queue."
         })
     }
+    PanelDivider()
+    ToggleRow(
+        title = "Audio AI analysis (deprecated)",
+        subtitle = "Also download songs and analyse the audio for AI-generation artifacts. This detector misses newer AI music.",
+        icon = Icons.Rounded.GraphicEq,
+        checked = settings.slopAudioScan,
+        enabled = settings.slopAction != SlopAction.OFF,
+        onChecked = { onSettings(settings.copy(slopAudioScan = it)) },
+    )
 }

@@ -85,6 +85,36 @@ private slots:
     QStandardPaths::setTestModeEnabled(true);
     QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)).removeRecursively();
     QSettings().remove(QStringLiteral("playback/slopAction"));
+    QSettings().remove(QStringLiteral("playback/slopAudioScan"));
+  }
+
+  void audioScanIsOptIn() {
+    SlopDetector detector;
+    QVERIFY(!detector.audioScan());
+    std::mt19937 rng(3);
+    for (int second = 0; second < 40; ++second)
+      detector.feed(QStringLiteral("ignored"), noise(rng, 48000));
+    QCOMPARE(detector.probability(QStringLiteral("ignored")), -1.0);
+  }
+
+  void youtubeLabelFlagsAndPersists() {
+    const QString id = QStringLiteral("labelled-track");
+    {
+      SlopDetector detector;
+      QSignalSpy flagged(&detector, &SlopDetector::flagged);
+      QVERIFY(!detector.isFlagged(id));
+      detector.labels()->store(id, true);
+      QVERIFY(detector.isFlagged(id));
+      QVERIFY(detector.isLabelled(id));
+      QCOMPARE(flagged.count(), 1);
+      detector.labels()->store(QStringLiteral("human-track"), false);
+      QVERIFY(!detector.isFlagged(QStringLiteral("human-track")));
+    }
+    SlopDetector reopened;
+    QVERIFY(reopened.isFlagged(id));
+    reopened.setAction(QStringLiteral("off"));
+    QVERIFY(!reopened.isFlagged(id));
+    reopened.setAction(QStringLiteral("mark"));
   }
 
   void unknownTrackHasNoVerdict() {
@@ -97,6 +127,7 @@ private slots:
     const QString id = QStringLiteral("noise-track");
     {
       SlopDetector detector;
+      detector.setAudioScan(true);
       QSignalSpy flagged(&detector, &SlopDetector::flagged);
       std::mt19937 rng(7);
       // 300 s fills the detector, which forces a stored verdict.

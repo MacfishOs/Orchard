@@ -29,9 +29,18 @@ internal object SlopPolicy {
     fun windowIndices(size: Int, index: Int): IntRange =
         if (index !in 0 until size) IntRange.EMPTY else index..minOf(size - 1, index + AHEAD)
 
-    fun flagged(id: String, probabilities: Map<String, Float>): Boolean =
-        (probabilities[id] ?: -1f) >= SLOP_THRESHOLD
+    fun nextAllowed(ids: List<String>, index: Int, known: SlopKnown): Int? =
+        ((index + 1) until ids.size).firstOrNull { !known.flagged(ids[it]) }
+}
 
-    fun nextAllowed(ids: List<String>, index: Int, probabilities: Map<String, Float>): Int? =
-        ((index + 1) until ids.size).firstOrNull { !flagged(ids[it], probabilities) }
+/** YouTube "Made with AI" labels, plus fakeprint scores when the deprecated audio scan is on. */
+data class SlopKnown(
+    val labels: Map<String, Boolean> = emptyMap(),
+    val probabilities: Map<String, Float> = emptyMap(),
+    val audioScan: Boolean = false,
+) {
+    fun labelled(id: String): Boolean = labels[id] == true
+
+    fun flagged(id: String): Boolean =
+        labelled(id) || (audioScan && (probabilities[id] ?: -1f) >= SLOP_THRESHOLD)
 }

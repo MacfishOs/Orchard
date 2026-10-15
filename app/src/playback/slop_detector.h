@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "ai_labels.h"
 #include "slop_fingerprint.h"
 
 #include <QHash>
@@ -38,13 +39,15 @@ class SlopScanWorker;
 class StreamDownload;
 class YouTubeProvider;
 
-// Scores tracks for AI-generation fakeprints and remembers verdicts per track id.
-// Queued songs are downloaded and analysed whole in the background; playing audio
-// is scored live as a fallback. Beep boop, this is a human-only dance floor.
+// Flags AI-generated tracks from YouTube's "Made with AI" label. The deprecated fakeprint
+// analysis is opt-in: it downloads queued songs for whole-file scoring and scores playing
+// audio live. Beep boop, this is a human-only dance floor.
 class SlopDetector final : public QObject {
   Q_OBJECT
   // "off", "mark", "skip" or "remove".
   Q_PROPERTY(QString action READ action WRITE setAction NOTIFY actionChanged)
+  // Deprecated audio fakeprint analysis, off by default.
+  Q_PROPERTY(bool audioScan READ audioScan WRITE setAudioScan NOTIFY audioScanChanged)
   // Bumps on every verdict change so QML bindings over isFlagged() re-evaluate.
   Q_PROPERTY(int revision READ revision NOTIFY flagsChanged)
 public:
@@ -60,11 +63,15 @@ public:
     return m_action == QStringLiteral("skip") || m_action == QStringLiteral("remove");
   }
   bool removes() const { return m_action == QStringLiteral("remove"); }
+  bool audioScan() const { return m_audioScan; }
+  void setAudioScan(bool enabled);
   int revision() const { return m_revision; }
 
   Q_INVOKABLE bool isFlagged(const QString &trackId) const;
-  // Last stored probability, or -1 when the track has no verdict yet.
+  // Last stored audio probability, or -1 when the track has no verdict yet.
   Q_INVOKABLE double probability(const QString &trackId) const;
+  Q_INVOKABLE bool isLabelled(const QString &trackId) const;
+  AiLabels *labels() { return &m_labels; }
 
   void feed(const QString &trackId, const QAudioBuffer &buffer);
   // Replaces the background scan order. Tracks with verdicts are skipped; work in flight continues.
@@ -72,8 +79,9 @@ public:
 
 signals:
   void actionChanged();
+  void audioScanChanged();
   void flagsChanged();
-  // A track crossed the threshold, from live playback or a background scan.
+  // A track was labelled or crossed the audio threshold.
   void flagged(const QString &trackId);
 
 private:
@@ -94,6 +102,8 @@ private:
   void scanFailed(const QString &trackId);
   void analyzed(const QString &trackId, bool ok, float probability, float seconds);
   void cancelScans();
+  void stopAudio();
+  void labelled(const QString &trackId, bool ai);
 
   // Early averages lean human, so negatives are stored only after this much audio.
   static constexpr float kSettleSeconds = 60.0f;
@@ -107,6 +117,8 @@ private:
   static constexpr qint64 kMaxDownloadBytes = 16LL * 1024 * 1024;
 
   QString m_action{QStringLiteral("mark")};
+  bool m_audioScan{false};
+  AiLabels m_labels;
   float m_threshold{SlopFingerprintDetector::kDefaultThreshold};
   QHash<QString, Session> m_sessions;
   // Opened on first lookup so startup never touches the disk for this.

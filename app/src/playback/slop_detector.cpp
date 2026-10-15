@@ -35,16 +35,19 @@
 
 namespace {
 const QString kActionKey = QStringLiteral("playback/slopAction");
+const QString kAudioScanKey = QStringLiteral("playback/slopAudioScan");
 // HE-AAC rebuilds its upper band synthetically, which pushed real songs toward the cut.
 const QJsonArray kScanMimeTypes{QStringLiteral("audio/webm; codecs=\"opus\""),
                                 QStringLiteral("audio/mp4; codecs=\"mp4a.40.2\"")};
 } // namespace
 
 SlopDetector::SlopDetector(YouTubeProvider *provider, AuthManager *auth, QObject *parent)
-    : QObject(parent), m_provider(provider), m_auth(auth) {
+    : QObject(parent), m_labels(provider), m_provider(provider), m_auth(auth) {
   const QString action = QSettings().value(kActionKey, m_action).toString();
   if (action == "off" || action == "mark" || action == "skip" || action == "remove")
     m_action = action;
+  m_audioScan = QSettings().value(kAudioScanKey, false).toBool();
+  connect(&m_labels, &AiLabels::labelled, this, &SlopDetector::labelled);
   m_dbName = QStringLiteral("orchard-slop-%1").arg(reinterpret_cast<quintptr>(this));
   if (!m_provider || !m_auth)
     return;
@@ -82,12 +85,21 @@ SlopDetector::~SlopDetector() {
 }
 
 void SlopDetector::scan(const QVariantList &tracks) {
+  if (enabled())
+    m_labels.check(tracks);
   m_scanQueue = tracks;
   pump();
 }
 
+void SlopDetector::labelled(const QString &trackId, bool ai) {
+  ++m_revision;
+  emit flagsChanged();
+  if (ai && enabled())
+    emit flagged(trackId);
+}
+
 void SlopDetector::pump() {
-  if (!m_worker || !enabled() || !m_auth->isSignedIn())
+  if (!m_worker || !enabled() || !m_audioScan || !m_auth->isSignedIn())
     return;
   while (m_downloads.size() + m_resolving.size() < kMaxDownloads && !m_scanQueue.isEmpty()) {
     const QVariantMap track = m_scanQueue.takeFirst().toMap();
@@ -95,6 +107,7 @@ void SlopDetector::pump() {
     const QString type = track.value(QStringLiteral("type")).toString();
     if (id.isEmpty() || (type != "song" && type != "track" && type != "video") ||
         track.value(QStringLiteral("unplayable")).toBool() || lookup(id) >= 0.0f ||
+        m_labels.label(id) == AiLabels::MadeWithAi ||
         m_failed.contains(id) || m_downloads.contains(id) || m_analyzing.contains(id) ||
         std::find(m_resolving.cbegin(), m_resolving.cend(), id) != m_resolving.cend())
       continue;
@@ -113,7 +126,7 @@ void SlopDetector::resolved(quint64 request, const QJsonValue &result) {
   const QString id = m_resolving.take(request);
   if (id.isEmpty())
     return;
-  if (!enabled()) {
+  if (!enabled() || !m_audioScan) {
     pump();
     return;
   }
@@ -151,7 +164,7 @@ void SlopDetector::analyzed(const QString &trackId, bool ok, float probability, 
     return;
   }
   // The whole song was heard, so even a short track's verdict is final.
-  if (enabled())
+  if (enabled() && m_audioScan)
     record(trackId, SlopVerdict{probability, 0.0f, seconds});
   pump();
 }
@@ -172,18 +185,42 @@ void SlopDetector::setAction(const QString &action) {
   m_action = action;
   QSettings().setValue(kActionKey, m_action);
   if (!enabled()) {
-    for (const Session &session : std::as_const(m_sessions))
-      delete session.handle;
-    m_sessions.clear();
-    cancelScans();
+    stopAudio();
+    m_labels.cancel();
   }
   emit actionChanged();
   ++m_revision;
   emit flagsChanged();
 }
 
+void SlopDetector::setAudioScan(bool enabled) {
+  if (enabled == m_audioScan)
+    return;
+  m_audioScan = enabled;
+  QSettings().setValue(kAudioScanKey, m_audioScan);
+  if (!m_audioScan)
+    stopAudio();
+  emit audioScanChanged();
+  ++m_revision;
+  emit flagsChanged();
+}
+
+void SlopDetector::stopAudio() {
+  for (const Session &session : std::as_const(m_sessions))
+    delete session.handle;
+  m_sessions.clear();
+  cancelScans();
+}
+
 bool SlopDetector::isFlagged(const QString &trackId) const {
-  return enabled() && !trackId.isEmpty() && lookup(trackId) >= m_threshold;
+  if (!enabled() || trackId.isEmpty())
+    return false;
+  return m_labels.label(trackId) == AiLabels::MadeWithAi ||
+         (m_audioScan && lookup(trackId) >= m_threshold);
+}
+
+bool SlopDetector::isLabelled(const QString &trackId) const {
+  return m_labels.label(trackId) == AiLabels::MadeWithAi;
 }
 
 double SlopDetector::probability(const QString &trackId) const {
@@ -231,7 +268,8 @@ float SlopDetector::lookup(const QString &trackId) const {
 }
 
 void SlopDetector::feed(const QString &trackId, const QAudioBuffer &buffer) {
-  if (!enabled() || trackId.isEmpty() || lookup(trackId) >= 0.0f ||
+  if (!enabled() || !m_audioScan || trackId.isEmpty() || lookup(trackId) >= 0.0f ||
+      m_labels.label(trackId) == AiLabels::MadeWithAi ||
       buffer.format().sampleFormat() != QAudioFormat::Float || buffer.frameCount() <= 0)
     return;
   const int rate = buffer.format().sampleRate();
