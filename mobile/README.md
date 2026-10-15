@@ -107,6 +107,17 @@ debug-only Compose tooling or automatic release lint checks. Full Canary and
 release builds also apply R8's code optimizations; use those for final
 performance and compatibility checks.
 
+For the x86_64 emulator, use `canaryFastX86`. It has the same optimizations and
+packages only x86_64 libraries:
+
+```sh
+./gradlew assembleCanaryFastX86
+adb install -r app/build/outputs/apk/canaryFastX86/app-canaryFastX86.apk
+```
+
+It installs as **Orchard Canary Fast x86_64** and shares the Canary x86_64
+application ID.
+
 The launcher label is **Orchard Canary Fast**, with Canary's yellow icon.
 It shares Canary's application ID and signing configuration, so installing it
 replaces Canary and retains its sign-ins and settings. It uses the local debug

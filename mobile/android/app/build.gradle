@@ -114,6 +114,9 @@ android {
         canaryFast {
             res.srcDir 'src/canary/res'
         }
+        canaryFastX86 {
+            res.srcDir 'src/canary/res'
+        }
     }
 
     signingConfigs {
@@ -182,6 +185,18 @@ android {
             // A generated value takes priority over Canary's source-set label without
             // replacing an inherited build-type value (which AGP warns about).
             resValue 'string', 'app_name', 'Orchard Canary x86_64'
+            ndk {
+                abiFilters.clear()
+                abiFilters += ['x86_64']
+            }
+        }
+        // Canary Fast for the x86_64 emulator. Shares the Canary x86_64 application ID.
+        canaryFastX86 {
+            initWith canaryFast
+            applicationIdSuffix = '.canaryx86'
+            versionNameSuffix = '-canary-fast-x86'
+            resValue 'string', 'app_name', 'Orchard Canary Fast x86_64'
+            matchingFallbacks = ['release']
             ndk {
                 abiFilters.clear()
                 abiFilters += ['x86_64']
@@ -498,8 +513,8 @@ tasks.named('preBuild').configure { dependsOn 'copySlopAssets' }
 
 // Keep local Canary iteration free of automatic release lint checks.
 tasks.matching {
-    (it.name.startsWith('lintVital') && it.name.endsWith('CanaryFast')) ||
-        it.name == 'generateCanaryFastLintVitalReportModel'
+    (it.name.startsWith('lintVital') && it.name.contains('CanaryFast')) ||
+        it.name ==~ /generateCanaryFast.*LintVitalReportModel/
 }.configureEach { enabled = false }
 
 // The Apple Music logo is supplied locally and never tracked.
