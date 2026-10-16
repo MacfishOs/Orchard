@@ -40,12 +40,11 @@ Clicking an album, playlist, or artist opens its page. Open an album or playlist
 
 The left sidebar lists the main pages of Orchard:
 
-- **Home**: recommendations and shelves of music. Choose **Normal** or **Apple** under Settings, General, Home source. Apple requires an Apple Music connection; see [Integrations](integrations.md).
-- **Search**: search results from YouTube Music.
+- **Home**: recommendations and shelves of music. Choose **Normal** or **Apple** under Settings, General, Music source; it also decides search, artist, album and playlist pages. Apple requires an Apple Music connection; see [Integrations](integrations.md).
 - **Your library**: your subscribed artists, albums, songs, and playlists. See [Library and playlists](library-and-playlists.md).
 - **PLAYLISTS**: your saved playlists, listed under the pages.
 
-The top bar has the **Search YouTube Music…** box, the **Docs** button (a book icon), and the **Account and settings** button. The player bar floats at the bottom of the window. See [Play music](playback.md).
+The **Search…** box sits at the top of the sidebar. The top bar has the **Docs** button (a book icon) and the **Account and settings** button. The player bar floats at the bottom in Glade and docks at the top in Canopy. See [Play music](playback.md).
 
 ## Open Settings
 

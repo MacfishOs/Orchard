@@ -92,14 +92,14 @@ ColumnLayout {
 
     SettingsSection {
         Layout.fillWidth: true
-        title: qsTr("Home")
+        title: qsTr("Music")
         rowSpacing: 0
         verticalPadding: 0
 
         SettingsRow {
-            iconName: "home"
-            title: qsTr("Home source")
-            description: qsTr("Normal uses YouTube Music. Apple uses Apple Music recommendations when connected, with YouTube Music as a fallback.")
+            iconName: "music-2"
+            title: qsTr("Music source")
+            description: qsTr("Home, search, artists, albums and playlists all come from this service. Apple needs Apple Music connected.")
 
             SettingsSegmented {
                 id: homeSourcePicker

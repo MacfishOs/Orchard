@@ -150,6 +150,15 @@ void AppleMusic::artistView(const QString &browseId, const QString &params, Page
        [done](const QJsonValue &result, const QString &error) { done(result.toObject(), error); });
 }
 
+void AppleMusic::search(const QString &query, const QString &filter, PageReply done) {
+  if (!connected()) {
+    done({}, tr("Connect Apple Music in Settings to search it."));
+    return;
+  }
+  call(QStringLiteral("catalog.search"), {{QStringLiteral("query"), query}, {QStringLiteral("filter"), filter}},
+       [done](const QJsonValue &result, const QString &error) { done(result.toObject(), error); });
+}
+
 void AppleMusic::artwork(const QJsonObject &query, PageReply done) {
   if (!connected()) {
     done({}, {});

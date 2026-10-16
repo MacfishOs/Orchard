@@ -75,7 +75,7 @@ class OrchardMediaLibrary(private val graph: OrchardGraph) {
         if (query.isBlank()) {
             graph.library.library.value.likedTracks
         } else {
-            runCatching { graph.catalog.search(query).tracks }.getOrDefault(emptyList())
+            runCatching { graph.catalogRouter.search(query).tracks }.getOrDefault(emptyList())
         }
     }
 

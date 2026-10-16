@@ -34,7 +34,7 @@ ColumnLayout {
     spacing: 20
 
     SettingsHint {
-        text: qsTr("Connect Apple Music for artist pages and personal recommendations. Choose Apple under Settings, General, Home source to use its Home feed. Songs play through matching YouTube Music tracks.")
+        text: qsTr("Connect Apple Music for artist pages and personal recommendations. Choose Apple under Settings, General, Music source to use it across the app. Apple Music playback is not available yet.")
     }
 
     RowLayout {

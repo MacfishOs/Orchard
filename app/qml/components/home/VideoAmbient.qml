@@ -51,13 +51,4 @@ Item {
             }
         }
     }
-
-    // Settles the edges toward the page ink so the sidebar and player read the same as elsewhere.
-    Rectangle {
-        anchors.fill: parent
-        gradient: Gradient {
-            GradientStop { position: 0; color: "#00000000" }
-            GradientStop { position: 1; color: "#59000000" }
-        }
-    }
 }

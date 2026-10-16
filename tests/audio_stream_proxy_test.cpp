@@ -236,6 +236,7 @@ private slots:
         QTRY_VERIFY(reply->isFinished());
         QCOMPARE(requests, 4);
         QCOMPARE(failures.count(), 1);
+        QCOMPARE(failures.first().at(0).toInt(), 0);
         QVERIFY(failures.first().at(1).toString().contains("interrupted"));
         reply->deleteLater();
     }

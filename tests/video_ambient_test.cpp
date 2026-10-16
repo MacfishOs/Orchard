@@ -89,6 +89,35 @@ private slots:
 
   void emptyFrameGivesNothing() {
     QVERIFY(videoambient::grid(QImage(), {}, 3, 3).isEmpty());
+    QVERIFY(videoambient::artistEdge(QImage(), {}).isEmpty());
+  }
+
+  void artistSamplesTheVisibleLowerEdge() {
+    QImage image(300, 200, QImage::Format_RGB32);
+    image.fill(Qt::red);
+    QPainter(&image).fillRect(QRect(60, 132, 180, 18), QColor(90, 150, 120));
+    const auto colors = videoambient::artistEdge(image, QRectF(0.2, 0.25, 0.6, 0.5));
+    QCOMPARE(colors.size(), 3);
+    for (const QColor &color : colors)
+      QCOMPARE(color, videoambient::artistTone(QColor(90, 150, 120)));
+    QVERIFY(videoambient::artistEdge(image, QRectF(2, 2, 1, 1)).isEmpty());
+  }
+
+  void artistKeepsTheEdgeColorsAcrossThePage() {
+    QImage image(300, 100, QImage::Format_RGB32);
+    image.fill(Qt::white);
+    QPainter painter(&image);
+    painter.fillRect(QRect(0, 82, 100, 18), Qt::red);
+    painter.fillRect(QRect(100, 82, 100, 18), Qt::green);
+    painter.fillRect(QRect(200, 82, 100, 18), Qt::blue);
+    painter.end();
+    const auto colors = videoambient::artistEdge(image, {});
+    QCOMPARE(colors, (QList<QColor>{videoambient::artistTone(Qt::red),
+                                   videoambient::artistTone(Qt::green), videoambient::artistTone(Qt::blue)}));
+    const QColor gray = videoambient::artistTone(QColor(166, 171, 180));
+    QVERIFY(gray.red() > 95);
+    QVERIFY(gray.blue() > gray.red());
+    QCOMPARE(videoambient::artistTone(Qt::black).rgb(), QColor(Qt::black).rgb());
   }
 };
 

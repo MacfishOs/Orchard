@@ -35,8 +35,10 @@ Appearance settings control the player layout, the player bar bitrate indicator,
 
 Under **Layout**, **Player layout** picks where the player bar lives.
 
-- **Glade** floats the player bar at the bottom of the window. Search is the wide field at the top.
-- **Canopy** puts a slimmer player bar at the top. Search is a small glass circle beside it that grows into a field when you select it, and shrinks back when you click away with nothing typed.
+- **Glade** floats the player bar at the bottom of the window.
+- **Canopy** puts a slimmer player bar at the top.
+
+Both layouts keep a compact search field at the top of the sidebar. In a narrow window, select the search icon to open Spotlight.
 
 Glade is the default.
 

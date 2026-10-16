@@ -429,6 +429,13 @@ if get_option('tests')
   test('orchard_qml_startup', qml_startup_test, timeout: 60,
     env: ['QT_QPA_PLATFORM=offscreen'])
   qt_test_dep = dependency('qt6', modules: ['Test'])
+  page_memory_moc = qt6.compile_moc(sources: ['tests/page_memory_test.cpp'],
+    dependencies: [qt_test_dep, qt_dep])
+  page_memory_test = executable('orchard_page_memory_tests',
+    files('tests/page_memory_test.cpp') + page_memory_moc,
+    dependencies: [qt_test_dep, qt_dep],
+    cpp_args: ['-DORCHARD_SOURCE_DIR="' + source_root + '"'])
+  test('orchard_page_memory', page_memory_test, timeout: 15)
   backdrop_test_moc = qt6.compile_moc(sources: ['tests/fullscreen_backdrop_test.cpp'],
     headers: ['app/src/appearance/kawarp_background.h'],
     include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
@@ -453,6 +460,7 @@ if get_option('tests')
     ['discord_artwork', 'tests/discord_artwork_test.cpp'],
     ['lastfm', 'tests/lastfm_test.cpp'],
     ['playback_persistence', 'tests/playback_persistence_test.cpp'],
+    ['playback_recovery', 'tests/playback_recovery_test.cpp'],
     ['songlink', 'tests/songlink_test.cpp'],
     ['animated_artwork', 'tests/animated_artwork_test.cpp'],
     ['artwork_video_cache', 'tests/artwork_video_cache_test.cpp'],
@@ -468,7 +476,9 @@ if get_option('tests')
     ['music_video_match', 'tests/music_video_match_test.cpp'],
     ['letterbox', 'tests/letterbox_test.cpp'],
     ['video_ambient', 'tests/video_ambient_test.cpp'],
+    ['artist_artwork', 'tests/artist_artwork_test.cpp'],
     ['audiodb_artist', 'tests/audiodb_artist_test.cpp'],
+    ['artist_sections', 'tests/artist_sections_test.cpp'],
     ['lyrics_translation', 'tests/lyrics_translation_test.cpp'],
   ]
   foreach spec : app_test_specs

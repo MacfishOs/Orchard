@@ -32,7 +32,7 @@ Item {
 
     // HomeShell: owns navigation state and the fullscreen player.
     required property Item shell
-    // Glass backdrop the popups blur; also hosts the top bar search field.
+    // Glass backdrop the popups blur; also hosts the sidebar search field.
     required property Item stage
 
     readonly property bool signedIn: OrchardAuth.isSignedIn
@@ -123,7 +123,6 @@ Item {
 
         sourceComponent: Component {
             SettingsPopup {
-                backdrop: overlays.stage
                 onClosed: settingsLoader.active = false
                 onDocsRequested: {
                     overlays.openDocs();
@@ -201,7 +200,7 @@ Item {
                 }
                 onSearchRequested: function(query) {
                     overlays.shell.searchQuery = query;
-                    overlays.stage.topBar.query = query;
+                    overlays.stage.sidebar.query = query;
                     overlays.shell.history = [];
                     overlays.shell.currentItem = ({
                     });

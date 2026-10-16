@@ -82,7 +82,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -301,8 +303,13 @@ fun HeroAbout(
     text: String,
     modifier: Modifier = Modifier,
     collapsedLines: Int = 3,
+    html: Boolean = false,
 ) {
     if (text.isBlank()) return
+    val body = remember(text, html) {
+        if (html) AnnotatedString.fromHtml(text.replace(Regex("\r\n?|\n"), "<br>"))
+        else AnnotatedString(text.replace(Regex("\\s+"), " ").trim())
+    }
     var expanded by rememberSaveable(text) { mutableStateOf(false) }
     var overflows by rememberSaveable(text) { mutableStateOf(false) }
     Column(
@@ -318,7 +325,7 @@ fun HeroAbout(
             modifier = Modifier.padding(bottom = 8.dp),
         )
         Text(
-            text = text.replace(Regex("\\s+"), " ").trim(),
+            text = body,
             style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
             color = CanopyColors.Text.copy(alpha = 0.72f),
             maxLines = if (expanded) Int.MAX_VALUE else collapsedLines,

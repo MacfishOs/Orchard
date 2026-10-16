@@ -28,7 +28,7 @@ order: 120
 
 # Accounts and startup
 
-Settings, General holds the startup behavior, the system tray option, listening history, the Home source, and your accounts. Your YouTube Music account supplies playback and your library. An optional Orchard account links your devices and is required to connect Apple Music. See [Integrations](integrations.md).
+Settings, General holds the startup behavior, the system tray option, listening history, the music source, and your accounts. Your YouTube Music account supplies playback and your library. An optional Orchard account links your devices and is required to connect Apple Music. See [Integrations](integrations.md).
 
 ## Sign out of YouTube Music
 
@@ -94,6 +94,6 @@ With the switch on, closing the window while signed in hides it and the music ke
 
 The **YouTube Music** group has a row named "Save plays to YouTube Music history" with a switch (accessible name "Send listening history to YouTube"). Its description reads "Songs you play in Orchard are added to your YouTube Music history." It is on by default. Turn it off to keep Orchard plays out of your YouTube Music history.
 
-## Choose the Home source
+## Choose the music source
 
-Open **Settings**, **General**, then choose **Normal** or **Apple** in the **Home source** row. **Normal** uses YouTube Music. **Apple** uses Apple Music recommendations when connected, with YouTube Music as a fallback. The choice is saved on this device. Connect Apple Music under **Settings**, **Integrations**. See [Integrations](integrations.md) for sign-in and playback details.
+Open **Settings**, **General**, then choose **Normal** or **Apple** in the **Music source** row. **Normal** uses YouTube Music. **Apple** uses Apple Music for Home, search, artists, albums and playlists, with no YouTube Music fallback; it needs Apple Music connected. The choice is saved on this device. Connect Apple Music under **Settings**, **Integrations**. See [Integrations](integrations.md) for sign-in and playback details.

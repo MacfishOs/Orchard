@@ -25,13 +25,16 @@ import dev.sfg.orchard.mobile.model.SearchResults
 import dev.sfg.orchard.mobile.songlinks.LinkResolution
 import dev.sfg.orchard.mobile.songlinks.SongLinksCoordinator
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** Debounced catalog search; pasted song links resolve to their tracks or open their collection. */
@@ -58,7 +61,11 @@ internal class SearchController(
     @OptIn(FlowPreview::class)
     fun observe() {
         scope.launch {
-            mutableQuery.debounce(350).distinctUntilChanged().collectLatest { value ->
+            combine(
+                mutableQuery.debounce(350).distinctUntilChanged(),
+                graph.settings.settings.map { it.homeSource }.distinctUntilChanged(),
+                graph.appleMusic.connection.map { it.connected }.distinctUntilChanged(),
+            ) { value, _, _ -> value }.collectLatest { value ->
                 if (value.isBlank()) {
                     mutableResults.value = LoadState.Idle
                     return@collectLatest
@@ -76,10 +83,10 @@ internal class SearchController(
                     }
                 }
 
-                mutableResults.value = runCatching { graph.catalog.search(value) }
+                mutableResults.value = runCatching { graph.catalogRouter.search(value) }
                     .fold(
                         onSuccess = { if (it.isEmpty) LoadState.Empty("No music matched “$value”.") else LoadState.Content(it) },
-                        onFailure = { LoadState.Error(it.message ?: "Search is unavailable.") },
+                        onFailure = { if (it is CancellationException) throw it else LoadState.Error(it.message ?: "Search is unavailable.") },
                     )
             }
         }

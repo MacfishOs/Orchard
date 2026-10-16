@@ -24,7 +24,9 @@
 #include <QString>
 #include <QVariantList>
 
+class AppleMusic;
 class AuthManager;
+class CatalogSource;
 class OfflineLibrary;
 class YouTubeCatalog;
 
@@ -48,6 +50,8 @@ public:
 
   // While the app is offline, search covers downloaded and local songs and playlists only.
   void setOfflineLibrary(OfflineLibrary *library) { m_offline = library; }
+  // Searches Apple Music instead of YouTube Music while it is the catalog source.
+  void setAppleMusic(AppleMusic *appleMusic, CatalogSource *source);
 
   Q_INVOKABLE void search(const QString &query, const QString &filter = QStringLiteral("all"));
   Q_INVOKABLE void retry();
@@ -64,6 +68,9 @@ private:
   YouTubeCatalog *m_catalog;
   AuthManager *m_auth;
   OfflineLibrary *m_offline{nullptr};
+  AppleMusic *m_appleMusic{nullptr};
+  CatalogSource *m_source{nullptr};
+  quint64 m_appleRequests{0};
   QVariantList m_sections;
   QString m_errorMessage;
   QString m_query;

@@ -21,10 +21,9 @@ import QtQuick
 import QtQuick.Controls
 import ".."
 
-// Settings popup shell: glass backdrop and transitions. The panel lives in SettingsPanel.ui.qml.
+// Settings popup shell and transitions. The panel lives in SettingsPanel.ui.qml.
 Popup {
     id: root
-    required property Item backdrop
     // Docs live in their own popup; the shell closes this one and opens it.
     signal docsRequested
     // Same deal for bug reports: the shell swaps this popup for the report one.
@@ -81,31 +80,11 @@ Popup {
         }
     }
 
-    background: Loader {
-        active: root.visible
-        sourceComponent: Item {
-            Glass {
-                anchors.fill: parent
-                backdrop: root.backdrop
-                // Track the backdrop so artwork and the immersive background keep moving behind the blur.
-                live: true
-                // Large panel: dimmer and flatter so the lens effect doesn't compete with the text.
-                // Frosted glass, not a magnifying glass. Nobody needs to see their album art through a telescope.
-                brightness: -0.35
-                blurRadius: 36
-                refraction: 0.3
-                chromaticAberration: 0.0
-                edgeHighlight: 0.15
-                fresnel: 0.25
-            }
-            Rectangle {
-                anchors.fill: parent
-                radius: 20
-                color: "#660e1210"
-                border.color: "#1cffffff"
-                border.width: 1
-            }
-        }
+    background: Rectangle {
+        radius: 20
+        color: "#0e1210"
+        border.color: "#1cffffff"
+        border.width: 1
     }
 
     contentItem: SettingsPanel {

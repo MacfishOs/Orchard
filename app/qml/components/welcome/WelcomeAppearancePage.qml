@@ -27,7 +27,7 @@ WelcomePage {
 
     WelcomeRow {
         title: qsTr("Player layout")
-        hint: qsTr("Glade floats at the bottom. Canopy docks at the top beside search.")
+        hint: qsTr("Glade floats at the bottom. Canopy docks at the top.")
 
         SettingsSegmented {
             model: [

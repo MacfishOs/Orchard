@@ -278,11 +278,16 @@ class YouTubeStreamResolver(
         }
     }
 
-    private fun payload(videoId: String, track: Track, quality: String): JSONObject = JSONObject()
-        .put("session", sessions.session().providerJson())
-        .put("track", track.providerJson())
-        .put("streamQuality", quality)
-        .put("refreshStream", refresh.remove(videoId))
+    private fun payload(videoId: String, track: Track, quality: String): JSONObject {
+        check(!videoId.startsWith("am.") && track.playbackSource != "apple_music") {
+            "Apple Music playback is not available yet."
+        }
+        return JSONObject()
+            .put("session", sessions.session().providerJson())
+            .put("track", track.providerJson())
+            .put("streamQuality", quality)
+            .put("refreshStream", refresh.remove(videoId))
+    }
 
     private fun rememberSource(trackId: String, json: JSONObject) {
         val videoId = json.text("youtubeVideoId")

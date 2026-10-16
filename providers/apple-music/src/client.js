@@ -109,11 +109,13 @@ export function createAppleMusicClient({ fetchImpl, session }) {
   /** Every resource behind a paginated list, following `next` up to [maxPages]. */
   async function all(path, query = {}, maxPages = MAX_PAGES) {
     const items = [];
+    const includes = Object.fromEntries(Object.entries(query)
+      .filter(([key]) => key === 'include' || key.startsWith('include[')));
     let page = await get(path, query);
     for (let count = 1; ; count++) {
       items.push(...(page.data || []));
       if (!page.next || count >= maxPages) return { items, next: page.next || '' };
-      page = await get(page.next);
+      page = await get(page.next, includes);
     }
   }
 

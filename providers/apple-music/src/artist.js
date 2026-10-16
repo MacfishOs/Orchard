@@ -19,7 +19,7 @@
 
 import { AppleMusicError } from './client.js';
 import { browseId, parseBrowseId } from './ids.js';
-import { artworkUrl, items, notes, track } from './normalize.js';
+import { ARTIST_INCLUDES, artworkUrl, items, notes, track } from './normalize.js';
 
 // Shelves in page order. Music videos and stations wait for Apple Music playback.
 export const ARTIST_VIEWS = [
@@ -37,7 +37,8 @@ export const ARTIST_VIEWS = [
 const ARTIST_EXTEND = 'artistBio,editorialVideo';
 // editorialArtwork is a 400 on the public API, so only music.apple.com's API is asked for it.
 const EDITORIAL_EXTEND = 'artistBio,editorialArtwork,editorialVideo';
-const TOP_SONGS = 5;
+// Fills the three-column Top Songs grid four rows deep.
+const TOP_SONGS = 12;
 
 function normalizedName(value) {
   return String(value || '')
@@ -48,22 +49,24 @@ function normalizedName(value) {
     .replace(/[^a-z0-9]+/g, '');
 }
 
-/** The widest motion artwork Apple offers, as an HLS URL. */
-export function heroVideo(editorialVideo) {
-  if (!editorialVideo || typeof editorialVideo !== 'object') return '';
-  const keys = Object.keys(editorialVideo).sort((left, right) => rank(right) - rank(left));
+// music.apple.com plays the fullscreen cut; the wide and square cuts are different edits.
+const HERO_VIDEO_KEYS = ['motionArtistFullscreen16x9', 'motionArtistWide16x9', 'motionArtistSquare1x1'];
+
+/** The motion artwork music.apple.com plays behind the artist name. */
+export function heroMotion(editorialVideo) {
+  if (!editorialVideo || typeof editorialVideo !== 'object') return null;
+  const keys = HERO_VIDEO_KEYS.filter((key) => key in editorialVideo)
+    .concat(Object.keys(editorialVideo).filter((key) => !HERO_VIDEO_KEYS.includes(key)));
   for (const key of keys) {
-    const url = editorialVideo[key]?.video;
-    if (typeof url === 'string' && url.startsWith('https://')) return url;
+    const entry = editorialVideo[key];
+    if (typeof entry?.video === 'string' && entry.video.startsWith('https://')) return entry;
   }
-  return '';
+  return null;
 }
 
-function rank(key) {
-  if (/16x9/i.test(key)) return 3;
-  if (/wide/i.test(key)) return 2;
-  if (/artist/i.test(key)) return 1;
-  return 0;
+/** The hero motion artwork as an HLS URL. */
+export function heroVideo(editorialVideo) {
+  return heroMotion(editorialVideo)?.video || '';
 }
 
 function viewSection(artistId, name, view) {
@@ -81,7 +84,7 @@ function viewSection(artistId, name, view) {
 export function createArtistCatalog(client) {
   async function fetchArtist(id) {
     const path = `/v1/catalog/${client.storefront()}/artists/${encodeURIComponent(id)}`;
-    const query = { views: ARTIST_VIEWS.join(','), 'include[songs]': 'artists,albums' };
+    const query = { views: ARTIST_VIEWS.join(','), ...ARTIST_INCLUDES };
     const editorial = await client.editorial(path, { ...query, extend: EDITORIAL_EXTEND });
     if (editorial) return editorial;
     try {
@@ -100,11 +103,14 @@ export function createArtistCatalog(client) {
     if (!resource) throw new AppleMusicError(404, 'not_found', 'Apple Music could not find that artist.');
     const attributes = resource.attributes || {};
     const views = resource.views || {};
+    const motion = heroMotion(attributes.editorialVideo);
     const tracks = (views['top-songs']?.data || [])
       .slice(0, TOP_SONGS)
       .map((song, index) => track(song, index))
       .filter(Boolean);
-    const sections = ARTIST_VIEWS
+    const viewNames = ARTIST_VIEWS.filter((name) => name !== 'similar-artists')
+      .concat(Object.keys(views).filter((name) => !ARTIST_VIEWS.includes(name)), 'similar-artists');
+    const sections = viewNames
       .map((name) => viewSection(parsed.id, name, views[name]))
       .filter(Boolean);
     return {
@@ -123,9 +129,15 @@ export function createArtistCatalog(client) {
       heroArtwork: artworkUrl(attributes.editorialArtwork?.centeredFullscreenBackground, 2400),
       // The name as artwork, as music.apple.com draws it over the hero. PNG keeps its transparency.
       logo: artworkUrl(attributes.editorialArtwork?.musicContentColorLogoTrimmed, 1200, 'png'),
-      heroVideo: heroVideo(attributes.editorialVideo),
+      heroVideo: motion?.video || '',
+      // Still of the video's first frame, shown until it plays.
+      heroPoster: artworkUrl(motion?.previewFrame, 1920),
+      // Hex without '#'; the page tints itself with this, darkened.
+      heroTint: String(motion?.previewFrame?.bgColor || attributes.artwork?.bgColor || ''),
       url: attributes.url || '',
       tracks,
+      // Desktop shows this as a card beside Top Songs; Android reads the section.
+      latestRelease: sections.find((section) => section.key === 'latest-release')?.items[0] || null,
       sections
     };
   }
@@ -134,9 +146,9 @@ export function createArtistCatalog(client) {
   async function artistView(id, params) {
     const parsed = parseBrowseId(id);
     const view = /^view:([a-z-]+)$/.exec(String(params || ''))?.[1];
-    if (!parsed || parsed.type !== 'artists' || !ARTIST_VIEWS.includes(view)) return [];
+    if (!parsed || parsed.type !== 'artists' || !view) return [];
     const path = `/v1/catalog/${client.storefront()}/artists/${encodeURIComponent(parsed.id)}/view/${view}`;
-    const { items: resources } = await client.all(path, { limit: 25 });
+    const { items: resources } = await client.all(path, { limit: 25, ...ARTIST_INCLUDES });
     return view === 'top-songs' ? resources.map((song, index) => track(song, index)).filter(Boolean) : items(resources);
   }
 

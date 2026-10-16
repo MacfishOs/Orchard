@@ -19,7 +19,7 @@
 
 import { AppleMusicError } from './client.js';
 import { APPLE_MUSIC_SOURCE } from './ids.js';
-import { items } from './normalize.js';
+import { ARTIST_INCLUDES, items } from './normalize.js';
 
 function titleOf(value) {
   return typeof value === 'string' ? value : value?.stringForDisplay || '';
@@ -49,7 +49,7 @@ export function createHomeCatalog(client) {
   }
 
   async function charts() {
-    const response = await client.get(`/v1/catalog/${client.storefront()}/charts`, { types: 'songs,albums,playlists', limit: 25 });
+    const response = await client.get(`/v1/catalog/${client.storefront()}/charts`, { types: 'songs,albums,playlists', limit: 25, ...ARTIST_INCLUDES });
     const sections = [];
     for (const [type, entries] of Object.entries(response.results || {})) {
       for (const chart of entries) {
@@ -61,7 +61,7 @@ export function createHomeCatalog(client) {
   }
 
   async function home() {
-    const response = await client.all('/v1/me/recommendations', { include: 'contents', limit: 30 });
+    const response = await client.all('/v1/me/recommendations', { include: 'contents', limit: 30, ...ARTIST_INCLUDES });
     const sections = await recommendationSections(response.items);
     if (!sections.length) sections.push(...await charts());
     if (!sections.length) throw new AppleMusicError(0, 'empty_home', 'Apple Music has no recommendations available.');
@@ -71,7 +71,7 @@ export function createHomeCatalog(client) {
   async function homeSection(id) {
     const prefix = 'am.recommendations.';
     if (!String(id).startsWith(prefix) || !String(id).slice(prefix.length)) return [];
-    const response = await client.all(`/v1/me/recommendations/${encodeURIComponent(id.slice(prefix.length))}/contents`);
+    const response = await client.all(`/v1/me/recommendations/${encodeURIComponent(id.slice(prefix.length))}/contents`, ARTIST_INCLUDES);
     return items(response.items);
   }
 

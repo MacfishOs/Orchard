@@ -56,25 +56,26 @@ class HomeFeedsTest {
     }
 
     @Test
-    fun disconnectedPreferredFallsBackWithWarning() = runBlocking {
+    fun disconnectedPreferredReportsErrorWithoutSwitchingCatalogs() {
         val youtube = FakeSource("youtube", "YouTube Music")
         val feeds = HomeFeeds(listOf(youtube, FakeSource("apple_music", "Apple Music", connected = false))) { "apple_music" }
-        val result = feeds.load()
-        assertEquals("youtube", result.source.id)
-        assertEquals("Apple Music is not connected. Showing YouTube Music on Home.", result.warning)
-        feeds.sectionItems("shelf", "")
-        assertEquals(listOf("shelf"), youtube.seeAll)
+        val error = assertThrows(IllegalStateException::class.java) { runBlocking { feeds.load() } }
+        assertEquals("Apple Music is not connected.", error.message)
+        assertNull(feeds.activeSource)
+        runBlocking { feeds.sectionItems("shelf", "") }
+        assertEquals(emptyList<String>(), youtube.seeAll)
     }
 
     @Test
-    fun failedPreferredFallsBackWithWarning() = runBlocking {
+    fun failedPreferredReportsItsOwnErrorWithoutSwitchingCatalogs() {
         val sources = listOf(
             FakeSource("youtube", "YouTube Music"),
             FakeSource("apple_music", "Apple Music", failure = IllegalStateException("down")),
         )
-        val result = HomeFeeds(sources) { "apple_music" }.load()
-        assertEquals("youtube", result.source.id)
-        assertEquals("Apple Music Home could not load. Showing YouTube Music on Home.", result.warning)
+        val feeds = HomeFeeds(sources) { "apple_music" }
+        val error = assertThrows(IllegalStateException::class.java) { runBlocking { feeds.load() } }
+        assertEquals("down", error.message)
+        assertNull(feeds.activeSource)
     }
 
     @Test

@@ -19,7 +19,7 @@
 
 import { AppleMusicError } from './client.js';
 import { APPLE_MUSIC_SOURCE, parseBrowseId } from './ids.js';
-import { album, artworkUrl, items, notes, playlist, releaseInfo, track, yearOf } from './normalize.js';
+import { ARTIST_INCLUDES, album, artworkUrl, items, notes, playlist, releaseInfo, track, yearOf } from './normalize.js';
 
 const SEARCH_TYPES = { songs: 'songs', albums: 'albums', artists: 'artists', playlists: 'playlists' };
 
@@ -36,14 +36,14 @@ export function createCatalog(client) {
     const appleId = requireId(id, type);
     const page = await client.get(catalogPath(`${type}/${encodeURIComponent(appleId)}`), {
       include: 'tracks',
-      'include[songs]': 'artists,albums'
+      ...ARTIST_INCLUDES
     });
     const resource = page.data?.[0];
     if (!resource) throw new AppleMusicError(404, 'not_found', 'Apple Music could not find that.');
     const relation = resource.relationships?.tracks || {};
     const resources = [...(relation.data || [])];
     // Long playlists continue past the first page of tracks.
-    if (relation.next) resources.push(...(await client.all(relation.next)).items);
+    if (relation.next) resources.push(...(await client.all(relation.next, ARTIST_INCLUDES)).items);
     return { resource, tracks: resources.filter((song) => song.type === 'songs') };
   }
 
@@ -57,6 +57,9 @@ export function createCatalog(client) {
       source: APPLE_MUSIC_SOURCE,
       title: card.title,
       artist: attributes.artistName || '',
+      artists: card.artists,
+      artistBrowseIds: card.artistBrowseIds,
+      artistBrowseId: card.artistBrowseId,
       releaseType: releaseInfo(attributes).releaseType,
       year: yearOf(attributes.releaseDate),
       description: notes(attributes.editorialNotes),
@@ -94,7 +97,7 @@ export function createCatalog(client) {
     if (!term) return { sections: [] };
     const types = filter === 'all' ? Object.values(SEARCH_TYPES) : [SEARCH_TYPES[filter]].filter(Boolean);
     if (!types.length) return { sections: [] };
-    const result = await client.get(catalogPath('search'), { term, types: types.join(','), limit: 25 });
+    const result = await client.get(catalogPath('search'), { term, types: types.join(','), limit: 25, ...ARTIST_INCLUDES });
     const sections = Object.entries(SEARCH_TYPES)
       .filter(([, type]) => types.includes(type))
       .map(([key, type]) => ({ key, title: key[0].toUpperCase() + key.slice(1), items: items(result.results?.[type]?.data) }))

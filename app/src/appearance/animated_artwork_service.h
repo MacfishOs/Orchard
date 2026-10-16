@@ -32,6 +32,7 @@
 
 class AppearanceSettings;
 class AppleMusic;
+class CatalogSource;
 class QNetworkReply;
 class SpotifyCanvas;
 
@@ -60,7 +61,7 @@ public:
     // Canvas loops for tracks the other mirrors miss. Connecting it retries old misses.
     void setSpotifyCanvas(SpotifyCanvas *spotify);
     // Signed in to Apple Music, Apple's catalog stands in for the unofficial mirrors.
-    void setAppleMusic(AppleMusic *appleMusic);
+    void setAppleMusic(AppleMusic *appleMusic, CatalogSource *source);
     void forgetMisses();
 
 signals:
@@ -109,6 +110,7 @@ private:
     AppearanceSettings *m_settings{nullptr};
     SpotifyCanvas *m_spotify{nullptr};
     AppleMusic *m_appleMusic{nullptr};
+    CatalogSource *m_source{nullptr};
     QNetworkAccessManager m_network;
     // Session cache: fetch once per song/album, reuse for the rest of eternity (or app restart).
     QHash<QString, QString> m_cache;

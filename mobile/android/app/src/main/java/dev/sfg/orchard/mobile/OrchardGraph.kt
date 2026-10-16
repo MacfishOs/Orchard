@@ -107,8 +107,9 @@ class OrchardGraph(context: Context) {
     }
     val catalog = CatalogRepository(youtube, auth)
     internal val appleMusic = dev.sfg.orchard.mobile.applemusic.AppleMusicCatalog(context, http, providerAsset)
-    internal val appleMusicMatches = dev.sfg.orchard.mobile.applemusic.AppleMusicMatches(catalog)
-    internal val catalogRouter = dev.sfg.orchard.mobile.catalog.CatalogRouter(catalog, appleMusic)
+    internal val catalogRouter = dev.sfg.orchard.mobile.catalog.CatalogRouter(catalog, appleMusic) {
+        settings.settings.value.homeSource
+    }
     val homeFeeds = HomeFeeds(listOf(YouTubeHomeSource(catalog),
         dev.sfg.orchard.mobile.home.AppleMusicHomeSource(appleMusic))) { settings.settings.value.homeSource }
     val playlistActions = PlaylistActions(youtube, auth)

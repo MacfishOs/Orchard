@@ -234,10 +234,6 @@ public:
     return !m_track.isEmpty() && (position() > 3.0 || !m_history.isEmpty());
   }
 
-  // Swaps songs the player cannot stream for playable ones; false when it has nothing to do.
-  using TrackMatcher = std::function<bool(const QVariantList &, int, std::function<void(const QVariantList &, int)>)>;
-  void setTrackMatcher(TrackMatcher matcher) { m_trackMatcher = std::move(matcher); }
-
   Q_INVOKABLE void playSong(const QVariantMap &track);
   Q_INVOKABLE void playCollection(const QVariantList &tracks,
                                   int startIndex = 0, bool shuffle = false,
@@ -310,6 +306,7 @@ signals:
   void animatedArtworkUrlChanged();
 
 private:
+  friend class PlaybackRecoveryTest;
   // True when the action went to a Connect target.
   bool forwardRemote(const QString &action, const QVariantMap &args = {});
   PlaybackRemote *m_remote{nullptr};
@@ -344,6 +341,8 @@ private:
   void receiveStream(quint64 id, const QJsonValue &result);
   void ensurePlaybackBackend();
   void wirePlayer(QMediaPlayer *source);
+  void wireStreamProxy(AudioStreamProxy *proxy);
+  void scheduleStreamRecovery(bool retryable, const QString &message);
   void applyPendingResume();
   void fail(const QString &message);
   void trackYouTubeHistory(double position);
@@ -385,7 +384,6 @@ private:
 
   YouTubeProvider *m_provider;
   QobuzService *m_qobuz{nullptr};
-  TrackMatcher m_trackMatcher;
   // Invalidates a preload's pending Qobuz lookup; YouTube preloads use m_nextRequest.
   quint64 m_preparedQobuzToken{0};
   bool m_qobuzWasActive{false};
@@ -405,6 +403,11 @@ private:
   std::unique_ptr<QMediaPlayer> m_players[2];
   QMediaPlayer *m_player{nullptr};
   QMediaPlayer *m_nextPlayer{nullptr};
+  struct PlayerTimeline {
+    double position{0.0};
+    bool paused{false};
+  };
+  QHash<QMediaPlayer *, PlayerTimeline> m_playerTimelines;
   AudioEngineOutput m_audioEngineOutput;
   AdaptiveMixController m_adaptiveMix;
   BestMixController m_bestMix;
@@ -437,6 +440,7 @@ private:
   QVariantList m_bestMixSortedQueue;
   bool m_bestMixSorted{false};
   QString m_error;
+  QTimer m_errorTimer;
   QString m_playlistId;
   QString m_queueContinuation;
   QString m_queueError;

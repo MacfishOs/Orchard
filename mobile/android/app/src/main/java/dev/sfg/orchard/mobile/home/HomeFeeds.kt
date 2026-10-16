@@ -21,16 +21,15 @@ package dev.sfg.orchard.mobile.home
 
 import dev.sfg.orchard.mobile.model.CatalogItem
 import dev.sfg.orchard.mobile.model.HomeFeed
-import kotlinx.coroutines.CancellationException
 
-/** A feed and the source that served it. [warning] is set when the preferred source was skipped. */
+/** A feed and the source that served it. */
 data class HomeFeedResult(
     val source: HomeSource,
     val feed: HomeFeed,
     val warning: String? = null,
 )
 
-/** Serves the home screen from the preferred source, falling back through the others in order. */
+/** Serves Home from the selected catalog. */
 class HomeFeeds(
     private val sources: List<HomeSource>,
     private val preferred: () -> String,
@@ -42,26 +41,12 @@ class HomeFeeds(
     val activeSource: HomeSource? get() = active
 
     suspend fun load(): HomeFeedResult {
-        val first = sources.firstOrNull { it.id == preferred() } ?: sources.first()
-        var skipped: String? = null
-        var lastError: Throwable? = null
-        for (source in listOf(first) + (sources - first)) {
-            if (!source.available()) {
-                if (source == first) skipped = "${source.name} is not connected."
-                continue
-            }
-            try {
-                val feed = source.feed()
-                active = source
-                return HomeFeedResult(source, feed, skipped?.let { "$it Showing ${source.name} on Home." })
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                lastError = e
-                if (source == first) skipped = "${source.name} Home could not load."
-            }
-        }
-        throw lastError ?: IllegalStateException("No home source is available.")
+        active = null
+        val source = sources.firstOrNull { it.id == preferred() } ?: sources.first()
+        check(source.available()) { "${source.name} is not connected." }
+        val feed = source.feed()
+        active = source
+        return HomeFeedResult(source, feed)
     }
 
     suspend fun sectionItems(browseId: String, params: String): List<CatalogItem> =

@@ -21,12 +21,18 @@
 // listener is signed in to Apple Music.
 #include "animated_artwork_lookup.h"
 #include "integrations/apple_music.h"
+#include "integrations/catalog_source.h"
 
 #include <QJsonObject>
 
-void AnimatedArtworkService::setAppleMusic(AppleMusic *appleMusic) { m_appleMusic = appleMusic; }
+void AnimatedArtworkService::setAppleMusic(AppleMusic *appleMusic, CatalogSource *source) {
+  m_appleMusic = appleMusic;
+  m_source = source;
+}
 
-bool AnimatedArtworkService::appleActive() const { return m_appleMusic && m_appleMusic->connected(); }
+bool AnimatedArtworkService::appleActive() const {
+  return m_appleMusic && m_source && m_source->apple() && m_appleMusic->connected();
+}
 
 void AnimatedArtworkService::applyAppleSource(QStringList &mirrors, bool album) const {
   if (!appleActive())

@@ -73,6 +73,8 @@ public:
   void artistView(const QString &browseId, const QString &params, PageReply done);
   // Apple's motion artwork for a song or album (catalog.artwork); an empty page when none matches.
   void artwork(const QJsonObject &query, PageReply done);
+  // Catalog search grouped into sections like YouTube's; filter is "all", "songs", "albums"...
+  void search(const QString &query, const QString &filter, PageReply done);
 
 signals:
   void changed();

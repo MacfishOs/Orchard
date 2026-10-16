@@ -204,6 +204,9 @@ internal class PlayerStreams(
     }
 
     private fun fresh(original: DataSpec, videoId: String): ResolvedStream {
+        check(!videoId.startsWith("am.") && trackLookup(videoId)?.playbackSource != "apple_music") {
+            "Apple Music playback is not available yet."
+        }
         Log.d(TAG, "resolve: resolving videoId=$videoId")
         val uri = original.uri
         val stream = qobuz(videoId, uri) ?: when {

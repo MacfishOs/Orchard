@@ -26,6 +26,7 @@ import dev.sfg.orchard.mobile.model.BrowseDetail
 import dev.sfg.orchard.mobile.model.CatalogItem
 import dev.sfg.orchard.mobile.model.CatalogKind
 import dev.sfg.orchard.mobile.model.HomeFeed
+import dev.sfg.orchard.mobile.model.SearchResults
 import dev.sfg.orchard.mobile.model.Track
 import dev.sfg.orchard.mobile.provider.ProviderBundle
 import dev.sfg.orchard.mobile.provider.ProviderHost
@@ -34,6 +35,7 @@ import dev.sfg.orchard.mobile.youtube.mapObjects
 import dev.sfg.orchard.mobile.youtube.providerDetail
 import dev.sfg.orchard.mobile.youtube.providerItem
 import dev.sfg.orchard.mobile.youtube.providerSections
+import dev.sfg.orchard.mobile.youtube.providerSearch
 import dev.sfg.orchard.mobile.youtube.text
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -56,6 +58,9 @@ internal class AppleMusicCatalog(context: Context, http: OkHttpClient, bundle: (
 
     fun signedIn(): Boolean = auth.userToken().isNotBlank()
     val connection = auth.state
+
+    suspend fun search(query: String): SearchResults =
+        call("catalog.search", JSONObject().put("query", query).put("filter", "all")).providerSearch()
 
     suspend fun home(): HomeFeed = HomeFeed(
         sections = call("catalog.home", JSONObject()).optJSONArray("sections").providerSections("apple-home"),
@@ -110,6 +115,7 @@ internal class AppleMusicCatalog(context: Context, http: OkHttpClient, bundle: (
     }
 
     private suspend fun call(method: String, payload: JSONObject, retry: Boolean = true): JSONObject {
+        check(signedIn()) { "Connect Apple Music in Settings to load this." }
         configure()
         val result = provider.invoke(method, payload)
         val error = result.optJSONObject("error") ?: return result

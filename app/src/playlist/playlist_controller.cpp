@@ -19,6 +19,7 @@
 
 #include "playlist_controller.h"
 #include "integrations/apple_music.h"
+#include "integrations/catalog_source.h"
 
 #include "auth/auth_manager.h"
 #include "local/local_library.h"
@@ -166,7 +167,24 @@ void PlaylistController::openPlaylist(const QVariantMap &item) {
     emit detailChanged();
     return;
   }
-  const bool appleId = m_appleMusic && AppleMusic::isAppleMusicId(browseId);
+  const bool appleId = AppleMusic::isAppleMusicId(browseId);
+  const bool appleSource = m_source && m_source->apple();
+  QString blocked;
+  if (appleSource && !appleId)
+    blocked = tr("This is a YouTube Music playlist. Switch to YouTube Music in Settings to open it.");
+  else if (!appleSource && appleId)
+    blocked = tr("This is an Apple Music playlist. Switch to Apple Music in Settings to open it.");
+  else if (appleSource && !m_appleMusic->connected())
+    blocked = tr("Connect Apple Music in Settings to open this.");
+  if (!blocked.isEmpty()) {
+    m_pendingItem = item;
+    m_loading = false;
+    m_loadingPage = false;
+    m_errorMessage = blocked;
+    emit stateChanged();
+    emit detailChanged();
+    return;
+  }
   if (!appleId && !m_auth->isSignedIn()) {
     m_pendingItem = item;
     m_loading = false;

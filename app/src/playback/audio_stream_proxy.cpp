@@ -183,14 +183,14 @@ private:
         m_reply->deleteLater();
         m_reply.clear();
     }
-    void retryChunk(int status) {
+    void retryChunk() {
         if (m_suspended) {
             if (m_headersValidated) m_offset = m_chunkEnd + 1 - m_chunkRemaining;
             releaseReply();
             return;
         }
         if (++m_retries > 3) {
-            fail(status, AudioStreamProxy::tr("The audio download was interrupted repeatedly. Please try again."));
+            fail(0, AudioStreamProxy::tr("The audio download was interrupted repeatedly. Please try again."));
             return;
         }
         // Resume after bytes already handed to the player, without duplicates.
@@ -228,7 +228,7 @@ private:
         if (m_reader) { readProvider(); return; }
         if (!m_reply || m_socket->state() != QAbstractSocket::ConnectedState) return;
         const int status = m_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        if (!status) { if (m_reply->isFinished()) retryChunk(0); return; }
+        if (!status) { if (m_reply->isFinished()) retryChunk(); return; }
         if (!m_headersValidated && !validateRange(status)) return;
         while (m_reply->bytesAvailable() && m_socket->bytesToWrite() < 128 * 1024) {
             if (m_chunkRemaining == 0) {
@@ -236,12 +236,12 @@ private:
                 return;
             }
             const auto data = m_reply->read(qMin(qint64(64 * 1024), m_chunkRemaining));
-            if (data.isEmpty()) { retryChunk(status); return; }
+            if (data.isEmpty()) { retryChunk(); return; }
             m_socket->write(data);
             m_chunkRemaining -= data.size();
         }
         if (!m_reply->isFinished() || m_reply->bytesAvailable()) return;
-        if (m_chunkRemaining != 0) { retryChunk(status); return; }
+        if (m_chunkRemaining != 0) { retryChunk(); return; }
         // All declared bytes arrived, even if the peer closed just afterward.
         releaseReply();
         m_retries = 0;

@@ -42,6 +42,21 @@ PlaybackController::PlaybackController(YouTubeProvider *provider,
       m_systemMedia(systemMedia), m_integrations(integrations),
       m_bestMix(provider, auth), m_slop(provider, auth),
       m_animatedArtworkService(animatedArtwork) {
+  m_errorTimer.setSingleShot(true);
+  m_errorTimer.setInterval(3200);
+  connect(&m_errorTimer, &QTimer::timeout, this, [this] {
+    m_error.clear();
+    emit stateChanged();
+  });
+  connect(this, &PlaybackController::stateChanged, this,
+          [this, shownError = QString()]() mutable {
+    if (m_error == shownError)
+      return;
+    shownError = m_error;
+    m_errorTimer.stop();
+    if (!m_error.isEmpty())
+      m_errorTimer.start();
+  });
   connect(&m_adaptiveMix, &AdaptiveMixController::modeChanged, this, [this] {
     clearPreparedTrack();
     prepareNextTrack();
@@ -246,56 +261,8 @@ PlaybackController::PlaybackController(YouTubeProvider *provider,
   if (m_auth->isSignedIn()) {
     maybePrepareAndRestore();
   }
-  for (auto &streamProxy : m_proxies) {
-    auto *proxy = &streamProxy;
-    connect(proxy, &AudioStreamProxy::streamFailed, this,
-            [this, proxy](int status, const QString &message) {
-              if (proxy != m_proxy) {
-                QMetaObject::invokeMethod(
-                    this,
-                    [this, proxy, status] {
-                      // The Qt player and the mix worker share this proxy and
-                      // can both fail on one bad URL; a pending retry covers both.
-                      if (proxy == m_nextProxy && !m_nextRequest)
-                        failPreparedTrack(status);
-                    },
-                    Qt::QueuedConnection);
-                return;
-              }
-              // Queue recovery so the connection can finish its signal handler
-              // safely.
-              const auto generation = m_generation;
-              QMetaObject::invokeMethod(
-                  this,
-                  [this, status, message, generation] {
-                    if (generation != m_generation || m_track.isEmpty())
-                      return;
-                    // Recovery resolves album audio, so the theater must stop following.
-                    if (!m_videoSourceTrackId.isEmpty()) {
-                      m_videoSourceTrackId.clear();
-                      emit videoSourceLost();
-                    }
-                    if (!m_retried && (status == 403 || status == 410 ||
-                                       status == 429 || status >= 500)) {
-                      m_retried = true;
-                      reportQobuzEnded(m_proxy, m_player);
-                      m_player->stop();
-                      m_proxy->clear();
-                      m_loading = true;
-                      m_error.clear();
-                      // A broken Qobuz stream retries on YouTube, as would a stale URL.
-                      requestStream(true);
-                      emit stateChanged();
-                      updateSystemMedia();
-                    } else
-                      fail(message.isEmpty()
-                               ? tr("YouTube audio request failed (HTTP %1).")
-                                     .arg(status)
-                               : message);
-                  },
-                  Qt::QueuedConnection);
-            });
-  }
+  for (auto &streamProxy : m_proxies)
+    wireStreamProxy(&streamProxy);
   attachQobuz();
 
   if (m_systemMedia) {

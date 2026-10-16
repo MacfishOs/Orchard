@@ -73,14 +73,13 @@ Item {
         if (page !== "search") {
             root.searchFilter = "all";
             OrchardSearch.clear();
-            scene.topBar.clearSearch();
+            scene.sidebar.clearSearch();
         }
         root.currentPage = page;
         if (page === "search") {
-            scene.topBar.focusSearch();
+            scene.sidebar.focusSearch();
             if (root.searchQuery.trim())
                 searchDebounce.restart();
-
         }
     }
 
@@ -128,7 +127,7 @@ Item {
         } else if (page === "search") {
             searchFilter = saved.filter || "all";
             currentPage = page;
-            scene.topBar.query = saved.query || "";
+            scene.sidebar.query = saved.query || "";
         } else if ((page === "album" || page === "artist" || page === "playlist") && detailKey(saved.item)) {
             showDetail(page, saved.item);
         }
@@ -409,14 +408,13 @@ Item {
         onPlaylistRequested: function(playlist) {
             root.openDetail("playlist", playlist);
         }
-        // Glade: centered in the content column at the bottom. Canopy: top row, ending before the search box.
+        // Glade: centered above the bottom edge. Canopy: top row, clear of the account controls.
         x: root.canopy ? scene.topBar.x : (parent.width - width) / 2 + scene.sidebarWidth / 2
         y: root.canopy ? scene.topBar.y + (scene.topBar.height - height) / 2 : parent.height - height - 14
         width: root.canopy ? scene.topBar.canopyPlayerWidth : Math.min(parent.width - scene.sidebarWidth - 32, 1120)
         height: root.canopy ? 52 : 64
         z: 6
     }
-
     // Above the player bar, which sits in the top row on canopy.
     TopErrorPill {
         anchors.horizontalCenter: parent.horizontalCenter

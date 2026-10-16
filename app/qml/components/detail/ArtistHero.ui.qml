@@ -23,70 +23,55 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
 
-// Artist banner. Wide fanart goes edge to edge; square portraits get a round avatar.
-// fullBleed drops the card and fades the fanart into the page, like mobile.
+// Artist header: edge-to-edge motion video or wide art, name and actions centered over its lower edge.
+// The picture's bottom melts through a blurred copy of itself into the page tint.
 Item {
     id: root
 
     property string title: "Artist"
-    property string subtitle: ""
     property string banner: ""
     property string portrait: ""
+    // Apple's name artwork; replaces the title text when present.
+    property string logo: ""
+    // First frame of the motion video, shown until it plays.
+    property string poster: ""
     property bool compact: false
     property bool actionsEnabled: true
     property bool playing: false
     property bool shareEnabled: true
-    // Wide artwork can bleed into the page when its aspect ratio leaves room for the title.
-    property bool fullBleed: false
-    // Extra horizontal padding so bled copy lines up with the page column.
-    property int sideInset: 0
-    // Page scroll offset, drives the banner parallax.
+    // Page scroll offset, drives the parallax.
     property real scrollY: 0
-    // Muted music video over the fanart. videoWanted reserves the wide layout before frames arrive.
+    // Muted backdrop video. videoWanted reserves the wide layout before frames arrive.
     property url videoSource: ""
     property bool videoWanted: false
     property bool videoPlaying: true
+    // Names the Watch button; empty hides it.
     property string videoTitle: ""
-    // {label, value} pairs for the credit row, e.g. genre, origin, subscribers.
-    property var credits: []
+    // Height the top bar covers; the name stays clear of it.
+    property real topInset: 0
+    // Visible page height; the header leaves room for Top Songs above the player.
+    property real viewportHeight: 1080
 
-    property color accentColor: "#7fbe90"
     property color accentSoftColor: "#96caa4"
-    property color accentInkColor: "#09100b"
-    property color inkColor: "#080c0a"
 
-    readonly property int pad: compact ? 20 : 32
+    readonly property bool masked: GraphicsInfo.api !== GraphicsInfo.Software
     // Anything wider than 4:3 is a real banner; squarer images would lose the face to cropping.
     readonly property bool bannerMode: bannerProbe.status === Image.Ready
                                        && bannerProbe.implicitWidth > bannerProbe.implicitHeight * 1.34
-    readonly property bool wideMode: bannerMode || videoWanted
-    readonly property bool panoramicBanner: root.bannerMode && !root.videoWanted
-                                            && bannerProbe.implicitWidth >= bannerProbe.implicitHeight * 3
-    // Panoramic banners stay inside the card so the center crop remains predictable.
-    readonly property bool bleeding: fullBleed && wideMode && !panoramicBanner
-    // Wide, roomy heroes set the name over a ruled row of credits.
-    readonly property bool creditMode: wideMode && !compact && !panoramicBanner
-    // Text, buttons and credits stacked at the bottom of the card.
-    readonly property real stackHeight: creditMode ? copy.height + 24 + creditBlock.height
-                                                   : copy.height + 20 + actions.height
-    // Open picture area above the name and credits; the video centers on it.
-    readonly property real stageHeight: creditMode ? card.height - pad - stackHeight - 24 : card.height
-    readonly property bool masked: GraphicsInfo.api !== GraphicsInfo.Software
-    // Soft edge width for bled fanart.
-    readonly property int feather: compact ? 48 : 96
-    // Wide heroes set short names like a title card.
-    readonly property int nameSize: compact ? 34 : title.length > 28 ? 44
-                                    : title.length > 14 ? 60
-                                    : wideMode ? Math.round(Math.max(68, Math.min(92, width * 0.062))) : 76
-    readonly property real avatarSize: compact ? 112 : Math.round(Math.max(150, Math.min(208, width * 0.2)))
+    readonly property bool wideMode: videoWanted || poster.length > 0 || bannerMode
+    // music.apple.com uses about 42% of the page width, capped so the first rows of songs stay in view.
+    readonly property real mediaHeight: wideMode
+        ? Math.round(Math.max(compact ? 340 : 440, Math.min(width * 0.42 + topInset * 0.5, viewportHeight * 0.62)))
+        : (compact ? 300 : 380) + topInset
+    readonly property int nameSize: compact ? 32 : title.length > 24 ? 38 : 48
 
     property alias playButton: playButton
     property alias shuffleButton: shuffleButton
     property alias shareButton: shareButton
     property alias backdropVideo: backdropVideo
-    property alias watchButton: creditBlock.watchButton
+    property alias watchButton: watchButton
 
-    implicitHeight: card.height
+    implicitHeight: mediaHeight + 4
 
     Image {
         id: bannerProbe
@@ -95,288 +80,233 @@ Item {
         visible: false
     }
 
+    // Whole header fades to transparent at the bottom so it melts into the shell's ambient colors.
     Rectangle {
-        id: card
+        id: stageFade
         width: root.width
-        height: root.bleeding
-                ? Math.max(root.stackHeight + root.pad * 2 + 140,
-                           Math.round(root.compact ? Math.max(380, root.width * 0.8)
-                                                   : Math.max(520, Math.min(780, root.width * 0.52))))
-                : !root.wideMode
-                ? Math.max(root.stackHeight, root.avatarSize) + root.pad * 2
-                : root.compact
-                ? Math.max(300, (root.wideMode ? 140 : root.pad + root.avatarSize + 16) + root.stackHeight + root.pad)
-                : Math.max(root.stackHeight + root.pad * 2 + 60, Math.round(Math.max(360, Math.min(480, root.width * 0.4))))
-        radius: root.bleeding ? 0 : 24
-        color: root.bleeding || !root.wideMode ? "transparent" : root.inkColor
-        layer.enabled: root.masked && !root.bleeding && root.wideMode
-        layer.effect: MultiEffect { maskEnabled: true; maskSource: cardMask }
+        height: root.mediaHeight
+        visible: false
+        layer.enabled: root.masked
+        gradient: Gradient {
+            GradientStop { position: 0; color: "white" }
+            GradientStop { position: 0.82; color: "white" }
+            GradientStop { position: 0.87; color: "#d7ffffff" }
+            GradientStop { position: 0.93; color: "#68ffffff" }
+            GradientStop { position: 0.98; color: "#09ffffff" }
+            GradientStop { position: 1; color: "transparent" }
+        }
+    }
 
-        Rectangle {
-            id: cardMask
-            anchors.fill: parent
-            radius: parent.radius
-            visible: false
-            layer.enabled: true
+    Item {
+        width: root.width
+        height: root.mediaHeight
+        layer.enabled: root.masked
+        layer.effect: MultiEffect {
+            maskEnabled: true
+            maskSource: stageFade
+            maskThresholdMin: 0.5
+            maskSpreadAtMin: 1
         }
 
-        // Alpha ramps so bled fanart melts into the page on every side; two passes because masks don't multiply.
-        Rectangle {
-            id: fadeMask
-            anchors.fill: parent
+        // Capture the visible picture so the blur follows the current video frame.
+        ShaderEffectSource {
+            id: blurredSource
+            width: root.width
+            height: root.mediaHeight
             visible: false
-            layer.enabled: root.bleeding
-            gradient: Gradient {
-                GradientStop { position: 0; color: "transparent" }
-                GradientStop { position: root.feather / Math.max(1, card.height); color: "white" }
-                GradientStop { position: 0.5; color: "white" }
-                GradientStop { position: 1; color: "transparent" }
-            }
+            sourceItem: root.wideMode && root.masked ? drift : null
+            sourceRect: Qt.rect(0, -drift.y, root.width, root.mediaHeight)
+            textureSize: Qt.size(480, Math.max(1, Math.round(root.mediaHeight * 480 / Math.max(1, root.width))))
+            live: root.videoPlaying
         }
+        // Smoothly reveal the blur over the lower picture, before it fades into the page.
         Rectangle {
-            id: edgeMask
-            anchors.fill: parent
+            id: blurMask
+            width: root.width
+            height: root.mediaHeight
             visible: false
-            layer.enabled: root.bleeding
+            layer.enabled: root.masked
             gradient: Gradient {
-                orientation: Gradient.Horizontal
                 GradientStop { position: 0; color: "transparent" }
-                GradientStop { position: root.feather / Math.max(1, card.width); color: "white" }
-                GradientStop { position: 1 - root.feather / Math.max(1, card.width); color: "white" }
-                GradientStop { position: 1; color: "transparent" }
+                GradientStop { position: 0.58; color: "transparent" }
+                GradientStop { position: 0.66; color: "#28ffffff" }
+                GradientStop { position: 0.75; color: "#80ffffff" }
+                GradientStop { position: 0.84; color: "#d7ffffff" }
+                GradientStop { position: 0.92; color: "white" }
+                GradientStop { position: 1; color: "white" }
             }
         }
 
         Item {
-            id: artFrame
-            anchors.fill: parent
-            // No fanart: just the round portrait, no backdrop.
-            visible: root.wideMode
-            layer.enabled: root.masked && root.bleeding
-            layer.effect: MultiEffect {
-                maskEnabled: true
-                maskSource: edgeMask
-                maskThresholdMin: 0.5
-                maskSpreadAtMin: 1
+            id: media
+            width: root.width
+            height: root.mediaHeight
+            clip: true
+
+            // No wide art, or none loaded yet: the portrait blurred at thumbnail size, then upscaled for a cheap glow.
+            Item {
+                width: 24
+                height: 24
+                visible: !root.wideMode || (stillImage.status !== Image.Ready && !backdropVideo.live)
+                layer.enabled: visible
+                layer.smooth: true
+                transform: Scale { xScale: media.width / 24; yScale: media.height / 24 }
+
+                Image {
+                    id: wash
+                    anchors.fill: parent
+                    source: root.portrait
+                    fillMode: Image.Stretch
+                    sourceSize.width: 32
+                    asynchronous: true
+                    visible: false
+                }
+                MultiEffect {
+                    anchors.fill: parent
+                    source: wash
+                    blurEnabled: true
+                    blurMax: 16
+                    blur: 1
+                    saturation: 0.4
+                }
             }
 
             Item {
-                id: art
-                anchors.fill: parent
-                // Layers clip on their own; the software renderer needs telling.
-                clip: root.bleeding
-                layer.enabled: root.masked && root.bleeding
-                layer.effect: MultiEffect {
-                    maskEnabled: true
-                    maskSource: fadeMask
-                    // Centered threshold with full spread maps mask alpha to a linear fade.
-                    maskThresholdMin: 0.5
-                    maskSpreadAtMin: 1
-                }
-
-                // Portrait mode backdrop: blur at thumbnail size, then upscale for a cheap soft glow.
-                Item {
-                    width: 24
-                    height: 24
-                    visible: !root.bannerMode
-                    opacity: 0.85
-                    layer.enabled: visible
-                    layer.smooth: true
-                    transform: Scale { xScale: card.width / 24; yScale: card.height / 24 }
-
-                    Image {
-                        id: wash
-                        anchors.fill: parent
-                        source: root.portrait
-                        fillMode: Image.Stretch
-                        sourceSize.width: 32
-                        asynchronous: true
-                        visible: false
-                    }
-                    MultiEffect {
-                        anchors.fill: parent
-                        source: wash
-                        blurEnabled: true
-                        blurMax: 16
-                        blur: 1
-                        saturation: 0.35
-                    }
-                }
+                id: drift
+                width: parent.width
+                // Oversized so the parallax never exposes the edge.
+                height: parent.height * 1.2
+                y: -Math.min(Math.max(root.scrollY, 0) * 0.3, parent.height * 0.2)
+                visible: root.wideMode
 
                 Image {
-                    id: bannerImage
-                    width: parent.width
-                    // Oversized so the parallax drift never exposes the card edge.
-                    height: root.panoramicBanner ? parent.height : parent.height * 1.25
-                    y: root.panoramicBanner ? 0 : -Math.min(Math.max(root.scrollY, 0) * 0.3, parent.height * 0.25)
-                    source: root.banner
+                    id: stillImage
+                    anchors.fill: parent
+                    source: root.poster.length > 0 ? root.poster : root.banner
                     fillMode: Image.PreserveAspectCrop
-                    // Fanart keeps heads near the top; crop from the bottom.
-                    verticalAlignment: Image.AlignTop
+                    // Banners keep heads near the top; video frames are composed around the middle.
+                    verticalAlignment: root.poster.length > 0 ? Image.AlignVCenter : Image.AlignTop
                     asynchronous: true
-                    opacity: root.bannerMode ? 1 : 0
-                    visible: opacity > 0
+                    opacity: status === Image.Ready ? 1 : 0
                     Behavior on opacity { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
                 }
-
-                // Fanart or the portrait wash holds the frame until the video has pictures.
-                // Centered on the stage so the subject clears the text. Drift is capped at a tenth so the
-                // box still reaches the card bottom without zooming the picture far in.
                 ArtistBackdropVideo {
                     id: backdropVideo
-                    width: parent.width
-                    height: parent.height * 2.2 - root.stageHeight
-                    y: (root.stageHeight - height) / 2 - Math.min(Math.max(root.scrollY, 0) * 0.15, parent.height * 0.1)
+                    anchors.fill: parent
                     source: root.videoSource
                     playing: root.videoPlaying
+                    visibleTop: -drift.y
+                    visibleHeight: root.mediaHeight
                     visible: hasVideo
                     opacity: live ? 1 : 0
-                    Behavior on opacity { NumberAnimation { duration: 1000; easing.type: Easing.InOutQuad } }
+                    Behavior on opacity { NumberAnimation { duration: 900; easing.type: Easing.InOutQuad } }
                 }
-                // Music videos run brighter than fanart; keep the title readable.
-                Rectangle {
-                    anchors.fill: parent
-                    color: root.inkColor
-                    opacity: backdropVideo.opacity * 0.22
-                    visible: opacity > 0
-                }
+            }
 
-                // Scrims: bottom fade for the name, left fade for the buttons.
-                Rectangle {
-                    anchors.fill: parent
-                    gradient: Gradient {
-                        GradientStop { position: 0; color: Qt.rgba(root.inkColor.r, root.inkColor.g, root.inkColor.b, 0.18) }
-                        GradientStop { position: 0.4; color: "transparent" }
-                        GradientStop { position: 0.78; color: Qt.rgba(root.inkColor.r, root.inkColor.g, root.inkColor.b, 0.55) }
-                        GradientStop { position: 1; color: Qt.rgba(root.inkColor.r, root.inkColor.g, root.inkColor.b, 0.92) }
-                    }
-                }
-                Rectangle {
-                    anchors.fill: parent
-                    visible: !root.compact
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop { position: 0; color: Qt.rgba(root.inkColor.r, root.inkColor.g, root.inkColor.b, 0.5) }
-                        GradientStop { position: 0.55; color: "transparent" }
-                    }
+            // Keeps the top bar legible over bright frames.
+            Rectangle {
+                width: parent.width
+                height: root.topInset + 40
+                gradient: Gradient {
+                    GradientStop { position: 0; color: "#33000000" }
+                    GradientStop { position: 1; color: "transparent" }
                 }
             }
         }
 
-        Item {
-            id: avatar
-            visible: !root.wideMode || root.panoramicBanner
-            x: root.compact ? (card.width - width) / 2 : root.pad
-            y: root.compact ? root.pad : actions.y + actions.height - height
-            width: root.avatarSize
-            height: root.avatarSize
+        MultiEffect {
+            width: root.width
+            height: root.mediaHeight
+            visible: root.wideMode && root.masked
+            source: blurredSource
+            autoPaddingEnabled: false
+            blurEnabled: true
+            blurMax: 64
+            blur: 1
+            maskEnabled: true
+            maskSource: blurMask
+            maskThresholdMin: 0.5
+            maskSpreadAtMin: 1
+        }
 
-            Rectangle {
-                id: avatarShadowSource
-                anchors.fill: parent
-                radius: width / 2
-                color: "black"
-                visible: false
+        // Darkens the lower picture so the name stays legible on bright frames.
+        Rectangle {
+            anchors.fill: parent
+            gradient: Gradient {
+                GradientStop { position: 0; color: "transparent" }
+                GradientStop { position: root.wideMode ? 0.55 : 0.3; color: "transparent" }
+                GradientStop { position: 1; color: "#26000000" }
             }
-            MultiEffect {
-                anchors.fill: parent
-                source: avatarShadowSource
-                autoPaddingEnabled: true
+        }
+    }
+
+    // Portrait layouts center the round artist photo above the name.
+    RoundedArtwork {
+        id: avatar
+        visible: !root.wideMode
+        width: root.compact ? 112 : 168
+        height: avatar.width
+        x: (root.width - avatar.width) / 2
+        y: name.y - avatar.height - 22
+        radius: avatar.width / 2
+        source: root.portrait
+    }
+
+    Column {
+        id: name
+        width: Math.min(root.width - 64, 900)
+        x: (root.width - width) / 2
+        y: root.mediaHeight - height - (root.compact ? 18 : 30)
+        spacing: root.compact ? 14 : 18
+
+        Image {
+            id: logoImage
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: root.logo.length > 0 && status === Image.Ready
+            source: root.logo
+            asynchronous: true
+            fillMode: Image.PreserveAspectFit
+            width: Math.min(parent.width * 0.6, root.compact ? 260 : 420)
+            height: visible ? (root.compact ? 64 : 104) : 0
+        }
+        Text {
+            width: parent.width
+            visible: !logoImage.visible
+            text: root.title
+            horizontalAlignment: Text.AlignHCenter
+            color: "#ffffff"
+            font.family: "Inter"
+            font.pixelSize: root.nameSize
+            font.weight: Font.Bold
+            font.letterSpacing: -root.nameSize * 0.02
+            wrapMode: Text.Wrap
+            maximumLineCount: 2
+            elide: Text.ElideRight
+            layer.enabled: root.masked
+            layer.effect: MultiEffect {
                 shadowEnabled: true
-                shadowBlur: 1
-                shadowOpacity: 0.5
-                shadowVerticalOffset: 14
-                shadowColor: "black"
-            }
-            RoundedArtwork {
-                anchors.fill: parent
-                radius: width / 2
-                source: root.portrait
-            }
-            LucideIcon {
-                anchors.centerIn: parent
-                width: 56
-                height: 56
-                name: "circle-user-round"
-                color: Qt.rgba(root.accentSoftColor.r, root.accentSoftColor.g, root.accentSoftColor.b, 0.7)
-                visible: !root.portrait
-            }
-            Rectangle {
-                anchors.fill: parent
-                radius: width / 2
-                color: "transparent"
-                border.color: "#1fffffff"
+                shadowBlur: 0.8
+                shadowOpacity: 0.3
+                shadowVerticalOffset: 2
             }
         }
 
-        Column {
-            id: copy
-            x: root.compact || (root.wideMode && !root.panoramicBanner)
-               ? root.pad + root.sideInset : avatar.x + avatar.width + 32
-            y: root.creditMode ? creditBlock.y - 24 - height : actions.y - 20 - height
-            width: card.width - x - root.pad - root.sideInset - (root.creditMode ? actions.width + 32 : 0)
-            spacing: 0
-
-            Row {
-                visible: !root.creditMode
-                spacing: 12
-
-                Text {
-                    text: qsTr("ARTIST")
-                    color: Qt.rgba(root.accentSoftColor.r, root.accentSoftColor.g, root.accentSoftColor.b, 0.95)
-                    font.family: "Inter"
-                    font.pixelSize: 11
-                    font.weight: Font.Bold
-                    font.letterSpacing: 2.4
-                }
-            }
-            Item { width: 1; height: root.creditMode ? 0 : 6 }
-            Text {
-                width: parent.width
-                text: root.title
-                color: "#f7f5f0"
-                font.family: "Inter"
-                font.pixelSize: root.nameSize
-                font.weight: root.creditMode ? Font.ExtraBold : Font.Black
-                font.letterSpacing: root.compact ? -0.8 : -root.nameSize * 0.04
-                lineHeight: root.wideMode ? 0.9 : 0.94
-                wrapMode: Text.Wrap
-                maximumLineCount: 2
-                elide: Text.ElideRight
-                // Lift the name off busy fanart without a visible box.
-                layer.enabled: root.wideMode && GraphicsInfo.api !== GraphicsInfo.Software
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 0.6
-                    shadowOpacity: 0.45
-                    shadowVerticalOffset: 2
-                }
-            }
-            Item { width: 1; height: subtitleText.visible ? 8 : 0 }
-            Text {
-                id: subtitleText
-                width: parent.width
-                visible: !root.creditMode && text.length > 0
-                text: root.subtitle
-                color: "#d4d8d2"
-                font.family: "Inter"
-                font.pixelSize: 13
-                font.weight: Font.Medium
-                elide: Text.ElideRight
-            }
-        }
-
-        // Under the name in portrait and compact layouts; right of it, play outermost, in credit mode.
         Row {
-            id: actions
-            x: root.creditMode ? card.width - root.pad - root.sideInset - width : copy.x
-            y: root.creditMode ? creditBlock.y - 24 - height : card.height - root.pad - height
-            spacing: root.creditMode ? 10 : 12
-            layoutDirection: root.creditMode ? Qt.RightToLeft : Qt.LeftToRight
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: 16
 
+            ArtistHeroGhostButton {
+                id: shuffleButton
+                anchors.verticalCenter: parent.verticalCenter
+                accentSoftColor: root.accentSoftColor
+                glyph: "shuffle"
+                enabled: root.actionsEnabled
+                Accessible.name: qsTr("Shuffle")
+                ToolTip.text: qsTr("Shuffle")
+            }
             Button {
                 id: playButton
-                width: root.creditMode ? 60 : 56
+                width: root.compact ? 52 : 60
                 height: width
                 enabled: root.actionsEnabled
                 opacity: enabled ? 1 : 0.4
@@ -385,8 +315,8 @@ Item {
                 Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
                 background: Rectangle {
                     radius: width / 2
-                    color: playButton.hovered ? Qt.lighter(root.accentColor, 1.08) : root.accentColor
-                    border.color: playButton.activeFocus ? "white" : "transparent"
+                    color: playButton.hovered ? "#ffffff" : "#f4f4f4"
+                    border.color: playButton.activeFocus ? root.accentSoftColor : "transparent"
                     border.width: 2
                 }
                 contentItem: Item {
@@ -396,18 +326,9 @@ Item {
                         width: 24
                         height: 24
                         name: root.playing ? "pause" : "play"
-                        color: root.accentInkColor
+                        color: "#111111"
                     }
                 }
-            }
-            ArtistHeroGhostButton {
-                id: shuffleButton
-                anchors.verticalCenter: parent.verticalCenter
-                accentSoftColor: root.accentSoftColor
-                glyph: "shuffle"
-                enabled: root.actionsEnabled
-                Accessible.name: qsTr("Shuffle")
-                ToolTip.text: qsTr("Shuffle")
             }
             ArtistHeroGhostButton {
                 id: shareButton
@@ -419,24 +340,42 @@ Item {
                 ToolTip.text: qsTr("Copy artist link")
             }
         }
+    }
 
-        ArtistHeroCredits {
-            id: creditBlock
-            visible: root.creditMode
-            x: root.pad + root.sideInset
-            y: card.height - root.pad - height
-            width: card.width - x - root.pad - root.sideInset
-            credits: root.credits
-            videoTitle: root.videoTitle
-            videoLive: backdropVideo.live
+    // Opens the full music video; HomeScene grows it out of this header.
+    Button {
+        id: watchButton
+        visible: root.videoTitle.length > 0 && !root.compact
+        x: root.width - width - 32
+        y: root.mediaHeight - height - 42
+        height: 34
+        leftPadding: 14
+        rightPadding: 16
+        Accessible.name: qsTr("Watch %1").arg(root.videoTitle)
+        background: Rectangle {
+            radius: height / 2
+            color: watchButton.hovered ? "#40ffffff" : "#26ffffff"
+            border.color: watchButton.activeFocus ? root.accentSoftColor : "transparent"
+            Behavior on color { ColorAnimation { duration: 120 } }
         }
+        contentItem: Row {
+            spacing: 8
 
-        Rectangle {
-            anchors.fill: parent
-            radius: parent.radius
-            visible: !root.bleeding && root.wideMode
-            color: "transparent"
-            border.color: "#14ffffff"
+            LucideIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 14
+                height: 14
+                name: "play"
+                color: "#ffffff"
+            }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("Watch “%1”").arg(root.videoTitle)
+                color: "#ffffff"
+                font.family: "Inter"
+                font.pixelSize: 13
+                font.weight: Font.Medium
+            }
         }
     }
 }

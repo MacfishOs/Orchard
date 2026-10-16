@@ -157,14 +157,14 @@ Select **Cancel** to stop connecting. Orchard stores the Apple Music token in th
 
 On Android, open **Settings**, **Connections**, **Apple Music**, then select **Sign in to Apple Music**. Sign in to the Orchard account under **Connections**, **Orchard Account** first.
 
-## Choose Apple Music recommendations on Home
+## Choose Apple Music as the music source
 
-On desktop, open **Settings**, **General** and set **Home source** to **Apple**. **Normal**, the default, uses YouTube Music. On Android, open **Settings**, **Appearance**, **Home screen layout**, then choose **Apple** under **Home source** on the **Online** tab.
+On desktop, open **Settings**, **General** and set **Music source** to **Apple**. **Normal**, the default, uses YouTube Music. On Android, open **Settings**, **Appearance**, **Home screen layout**, then choose **Apple Music** under **Music source** on the **Online** tab.
 
-Apple Home shows personal recommendations. If Apple returns no supported recommendations, Orchard shows Apple Music charts. If Apple Music is disconnected or Home cannot load, Orchard shows the normal YouTube Music feed and a message. The saved **Apple** choice stays selected so a refresh can try Apple Music again. Connecting or disconnecting Apple Music refreshes Home when **Apple** is selected.
+The music source decides Home, search, artist, album and playlist pages on both platforms. Orchard never mixes the two services and never falls back to the other one. With **Apple** selected, Home shows Apple Music recommendations or charts, the sidebar search uses Apple Music, and an artist named on a YouTube Music song opens its Apple Music page. A YouTube Music album or playlist shows a message asking you to switch to YouTube Music; an Apple Music page shows the matching message under **Normal**. If Apple Music is disconnected or fails, the page shows an error instead of YouTube Music. Changing the source returns to Home on desktop. Your library and the sidebar playlists still come from YouTube Music.
 
-Search and your library continue to use YouTube Music. Apple Music albums, playlists, and artists open their Apple Music catalog pages. Songs from Apple Music are matched to YouTube Music for playback; Orchard does not stream Apple Music subscription audio. A song without a matching YouTube Music track cannot play. Your YouTube Music session is required for playback.
+Apple Music playback is not available yet. Apple Music songs keep their Apple Music identity and are not matched to YouTube Music for playback. Your YouTube Music session is required to play YouTube Music songs.
 
 ## Disconnect Apple Music
 
-Select **Disconnect** in the **Apple Music** card in **Settings**, **Integrations** on desktop or **Settings**, **Connections**, **Apple Music** on Android. Orchard removes the saved Apple Music user token and clears Apple's sign-in cookies and MusicKit page storage. If **Home source** is **Apple**, Home reloads using YouTube Music.
+Select **Disconnect** in the **Apple Music** card in **Settings**, **Integrations** on desktop or **Settings**, **Connections**, **Apple Music** on Android. Orchard removes the saved Apple Music user token and clears Apple's sign-in cookies and MusicKit page storage. If **Music source** is **Apple** on desktop, Home shows "Connect Apple Music in Settings to load Home." On Android, Home shows an Apple Music connection error until you reconnect or choose YouTube Music.

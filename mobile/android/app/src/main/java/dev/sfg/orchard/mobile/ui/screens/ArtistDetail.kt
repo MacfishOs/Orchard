@@ -236,7 +236,7 @@ internal fun ArtistDetailContent(
                         compact = true,
                     )
                     is ArtistRow.Rail -> CatalogRail(row.items, row.title, onPlayTrack, onOpen)
-                    ArtistRow.About -> ArtistAboutCard(detail.description, palette)
+                    ArtistRow.About -> ArtistAboutCard(detail, palette)
                 }
             }
         }
@@ -267,11 +267,14 @@ internal fun ArtistDetailContent(
 
 /** The bio in a tinted card, four lines until it is opened. */
 @Composable
-private fun ArtistAboutCard(text: String, palette: ArtworkPalette) {
+private fun ArtistAboutCard(detail: BrowseDetail, palette: ArtworkPalette) {
     HeroAbout(
         title = "About",
-        text = text,
+        text = detail.description,
         collapsedLines = 4,
+        html = detail.source == "apple_music" || Regex(
+            "</?(?:a|b|br|div|em|i|li|ol|p|span|strong|u|ul)\\b", RegexOption.IGNORE_CASE,
+        ).containsMatchIn(detail.description),
         modifier = Modifier
             .padding(start = 20.dp, end = 20.dp, top = 28.dp)
             .clip(RoundedCornerShape(20.dp))

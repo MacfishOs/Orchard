@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createAppleMusic } from '../src/index.js';
 
-const album = (id) => ({ id, type: 'albums', attributes: { name: `Album ${id}`, artistName: 'Artist' } });
+const album = (id) => ({
+  id, type: 'albums', attributes: { name: `Album ${id}`, artistName: 'Artist' },
+  relationships: { artists: { data: [{ id: '42', type: 'artists', attributes: { name: 'Artist' } }] } }
+});
 const recommendation = (id, data, next = '') => ({
   id, type: 'personal-recommendation',
   attributes: { title: { stringForDisplay: `For you ${id}` } },
@@ -31,8 +34,11 @@ test('Home normalizes MusadoraKit recommendation titles and contents with the us
   assert.equal(home.sections[0].title, 'For you one');
   assert.equal(home.sections[0].items.length, 1);
   assert.equal(home.sections[0].items[0].browseId, 'am.albums.1');
+  assert.deepEqual(home.sections[0].items[0].artistBrowseIds, ['am.artists.42']);
+  assert.deepEqual(home.sections[0].items[0].artists, ['Artist']);
   assert.equal(calls[0].headers['Music-User-Token'], 'user');
   assert.match(calls[0].url, /include=contents/);
+  assert.equal(new URL(calls[0].url).searchParams.get('include[albums]'), 'artists');
 });
 
 test('Home follows recommendation pages and nested groups without repeating a shelf', async () => {
@@ -54,6 +60,8 @@ test('empty supported recommendations fall back to the listener storefront chart
   const home = await client.home();
   assert.equal(home.sections[0].title, 'Top Albums');
   assert.equal(home.sections[0].items[0].source, 'apple_music');
+  assert.deepEqual(home.sections[0].items[0].artistBrowseIds, ['am.artists.42']);
+  assert.equal(new URL(calls[1].url).searchParams.get('include[albums]'), 'artists');
   assert.equal(calls.length, 2);
 });
 
@@ -71,11 +79,13 @@ test('Home rejects disconnected and expired sessions without silently using char
 });
 
 test('See all recommendation contents follow pagination and preserve the dotted id', async () => {
-  const { client } = music([
+  const { client, calls } = music([
     [/offset=1/, 200, { data: [album('2')] }],
     [/recommendations\/one.two\/contents/, 200, { data: [album('1')], next: '/v1/me/recommendations/one.two/contents?offset=1' }],
   ]);
   const cards = await client.homeSection('am.recommendations.one.two');
   assert.deepEqual(cards.map((card) => card.browseId), ['am.albums.1', 'am.albums.2']);
+  assert.deepEqual(cards.map((card) => card.artistBrowseIds), [['am.artists.42'], ['am.artists.42']]);
+  for (const { url } of calls) assert.equal(new URL(url).searchParams.get('include[albums]'), 'artists');
   assert.deepEqual(await client.homeSection('UCyoutube'), []);
 });

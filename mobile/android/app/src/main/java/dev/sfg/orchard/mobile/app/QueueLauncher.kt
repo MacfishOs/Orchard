@@ -76,20 +76,16 @@ internal class QueueLauncher(
     ) {
         Log.d(TAG, "playAll: ${tracks.size} tracks, startIndex=$startIndex, contextTitle='$contextTitle'")
         if (tracks.isEmpty()) return
+        if (tracks[startIndex.coerceIn(tracks.indices)].let { it.playbackSource == "apple_music" || it.id.startsWith("am.") }) {
+            showWarning("Apple Music playback is not available yet.")
+            return
+        }
         scope.launch {
-            val requested = tracks[startIndex.coerceIn(tracks.indices)]
-            val playable = graph.appleMusicMatches.playable(tracks)
-            if (playable.isEmpty()) {
-                showWarning("Could not find these songs to play.")
-                return@launch
-            }
-            // Matching can drop songs, so the requested start is found again by title.
-            val safeIndex = if (playable.size == tracks.size) startIndex.coerceIn(tracks.indices)
-                else playable.indexOfFirst { it.title == requested.title }.coerceAtLeast(0)
+            val safeIndex = startIndex.coerceIn(tracks.indices)
             val source = contextTitle.takeIf { it.isMeaningfulPlaybackSource() }
-                ?: playable[safeIndex].album.takeIf { it.isMeaningfulPlaybackSource() }
+                ?: tracks[safeIndex].album.takeIf { it.isMeaningfulPlaybackSource() }
                 ?: "Your queue"
-            replaceQueue(playable, safeIndex, source, shuffle)
+            replaceQueue(tracks, safeIndex, source, shuffle)
         }
     }
 
@@ -134,7 +130,7 @@ internal class QueueLauncher(
             val tracks = if (query.isBlank()) {
                 graph.library.library.value.likedTracks.let(QueueEditor::shuffle)
             } else {
-                runCatching { graph.catalog.search(query).tracks }.getOrDefault(emptyList())
+                runCatching { graph.catalogRouter.search(query).tracks }.getOrDefault(emptyList())
             }
             if (tracks.isEmpty()) {
                 showWarning(

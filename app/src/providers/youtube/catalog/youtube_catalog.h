@@ -39,6 +39,7 @@ public:
   quint64 fetchSearch(const QString &query, const QString &filter,
                      const QJsonObject &session);
   quint64 fetchArtist(const QString &browseId, const QJsonObject &session);
+  quint64 fetchBrowse(const QJsonObject &payload, const QJsonObject &session);
   quint64 fetchAlbum(const QString &browseId, const QJsonObject &session);
   quint64 fetchPlaylist(const QString &browseId, const QJsonObject &session);
   quint64 fetchPlaylistPage(const QString &continuation, int startIndex,
@@ -50,13 +51,14 @@ signals:
   void playlistsReady(quint64 requestId, const QJsonArray &playlists);
   void searchReady(quint64 requestId, const QJsonObject &search);
   void artistReady(quint64 requestId, const QJsonObject &artist);
+  void browseReady(quint64 requestId, const QJsonObject &page);
   void albumReady(quint64 requestId, const QJsonObject &album);
   void playlistReady(quint64 requestId, const QJsonObject &playlist);
   void playlistPageReady(quint64 requestId, const QJsonObject &page);
   void requestFailed(quint64 requestId, const QString &message);
 
 private:
-  enum class RequestKind { Home, Library, Playlists, Search, Artist, Album, Playlist, PlaylistPage };
+  enum class RequestKind { Home, Library, Playlists, Search, Artist, Browse, Album, Playlist, PlaylistPage };
 
   quint64 invoke(RequestKind kind, const QString &method, QJsonObject payload);
   void handleResult(quint64 requestId, const QJsonValue &result);

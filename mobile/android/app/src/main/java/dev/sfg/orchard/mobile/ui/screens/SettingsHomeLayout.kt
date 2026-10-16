@@ -104,10 +104,10 @@ fun SettingsHomeLayout(
                 if (selectedTabIndex == 0) {
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            RowTitle("Home source")
-                            RowSubtitle("Normal uses YouTube Music. Apple uses Apple Music recommendations when connected, with YouTube Music as a fallback.")
+                            RowTitle("Music source")
+                            RowSubtitle("Choose the catalog for Home, search, albums, artists and playlists.")
                             SettingsSegmented(
-                                options = listOf("youtube" to "Normal", "apple_music" to "Apple"),
+                                options = listOf("youtube" to "YouTube Music", "apple_music" to "Apple Music"),
                                 selected = settings.homeSource,
                                 onSelect = { onSettings(settings.copy(homeSource = it)) },
                             )

@@ -51,6 +51,7 @@ internal fun SearchOverlayHost(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val search by viewModel.search.collectAsStateWithLifecycle()
     val history by viewModel.searchHistory.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val downloadedTrackIds by viewModel.downloadedTrackIds.collectAsStateWithLifecycle()
     val downloadingTrackIds by viewModel.downloadingTrackIds.collectAsStateWithLifecycle()
     var pickerTrack by remember { mutableStateOf<Track?>(null) }
@@ -96,6 +97,7 @@ internal fun SearchOverlayHost(
         backdropArtworkUrl = backdropArtworkUrl,
         backdropPlaying = backdropPlaying,
         showBackdrop = showBackdrop,
+        youtubeCatalog = settings.homeSource != "apple_music",
         modifier = modifier,
     )
 

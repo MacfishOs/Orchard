@@ -21,6 +21,7 @@
 
 #include "auth/auth_manager.h"
 #include "integrations/apple_music.h"
+#include "integrations/catalog_source.h"
 #include "providers/youtube/catalog/youtube_catalog.h"
 
 #include <QJsonArray>
@@ -48,9 +49,6 @@ HomeController::HomeController(YouTubeCatalog *catalog, AuthManager *auth,
   settings.beginGroup(QStringLiteral("playback"));
   m_volume = qBound(
       0.0, settings.value(QStringLiteral("volume"), 1.0).toDouble(), 1.0);
-  m_homeSource = settings.value(QStringLiteral("homeSource"), QStringLiteral("youtube")).toString();
-  if (m_homeSource != QStringLiteral("apple_music"))
-    m_homeSource = QStringLiteral("youtube");
 
   connect(m_catalog, &YouTubeCatalog::playlistsReady, this,
           [this](quint64 requestId, const QJsonArray &playlists) {
@@ -129,26 +127,30 @@ void HomeController::refresh() {
   refreshPlaylists();
   m_loading = true;
   m_errorMessage.clear();
-  m_homeWarning.clear();
-  if (m_homeSource == QStringLiteral("apple_music") && m_appleMusic && m_appleMusic->connected()) {
+  if (m_source && m_source->apple()) {
+    if (!m_appleMusic || !m_appleMusic->connected()) {
+      m_requestId = 0;
+      m_loading = false;
+      m_errorMessage = tr("Connect Apple Music in Settings to load Home.");
+      emit stateChanged();
+      return;
+    }
     const quint64 id = (quint64{1} << 63) | ++m_appleRequests;
     m_requestId = id;
     m_appleMusic->home([this, id](const QJsonObject &home, const QString &error) {
       if (m_requestId != id) return;
       if (!error.isEmpty() || home.value(QStringLiteral("sections")).toArray().isEmpty())
-        fetchNormalHome(tr("Apple Music Home could not load. Showing YouTube Music on Home."));
+        receiveFailure(id, error.isEmpty() ? tr("Apple Music Home could not load.") : error);
       else
         receiveHome(id, home);
     });
   } else {
-    fetchNormalHome(m_homeSource == QStringLiteral("apple_music")
-                        ? tr("Apple Music is not connected. Showing YouTube Music on Home.") : QString());
+    fetchNormalHome();
   }
   emit stateChanged();
 }
 
-void HomeController::fetchNormalHome(const QString &warning) {
-  m_homeWarning = warning;
+void HomeController::fetchNormalHome() {
   if (!m_auth->isSignedIn()) {
     m_requestId = 0;
     m_loading = false;
@@ -160,14 +162,24 @@ void HomeController::fetchNormalHome(const QString &warning) {
   m_requestId = m_catalog->fetchHome(m_auth->sessionObject());
 }
 
-void HomeController::setAppleMusic(AppleMusic *appleMusic) {
+void HomeController::setAppleMusic(AppleMusic *appleMusic, CatalogSource *source) {
   m_appleMusic = appleMusic;
+  m_source = source;
+  connect(source, &CatalogSource::changed, this, [this] {
+    m_requestId = 0;
+    m_loading = false;
+    m_sections.clear();
+    m_artists.clear();
+    m_hero.clear();
+    emit homeSourceChanged();
+    refresh();
+  });
   m_appleConnected = appleMusic->connected();
   connect(appleMusic, &AppleMusic::changed, this, [this] {
     const bool connected = m_appleMusic->connected();
     if (connected == m_appleConnected) return;
     m_appleConnected = connected;
-    if (m_homeSource == QStringLiteral("apple_music")) {
+    if (m_source->apple()) {
       m_requestId = 0;
       m_loading = false;
       refresh();
@@ -175,19 +187,13 @@ void HomeController::setAppleMusic(AppleMusic *appleMusic) {
   });
 }
 
+QString HomeController::homeSource() const {
+  return m_source ? m_source->source() : QStringLiteral("youtube");
+}
+
 void HomeController::setHomeSource(const QString &source) {
-  if ((source != QStringLiteral("youtube") && source != QStringLiteral("apple_music")) || source == m_homeSource)
-    return;
-  m_homeSource = source;
-  QSettings settings;
-  settings.setValue(QStringLiteral("playback/homeSource"), source);
-  m_requestId = 0;
-  m_loading = false;
-  m_sections.clear();
-  m_artists.clear();
-  m_hero.clear();
-  emit homeSourceChanged();
-  refresh();
+  if (m_source)
+    m_source->setSource(source);
 }
 
 void HomeController::loadLibrary() {
@@ -241,8 +247,6 @@ void HomeController::receiveHome(quint64 requestId, const QJsonObject &home) {
   }
   chooseHero();
   emit stateChanged();
-  if (!m_homeWarning.isEmpty())
-    emit noticeRequested(std::exchange(m_homeWarning, {}));
 }
 
 void HomeController::receiveFailure(quint64 requestId, const QString &message) {

@@ -84,7 +84,8 @@ internal class HomeController(
 
     private fun offlineState(error: Throwable): LoadState<List<CatalogSection>> {
         val hasDownloads = graph.downloads.downloads.value.values.any { it.status == DownloadStatus.COMPLETED }
-        return if (hasDownloads || graph.library.library.value.recentlyPlayed.isNotEmpty()) {
+        return if (!graph.networkMonitor.isOnline.value &&
+            (hasDownloads || graph.library.library.value.recentlyPlayed.isNotEmpty())) {
             LoadState.Error("Orchard is offline. Your downloaded music is available.", true)
         } else {
             LoadState.Error(error.message ?: "Home could not be loaded.")

@@ -182,10 +182,20 @@ Window {
             }
         }
 
+        // Grows in from just under full size and stays loaded until its fade-out ends.
         Loader {
+            id: theater
+
+            readonly property bool shown: OrchardMusicVideo.open && homeShell.visible
+
             anchors.fill: parent
-            active: OrchardMusicVideo.open && homeShell.visible
+            active: shown || opacity > 0
+            opacity: shown ? 1 : 0
+            scale: shown ? 1 : 0.94
             sourceComponent: Component { MusicVideoTheater {} }
+
+            Behavior on opacity { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } }
+            Behavior on scale { NumberAnimation { duration: 560; easing.type: Easing.OutExpo } }
         }
     }
 

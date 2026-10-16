@@ -20,6 +20,8 @@
 import "../../components"
 import "../../components/home"
 import "../../components/detail"
+import "../../components/detail/heroTint.js" as HeroTint
+import "../../components/detail/hlsVariant.js" as HlsVariant
 import QtQuick
 import QtQuick.Window
 
@@ -38,8 +40,15 @@ ArtistViewForm {
         const items = shelf && shelf.items || [];
         return items.find((item) => item && item.id) || null;
     }
-    // Feeds the shell's ambient colors while the backdrop has moving pictures.
-    readonly property bool samplingVideo: hero.backdropVideo.live && heroVideoPlaying
+    // Apple's motion artwork; plays as is, no stream resolve.
+    readonly property string appleMotion: OrchardAppearance.artistVideoBackdrop ? detail.heroVideo || "" : ""
+    // Complete H.264 file resolved from Apple's master and media playlists.
+    property string appleMotionStream: ""
+    // The full video behind the Watch button; the top song's video when the page has no Videos shelf.
+    readonly property var watchMedia: backdropVideo || tracks[0] || null
+    readonly property var tintRgb: HeroTint.pageRgb(detail.heroTint)
+    // Editorial pages keep their supplied background color throughout the loop.
+    readonly property bool samplingVideo: !tintRgb && hero.backdropVideo.live && heroVideoPlaying
     readonly property bool containsCurrent: {
         const id = OrchardPlayback.track.id;
         return Boolean(id) && tracks.some((track) => track.id === id);
@@ -53,11 +62,14 @@ ArtistViewForm {
 
     detail: OrchardArtist.detail || ({})
     tracks: detail.tracks || []
-    // Discography first, then videos, then everyone else's shelves.
+    popularTracks: tracks.slice(0, songColumns * 4)
+    // Latest Release has its own card beside Top Songs.
     orderedSections: sections
-        .map((section, index) => ({ section, index }))
-        .sort((left, right) => sectionRank(left.section) - sectionRank(right.section) || left.index - right.index)
-        .map((entry) => entry.section)
+        .filter((section) => !(latestRelease && section.key === "latest-release"))
+    expandedSection: {
+        const section = OrchardArtist.expandedSection;
+        return section && section.title !== undefined ? section : null;
+    }
     latestRelease: detail.latestRelease || null
     latestCaption: cardCaption(latestRelease || ({}))
     expandedKind: sectionKind(expandedSection || ({}))
@@ -67,32 +79,30 @@ ArtistViewForm {
     browseIdentity: detail.browseId || ""
     collectionPlaying: containsCurrent && OrchardPlayback.playing
     playerInset: scroll.playerInset
-    heroMeta: [detail.subtitle].concat((detail.facts || [])
-        .filter((fact) => fact.key === "genre" || fact.key === "origin")
-        .map((fact) => fact.value))
-        .filter(Boolean).join(" · ")
     heroCredits: {
         const facts = detail.facts || [];
         const fact = (key) => (facts.find((entry) => entry.key === key) || {}).value || "";
         // "25.5M subscribers" becomes a SUBSCRIBERS credit of 25.5M.
         const audience = String(detail.subtitle || "").match(/^([\d.,]+\s*[KMB]?)\s+(.+)$/i);
         return [
-            { label: qsTr("Genre"), value: fact("genre") },
+            // Apple pages carry genres in the subtitle and no facts.
+            { label: qsTr("Genre"), value: fact("genre") || (detail.source === "apple_music" ? detail.subtitle || "" : "") },
             { label: qsTr("From"), value: fact("origin") },
             audience ? { label: audience[2], value: audience[1] } : { label: "", value: "" },
             { label: qsTr("Active since"), value: fact("formed") }
         ].filter((credit) => credit.label && credit.value);
     }
-    heroVideoWanted: !!backdropVideo && OrchardArtistVideo.status !== "error"
-    heroVideoSource: backdropVideo && OrchardArtistVideo.videoId === backdropVideo.id ? OrchardArtistVideo.source : ""
-    heroVideoTitle: backdropVideo ? backdropVideo.title || "" : ""
+    heroVideoWanted: !!appleMotion || (!!backdropVideo && OrchardArtistVideo.status !== "error")
+    heroVideoSource: appleMotion ? appleMotionStream
+        : backdropVideo && OrchardArtistVideo.videoId === backdropVideo.id ? OrchardArtistVideo.source : ""
+    heroVideoTitle: watchMedia ? watchMedia.title || "" : ""
     // Runs only while the hero is on screen and the window is shown.
     heroVideoPlaying: visible && !expandedSection && scroll.contentY < hero.height
                       && Window.visibility !== Window.Minimized && Window.visibility !== Window.Hidden
     accentColor: rgb(artistPalette.accent, [127, 190, 144])
     accentSoftColor: rgb(artistPalette.accentSoft, [150, 202, 164])
-    deepColor: rgb(artistPalette.deep, [15, 21, 18])
-    inkColor: rgb(artistPalette.ink, [8, 12, 10])
+    deepColor: rgb(tintRgb || artistPalette.deep, [15, 21, 18])
+    inkColor: tintRgb ? deepColor : rgb(artistPalette.ink, [8, 12, 10])
     accentInkColor: rgb(artistPalette.onAccent, [9, 16, 11])
 
     function rgb(value, fallback) {
@@ -113,10 +123,6 @@ ArtistViewForm {
         return "other";
     }
 
-    function sectionRank(section) {
-        return ["albums", "singles", "videos", "other", "related"].indexOf(sectionKind(section));
-    }
-
     // Albums get the big covers; 65 singles would rather not.
     function albumWidthFor(section) {
         const kind = sectionKind(section);
@@ -132,13 +138,13 @@ ArtistViewForm {
     }
 
     function openSection(section) {
-        expandedSection = section;
+        OrchardArtist.openSection(section);
         sectionGrid.contentY = sectionGrid.originY;
         sectionGrid.forceActiveFocus();
     }
 
     function closeSection() {
-        expandedSection = null;
+        OrchardArtist.closeSection();
         root.forceActiveFocus();
     }
 
@@ -151,6 +157,33 @@ ArtistViewForm {
             playlistRequested(media);
     }
 
+    function resolveMotion() {
+        appleMotionStream = "";
+        const master = appleMotion;
+        if (!master)
+            return;
+        const request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (request.readyState !== XMLHttpRequest.DONE || master !== root.appleMotion)
+                return;
+            const picked = request.status === 200 ? HlsVariant.pick(request.responseText, master, root.hero.backdropVideo.pixelHeight) : "";
+            if (!picked) {
+                root.appleMotionStream = master;
+                return;
+            }
+            const media = new XMLHttpRequest();
+            media.onreadystatechange = function() {
+                if (media.readyState !== XMLHttpRequest.DONE || master !== root.appleMotion)
+                    return;
+                root.appleMotionStream = media.status === 200 ? HlsVariant.mediaSource(media.responseText, picked) : picked;
+            };
+            media.open("GET", picked);
+            media.send();
+        };
+        request.open("GET", master);
+        request.send();
+    }
+
     function playOrToggle() {
         if (containsCurrent)
             OrchardPlayback.toggle();
@@ -158,13 +191,17 @@ ArtistViewForm {
             OrchardPlayback.playCollection(tracks, 0, false);
     }
 
+    onAppleMotionChanged: resolveMotion()
     onSamplingVideoChanged: OrchardArtistVideo.watchFrames(samplingVideo ? hero.backdropVideo.sink : null)
     Component.onDestruction: OrchardArtistVideo.watchFrames(null)
 
     onBrowseIdentityChanged: {
-        expandedSection = null;
         scroll.contentY = 0;
     }
+
+    sectionGrid.loading: OrchardArtist.sectionLoading
+    sectionGrid.errorMessage: OrchardArtist.sectionError
+    sectionGrid.onRetryRequested: OrchardArtist.retrySection()
 
     Keys.onReleased: function(event) {
         if (event.key === Qt.Key_Escape) {
@@ -182,7 +219,9 @@ ArtistViewForm {
 
     hero.playButton.onClicked: root.playOrToggle()
     hero.shuffleButton.onClicked: OrchardPlayback.playCollection(root.tracks, 0, true)
-    hero.watchButton.onClicked: if (root.backdropVideo) root.unsupportedRequested(root.backdropVideo)
+    hero.watchButton.onClicked: if (root.watchMedia) root.unsupportedRequested(root.watchMedia)
+    // Apple's loops are composed from the first frame; music videos open on label cards.
+    hero.backdropVideo.startAt: root.appleMotion ? 0 : 0.22
     hero.backdropVideo.onFailed: OrchardArtistVideo.retry()
     hero.shareButton.onClicked: OrchardBackend.copyToClipboard("https://music.youtube.com/channel/" + root.browseIdentity, qsTr("Copied artist link to clipboard"))
 
@@ -194,24 +233,21 @@ ArtistViewForm {
     latestCard.onArtistRequested: function(artist) { root.artistRequested(artist); }
     latestCard.onPlaylistRequested: function(playlist) { root.playlistRequested(playlist); }
 
-    popularList.delegate: CollectionTrackRow {
+    popularList.delegate: ArtistSongCell {
         id: song
 
         required property var modelData
         required property int index
 
-        width: parent.width
+        width: (parent.width - parent.columnSpacing * (root.songColumns - 1)) / root.songColumns
         track: modelData
         trackIndex: index
-        showArtwork: true
-        showAlbum: !root.compact
-        // Features earn a second line; the headliner's name is already 76px tall.
+        // Features name their artists; the headliner's own songs name the album.
         showArtist: song.artistLabel !== (root.detail.title || "")
         fallbackArtist: root.detail.title || ""
         menuMedia: Object.assign({}, modelData, {
             "artistBrowseIds": modelData.artistBrowseIds && modelData.artistBrowseIds.length ? modelData.artistBrowseIds : [root.browseIdentity]
         })
-        accentColor: root.accentColor
         accentSoftColor: root.accentSoftColor
         onClicked: OrchardPlayback.playCollection(root.tracks, index, false)
         onAlbumRequested: function(album) { root.albumRequested(album); }
@@ -281,11 +317,17 @@ ArtistViewForm {
         value: root.hero.backdropVideo.pixelHeight
     }
 
+    Binding {
+        target: OrchardArtistVideo
+        property: "sampleRect"
+        value: root.hero.backdropVideo.frameRect
+    }
+
     // Leaving the page releases the stream.
     Binding {
         target: OrchardArtistVideo
         property: "videoId"
-        value: root.visible && root.backdropVideo ? root.backdropVideo.id : ""
+        value: root.visible && root.backdropVideo && !root.appleMotion ? root.backdropVideo.id : ""
     }
 
     // The grid's Back button lives in its header delegate, so it is wired through the header item.

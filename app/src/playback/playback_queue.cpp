@@ -29,12 +29,11 @@ void PlaybackController::playCollection(const QVariantList &tracks,
                                         int startIndex, bool shuffle,
                                         const QString &playlistId,
                                         const QString &continuation) {
-  if (m_trackMatcher &&
-      m_trackMatcher(tracks, startIndex, [this, shuffle, playlistId, continuation](const QVariantList &matched, int start) {
-        if (!matched.isEmpty())
-          playCollection(matched, start, shuffle, playlistId, continuation);
-      }))
+  if (!tracks.isEmpty() && isAppleTrack(tracks.at(qBound(0, startIndex, int(tracks.size()) - 1)).toMap())) {
+    m_error = tr("Apple Music playback is not available yet.");
+    emit stateChanged();
     return;
+  }
   if (remoteActive()) {
     // The target owns the queue; it gets this page, without continuation loading.
     if (shuffle)
@@ -153,11 +152,6 @@ void PlaybackController::appendPlaylistTracks(const QString &playlistId,
 }
 
 void PlaybackController::enqueue(const QVariantMap &track, bool playNext) {
-  if (m_trackMatcher && m_trackMatcher({track}, 0, [this, playNext](const QVariantList &tracks, int) {
-        if (!tracks.isEmpty())
-          enqueue(tracks.first().toMap(), playNext);
-      }))
-    return;
   if (forwardRemote(QStringLiteral("enqueue"), {{QStringLiteral("track"), track}, {QStringLiteral("next"), playNext}}))
     return;
   const QString type = track.value("type").toString();

@@ -23,6 +23,7 @@
 import { APPLE_MUSIC_SOURCE, browseId } from './ids.js';
 
 const RELEASE_SUFFIX = /\s+-\s+(Single|EP)$/i;
+export const ARTIST_INCLUDES = { 'include[albums]': 'artists', 'include[songs]': 'artists,albums' };
 
 /** Fills an artwork template; Apple sizes covers on its CDN. */
 export function artworkUrl(artwork, size = 600, format = 'jpg') {
@@ -42,6 +43,13 @@ export function artworkUrl(artwork, size = 600, format = 'jpg') {
 function yearOf(date) {
   const match = /^(\d{4})/.exec(String(date || ''));
   return match ? match[1] : '';
+}
+
+/** "3:05" from seconds; empty when Apple omits the length. */
+function clock(seconds) {
+  const total = Math.round(Number(seconds) || 0);
+  if (total <= 0) return '';
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
 function notes(value) {
@@ -65,10 +73,18 @@ function related(resource, name) {
   return resource?.relationships?.[name]?.data || [];
 }
 
+function artistCredits(resource) {
+  const artists = related(resource, 'artists').filter((artist) => artist?.id);
+  const name = resource?.attributes?.artistName || '';
+  return {
+    artists: artists.length ? artists.map((artist) => artist.attributes?.name || (artists.length === 1 ? name : '')) : [name],
+    artistBrowseIds: artists.map((artist) => browseId('artists', artist.id))
+  };
+}
+
 export function track(resource, index) {
   const attributes = resource?.attributes;
   if (!attributes || !resource.id) return null;
-  const artists = related(resource, 'artists');
   const album = related(resource, 'albums')[0];
   return {
     id: browseId('songs', resource.id),
@@ -77,12 +93,13 @@ export function track(resource, index) {
     source: APPLE_MUSIC_SOURCE,
     title: attributes.name || 'Untitled',
     artist: attributes.artistName || '',
-    artists: artists.length ? artists.map((artist) => artist.attributes?.name || '') : [attributes.artistName || ''],
-    artistBrowseIds: artists.map((artist) => browseId('artists', artist.id)),
+    ...artistCredits(resource),
     album: releaseInfo({ name: attributes.albumName }).title,
     albumId: album ? browseId('albums', album.id) : '',
     thumbnail: artworkUrl(attributes.artwork),
     durationSeconds: (Number(attributes.durationInMillis) || 0) / 1000,
+    duration: clock((Number(attributes.durationInMillis) || 0) / 1000),
+    year: yearOf(attributes.releaseDate),
     explicit: attributes.contentRating === 'explicit',
     isrc: attributes.isrc || '',
     previewUrl: attributes.previews?.[0]?.url || '',
@@ -97,12 +114,15 @@ export function album(resource) {
   if (!attributes) return null;
   const { title, releaseType } = releaseInfo(attributes);
   const year = yearOf(attributes.releaseDate);
+  const credits = artistCredits(resource);
   return {
     type: 'album',
     browseId: browseId('albums', resource.id),
     source: APPLE_MUSIC_SOURCE,
     title,
     artist: attributes.artistName || '',
+    ...credits,
+    artistBrowseId: credits.artistBrowseIds[0] || '',
     subtitle: [releaseType, attributes.artistName, year].filter(Boolean).join(' • '),
     thumbnail: artworkUrl(attributes.artwork),
     year,

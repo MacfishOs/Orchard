@@ -57,13 +57,23 @@ ArtistVideoBackdrop::ArtistVideoBackdrop(YouTubeProvider *provider, AuthManager 
 }
 
 void ArtistVideoBackdrop::watchFrames(QObject *sink) {
-  m_sink = qobject_cast<QVideoSink *>(sink);
+  auto *videoSink = qobject_cast<QVideoSink *>(sink);
+  if (videoSink && videoSink != m_sink)
+    clearAmbient();
+  m_sink = videoSink;
   if (m_sink) {
     sampleFrame();
     m_frameTimer.start();
   } else {
     m_frameTimer.stop();
   }
+}
+
+void ArtistVideoBackdrop::setSampleRect(const QRectF &rect) {
+  if (m_sampleRect == rect)
+    return;
+  m_sampleRect = rect;
+  emit sampleRectChanged();
 }
 
 // Polls on the GUI thread; the sink's frame signal can fire on the decoder thread.
@@ -77,13 +87,17 @@ void ArtistVideoBackdrop::sampleFrame() {
     return;
   const QImage image = frame.toImage();
   m_crop = letterbox::accumulate(m_crop, letterbox::contentRect(image));
-  const QList<QColor> cells = videoambient::grid(image, m_crop, kAmbientCells, kAmbientCells);
+  const QRectF area = m_crop.isEmpty() ? m_sampleRect : m_crop.intersected(m_sampleRect);
+  if (area.isEmpty())
+    return;
+  const QList<QColor> cells = videoambient::artistEdge(image, area);
   if (cells.isEmpty())
     return;
   QVariantList ambient;
-  ambient.reserve(cells.size());
-  for (const QColor &cell : cells)
-    ambient.append(videoambient::backgroundTone(cell));
+  ambient.reserve(cells.size() * kAmbientCells);
+  for (int row = 0; row < kAmbientCells; ++row)
+    for (const QColor &cell : cells)
+      ambient.append(cell);
   if (ambient == m_ambient)
     return;
   m_ambient = ambient;

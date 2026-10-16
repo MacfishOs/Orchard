@@ -26,6 +26,7 @@
 
 class AuthManager;
 class AppleMusic;
+class CatalogSource;
 class YouTubeCatalog;
 
 class HomeController final : public QObject {
@@ -52,9 +53,10 @@ public:
   [[nodiscard]] QVariantList sections() const { return m_sections; }
   [[nodiscard]] QVariantMap hero() const { return m_hero; }
   [[nodiscard]] double volume() const { return m_volume; }
-  QString homeSource() const { return m_homeSource; }
+  // App-wide catalog source; Home keeps the property QML already binds to.
+  QString homeSource() const;
   void setHomeSource(const QString &source);
-  void setAppleMusic(AppleMusic *appleMusic);
+  void setAppleMusic(AppleMusic *appleMusic, CatalogSource *source);
 
   [[nodiscard]] QVariantList playlists() const { return m_playlists; }
   [[nodiscard]] bool playlistsLoading() const { return m_playlistsRequestId != 0; }
@@ -74,20 +76,18 @@ signals:
   void libraryChanged();
   void volumeChanged();
   void homeSourceChanged();
-  void noticeRequested(const QString &message);
 
 private:
   void receiveHome(quint64 requestId, const QJsonObject &home);
   void receiveFailure(quint64 requestId, const QString &message);
   void chooseHero();
-  void fetchNormalHome(const QString &warning = {});
+  void fetchNormalHome();
   [[nodiscard]] static bool usefulItem(const QVariantMap &item);
 
   YouTubeCatalog *m_catalog;
   AuthManager *m_auth;
   AppleMusic *m_appleMusic{nullptr};
-  QString m_homeSource{QStringLiteral("youtube")};
-  QString m_homeWarning;
+  CatalogSource *m_source{nullptr};
   quint64 m_appleRequests{0};
   bool m_appleConnected{false};
   QVariantList m_playlists;

@@ -23,8 +23,7 @@ import dev.sfg.orchard.mobile.applemusic.AppleMusicCatalog
 import dev.sfg.orchard.mobile.model.BrowseDetail
 import dev.sfg.orchard.mobile.model.CatalogItem
 import dev.sfg.orchard.mobile.model.CatalogKind
-import java.util.concurrent.ConcurrentHashMap
-import kotlinx.coroutines.CancellationException
+import dev.sfg.orchard.mobile.model.SearchResults
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
@@ -33,53 +32,59 @@ import kotlinx.coroutines.flow.last
 
 internal fun isAppleMusicId(id: String): Boolean = id.startsWith("am.")
 
-/**
- * Detail pages and "See all" shelves from the catalog that owns them. A signed-in Apple Music
- * listener gets Apple's artist page in place of YouTube's when the names match exactly.
- */
+/** Home, search and detail pages share the listener's catalog selection. */
 internal class CatalogRouter(
-    private val youtube: CatalogRepository,
-    private val apple: AppleMusicCatalog,
+    private val youtube: Source,
+    private val apple: Source,
+    private val preferred: () -> String,
 ) {
-    // YouTube artist id to Apple artist id; blank records a miss.
-    private val appleIds = ConcurrentHashMap<String, String>()
+    internal interface Source {
+        suspend fun search(query: String): SearchResults
+        fun pages(id: String): Flow<BrowseDetail>
+        suspend fun sectionItems(id: String, params: String): List<CatalogItem>
+        suspend fun artist(name: String): BrowseDetail? = null
+    }
+
+    constructor(youtube: CatalogRepository, apple: AppleMusicCatalog, preferred: () -> String) : this(
+        object : Source {
+            override suspend fun search(query: String) = youtube.search(query)
+            override fun pages(id: String) = youtube.browsePages(id)
+            override suspend fun sectionItems(id: String, params: String) = youtube.sectionItems(id, params)
+        },
+        object : Source {
+            override suspend fun search(query: String) = apple.search(query)
+            override fun pages(id: String) = flow { emit(apple.detail(id)) }
+            override suspend fun sectionItems(id: String, params: String) = apple.artistView(id, params)
+            override suspend fun artist(name: String) = apple.matchArtist(name)?.let { apple.detail(it) }
+        },
+        preferred,
+    )
+
+    private val appleSelected: Boolean get() = preferred() == "apple_music"
+
+    suspend fun search(query: String): SearchResults =
+        (if (appleSelected) apple else youtube).search(query)
 
     fun pages(id: String, seed: CatalogItem? = null): Flow<BrowseDetail> = flow {
-        if (isAppleMusicId(id)) {
-            emit(apple.detail(id))
-            return@flow
+        if (!appleSelected) {
+            check(!isAppleMusicId(id)) { "This is from Apple Music. Switch to Apple Music in Settings to open it." }
+            emitAll(youtube.pages(id))
+        } else if (isAppleMusicId(id)) {
+            emitAll(apple.pages(id))
+        } else {
+            check(CatalogRepository.kindOf(id.substringBefore(":")) == CatalogKind.ARTIST) {
+                "This is from YouTube Music. Switch to YouTube Music in Settings to open it."
+            }
+            val name = (seed as? CatalogItem.Performer)?.artist?.name?.takeIf { it.isNotBlank() }
+                ?: youtube.pages(id).first().title
+            emit(apple.artist(name) ?: error("Apple Music has no artist named $name."))
         }
-        if (!apple.signedIn() || CatalogRepository.kindOf(id.substringBefore(":")) != CatalogKind.ARTIST) {
-            emitAll(youtube.browsePages(id))
-            return@flow
-        }
-        val name = (seed as? CatalogItem.Performer)?.artist?.name.orEmpty()
-        if (name.isNotBlank()) {
-            appleArtistFor(id, name)?.let { emit(it); return@flow }
-            emitAll(youtube.browsePages(id))
-            return@flow
-        }
-        // Artists opened from a track or the player arrive without a seed, so YouTube's page supplies the name.
-        val page = youtube.browsePages(id).first()
-        emit(appleArtistFor(id, page.title) ?: page)
     }
 
     suspend fun browse(id: String): BrowseDetail = pages(id).last()
 
-    suspend fun sectionItems(browseId: String, params: String): List<CatalogItem> =
-        if (isAppleMusicId(browseId)) apple.artistView(browseId, params) else youtube.sectionItems(browseId, params)
-
-    /** Keeps the YouTube channel id so subscribing still targets the listener's YouTube library. */
-    private suspend fun appleArtistFor(id: String, name: String): BrowseDetail? {
-        if (name.isBlank()) return null
-        return try {
-            val appleId = appleIds[id] ?: apple.matchArtist(name).orEmpty().also { appleIds[id] = it }
-            appleId.ifEmpty { null }?.let { apple.detail(it).copy(id = id) }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            // Apple being unreachable is no reason to lose the YouTube page.
-            null
-        }
+    suspend fun sectionItems(browseId: String, params: String): List<CatalogItem> {
+        check(isAppleMusicId(browseId) == appleSelected) { "Switch catalogs in Settings to open this section." }
+        return (if (appleSelected) apple else youtube).sectionItems(browseId, params)
     }
 }

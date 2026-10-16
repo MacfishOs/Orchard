@@ -35,6 +35,8 @@ Item {
         subtitle: "12.4M subscribers",
         description: "French electronic music duo formed in Paris in 1993. They helped bring house and techno into the mainstream."
     })
+    // Top Songs as shown; the logic layer trims tracks to what fits the grid.
+    property var popularTracks: tracks
     property var tracks: [
         { id: "t1", title: "One More Time", artist: "Daft Punk", album: "Discovery", duration: "5:20" },
         { id: "t2", title: "Get Lucky", artist: "Daft Punk", album: "Random Access Memories", duration: "6:09" },
@@ -56,11 +58,12 @@ Item {
     property string browseIdentity: ""
     // Bottom padding so the last row clears the player pill.
     property real playerInset: 0
+    // The page runs under the top bar and from the sidebar edge; content keeps clear of both.
+    property real topInset: 0
+    property real edgeInset: 0
 
     // Backdrop video for the hero; the logic layer picks and resolves it.
     property bool heroVideoWanted: false
-    // Subscribers plus genre and origin, joined by the logic layer.
-    property string heroMeta: ""
     // {label, value} pairs for the hero's credit row.
     property var heroCredits: []
     property url heroVideoSource: ""
@@ -77,9 +80,8 @@ Item {
     readonly property bool hasLatest: !!latestRelease
     readonly property bool hasPopular: tracks.length > 0
     readonly property bool splitTop: hasLatest && width >= 980
-    readonly property int pageInset: width < 600 ? 14 : 24
-    // Wide artist artwork runs edge to edge.
-    readonly property bool heroBleeds: hero.bleeding
+    readonly property int pageInset: edgeInset + (width < 600 ? 14 : 24)
+    readonly property int songColumns: width >= 1500 ? 3 : width >= 1000 ? 2 : 1
 
     property alias scroll: scroll
     property alias hero: hero
@@ -118,48 +120,32 @@ Item {
             id: content
 
             x: root.pageInset
-            y: root.heroBleeds ? 0 : 14
             width: scroll.width - root.pageInset * 2
             spacing: 14
-
-            // Holds the back button's slot unless the hero is sliding under it.
-            Item {
-                width: 1
-                height: backButton.height
-                visible: !root.heroBleeds
-            }
 
             ArtistHero {
                 id: hero
 
-                x: root.heroBleeds ? -root.pageInset : 0
-                width: root.heroBleeds ? scroll.width : parent.width
-                fullBleed: !!root.detail.heroArtwork || root.heroVideoWanted
-                sideInset: root.heroBleeds ? root.pageInset : 0
+                x: -root.pageInset
+                width: scroll.width
                 compact: root.compact
+                topInset: root.topInset
                 title: root.detail.title || qsTr("Artist")
-                subtitle: root.heroMeta || root.detail.subtitle || ""
-                // Wide art comes from TheAudioDB or the YouTube Music artist header.
+                // Wide art comes from Apple, TheAudioDB or the YouTube Music artist header.
                 banner: root.detail.heroArtwork || root.detail.thumbnail || ""
                 portrait: root.detail.thumbnail || ""
+                logo: root.detail.logo || ""
+                poster: root.heroVideoWanted ? root.detail.heroPoster || "" : ""
                 scrollY: scroll.contentY
                 videoWanted: root.heroVideoWanted
-                credits: root.heroCredits
                 videoSource: root.heroVideoSource
                 videoTitle: root.heroVideoTitle
                 videoPlaying: root.heroVideoPlaying
                 actionsEnabled: root.tracks.length > 0 && !root.loading
                 playing: root.collectionPlaying
                 shareEnabled: !!root.browseIdentity
-                accentColor: root.accentColor
+                viewportHeight: scroll.height
                 accentSoftColor: root.accentSoftColor
-                accentInkColor: root.accentInkColor
-                inkColor: root.inkColor
-            }
-
-            Item {
-                width: 1
-                height: 10
             }
 
             Item {
@@ -173,24 +159,24 @@ Item {
                 Column {
                     id: latest
 
-                    width: root.splitTop ? 232 : parent.width
+                    width: root.splitTop ? 200 : parent.width
                     spacing: 0
                     visible: root.hasLatest
 
                     Text {
-                        bottomPadding: 10
-                        text: qsTr("Latest release")
+                        bottomPadding: 12
+                        text: qsTr("Latest Release")
                         color: "#f2efe7"
                         font.family: "Inter"
-                        font.pixelSize: 20
-                        font.weight: Font.DemiBold
+                        font.pixelSize: 19
+                        font.weight: Font.Bold
                     }
 
                     MediaCard {
                         id: latestCard
                         media: root.latestRelease || ({})
                         presentation: root.splitTop ? "album" : "compact"
-                        preferredWidth: 232
+                        preferredWidth: 200
                         caption: root.latestCaption
                         animatedArtist: root.detail.title || ""
                         navigable: media.type === "album" || media.type === "playlist"
@@ -200,39 +186,46 @@ Item {
                 Column {
                     id: popular
 
-                    x: root.splitTop ? latest.width + 32 : 0
+                    x: root.splitTop ? latest.width + 40 : 0
                     y: root.splitTop ? 0 : root.hasLatest ? latest.height + 24 : 0
                     width: parent.width - x
                     spacing: 0
                     visible: root.hasPopular
 
                     Text {
-                        x: 12
-                        bottomPadding: 10
-                        text: qsTr("Popular")
+                        bottomPadding: 6
+                        text: qsTr("Top Songs")
                         color: "#f2efe7"
                         font.family: "Inter"
-                        font.pixelSize: 20
-                        font.weight: Font.DemiBold
+                        font.pixelSize: 19
+                        font.weight: Font.Bold
                     }
 
-                    // The logic layer swaps in a delegate that plays rows and opens menus.
-                    Repeater {
-                        id: popularList
-                        model: root.tracks
+                    // Columns fill top to bottom, as on music.apple.com.
+                    Grid {
+                        id: songGrid
 
-                        delegate: CollectionTrackRow {
-                            required property var modelData
-                            required property int index
+                        width: parent.width
+                        columns: root.songColumns
+                        rows: Math.ceil(root.popularTracks.length / root.songColumns)
+                        flow: Grid.TopToBottom
+                        columnSpacing: 28
 
-                            width: parent.width
-                            track: modelData
-                            trackIndex: index
-                            showArtwork: true
-                            showAlbum: !root.compact
-                            fallbackArtist: root.detail.title || ""
-                            accentColor: root.accentColor
-                            accentSoftColor: root.accentSoftColor
+                        // The logic layer swaps in a delegate that plays rows and opens menus.
+                        Repeater {
+                            id: popularList
+                            model: root.popularTracks
+
+                            delegate: ArtistSongCell {
+                                required property var modelData
+                                required property int index
+
+                                width: (songGrid.width - songGrid.columnSpacing * (root.songColumns - 1)) / root.songColumns
+                                track: modelData
+                                trackIndex: index
+                                fallbackArtist: root.detail.title || ""
+                                accentSoftColor: root.accentSoftColor
+                            }
                         }
                     }
                 }
@@ -268,7 +261,7 @@ Item {
             Rectangle {
                 width: parent.width
                 height: aboutColumn.height + 48
-                visible: !!root.detail.description
+                visible: !!root.detail.description || root.heroCredits.length > 0
                 radius: 20
                 color: Qt.rgba(root.inkColor.r, root.inkColor.g, root.inkColor.b, 0.55)
                 border.color: "#12ffffff"
@@ -293,17 +286,52 @@ Item {
                         id: aboutText
 
                         property bool expanded: false
+                        readonly property bool html: root.detail.source === "apple_music"
+                            || /<\/?(?:a|b|br|div|em|i|li|ol|p|span|strong|u|ul)\b/i.test(root.detail.description || "")
 
                         width: Math.min(parent.width, 820)
-                        text: root.detail.description || ""
+                        text: html ? String(root.detail.description || "").replace(/\r\n?|\n/g, "<br>")
+                                   : root.detail.description || ""
                         color: "#bcc3bc"
                         font.family: "Inter"
                         font.pixelSize: 14
                         lineHeight: 1.5
                         wrapMode: Text.Wrap
-                        textFormat: Text.PlainText
+                        textFormat: html ? Text.StyledText : Text.PlainText
                         maximumLineCount: expanded ? 400 : 5
                         elide: Text.ElideRight
+                    }
+
+                    Row {
+                        spacing: 40
+                        visible: root.heroCredits.length > 0
+
+                        Repeater {
+                            model: root.heroCredits
+
+                            delegate: Column {
+                                required property var modelData
+
+                                spacing: 6
+
+                                Text {
+                                    text: modelData.label
+                                    color: "#99ffffff"
+                                    font.family: "Inter"
+                                    font.pixelSize: 10
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 2.2
+                                    font.capitalization: Font.AllUppercase
+                                }
+                                Text {
+                                    text: modelData.value
+                                    color: "#f2efe7"
+                                    font.family: "Inter"
+                                    font.pixelSize: 14
+                                    font.weight: Font.Medium
+                                }
+                            }
+                        }
                     }
 
                     Button {
@@ -344,36 +372,28 @@ Item {
         Button {
             id: backButton
 
+            // Sits in the top bar's row, left of the search field.
             x: root.pageInset
-            y: 14
-            width: 84
-            height: 34
+            y: Math.max(8, root.topInset - 49)
+            width: 36
+            height: 36
             text: qsTr("Back")
+            display: AbstractButton.IconOnly
+            Accessible.name: qsTr("Back")
 
             background: Rectangle {
-                radius: 17
-                // Dark chip keeps the label legible over fanart.
-                color: backButton.hovered ? "#30ffffff" : root.heroBleeds ? "#40000000" : "transparent"
+                radius: width / 2
+                color: backButton.hovered ? "#40ffffff" : "#26ffffff"
                 border.color: backButton.activeFocus ? root.accentSoftColor : "transparent"
             }
 
-            contentItem: Row {
-                spacing: 8
-
+            contentItem: Item {
                 LucideIcon {
+                    anchors.centerIn: parent
                     name: "chevron-left"
-                    width: 16
-                    height: 16
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: root.heroBleeds ? "#f2f3ef" : root.accentSoftColor
-                }
-
-                Text {
-                    text: backButton.text
-                    color: root.heroBleeds ? "#f2f3ef" : root.accentSoftColor
-                    font.family: "Inter"
-                    font.pixelSize: 12
-                    anchors.verticalCenter: parent.verticalCenter
+                    width: 18
+                    height: 18
+                    color: "#f2f3ef"
                 }
             }
         }
@@ -386,6 +406,7 @@ Item {
         anchors.fill: parent
         anchors.leftMargin: root.pageInset
         anchors.rightMargin: root.pageInset
+        anchors.topMargin: root.topInset
         visible: !!root.expandedSection
         section: root.expandedSection || ({})
         kind: root.expandedKind
@@ -398,7 +419,7 @@ Item {
     CollectionStickyBar {
         id: stickyBar
         x: root.pageInset
-        y: 8
+        y: root.topInset + 8
         width: root.width - root.pageInset * 2
         shown: !root.loading && !root.expandedSection && scroll.contentY > content.y + hero.y + hero.height - 40
         title: root.detail.title || qsTr("Artist")
@@ -414,6 +435,7 @@ Item {
     PageLoadState {
         id: pageLoad
         anchors.fill: parent
+        anchors.topMargin: root.topInset
         loading: root.loading
         errorMessage: root.errorMessage
         accentColor: root.accentColor
