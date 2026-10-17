@@ -148,6 +148,7 @@ app_sources = [
   'app/src/playback/adaptive_mix/adaptive_mix_output.cpp',
   'app/src/playback/playback_transitions.cpp',
   'app/src/playback/playback_backend.cpp',
+  'app/src/playback/playback_recovery.cpp',
   'app/src/playback/playback_controller.cpp',
   'app/src/playback/sleep_timer.cpp',
   'app/src/playback/sleep_timer.h',

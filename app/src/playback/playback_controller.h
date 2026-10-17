@@ -306,6 +306,7 @@ signals:
   void animatedArtworkUrlChanged();
 
 private:
+  friend class PlaybackRecoveryTest;
   // True when the action went to a Connect target.
   bool forwardRemote(const QString &action, const QVariantMap &args = {});
   PlaybackRemote *m_remote{nullptr};
@@ -340,6 +341,8 @@ private:
   void receiveStream(quint64 id, const QJsonValue &result);
   void ensurePlaybackBackend();
   void wirePlayer(QMediaPlayer *source);
+  void wireStreamProxy(AudioStreamProxy *proxy);
+  void scheduleStreamRecovery(bool retryable, const QString &message);
   void applyPendingResume();
   void fail(const QString &message);
   void trackYouTubeHistory(double position);
@@ -400,6 +403,11 @@ private:
   std::unique_ptr<QMediaPlayer> m_players[2];
   QMediaPlayer *m_player{nullptr};
   QMediaPlayer *m_nextPlayer{nullptr};
+  struct PlayerTimeline {
+    double position{0.0};
+    bool paused{false};
+  };
+  QHash<QMediaPlayer *, PlayerTimeline> m_playerTimelines;
   AudioEngineOutput m_audioEngineOutput;
   AdaptiveMixController m_adaptiveMix;
   BestMixController m_bestMix;

@@ -37,9 +37,14 @@ void PlaybackController::ensurePlaybackBackend() {
 }
 
 void PlaybackController::wirePlayer(QMediaPlayer *source) {
+  connect(source, &QMediaPlayer::sourceChanged, this,
+          [this, source] { m_playerTimelines[source] = {}; });
   connect(source, &QMediaPlayer::metaDataChanged, this,
           [this, source] { noteLocalMetadata(source); });
-  connect(source, &QMediaPlayer::positionChanged, this, [this, source] {
+  connect(source, &QMediaPlayer::positionChanged, this, [this, source](qint64 position) {
+    // A decoder can reset its clock before reporting an error.
+    if (position > 0)
+      m_playerTimelines[source].position = position / 1000.0;
     if (source == m_player)
       emit stateChanged();
   });
@@ -74,6 +79,8 @@ void PlaybackController::wirePlayer(QMediaPlayer *source) {
   });
   connect(source, &QMediaPlayer::playbackStateChanged, this,
           [this, source](QMediaPlayer::PlaybackState state) {
+            if (state != QMediaPlayer::StoppedState)
+              m_playerTimelines[source].paused = state == QMediaPlayer::PausedState;
             if (source != m_player)
               return;
             if (m_crossfadeActive && state == QMediaPlayer::StoppedState &&
@@ -124,9 +131,14 @@ void PlaybackController::wirePlayer(QMediaPlayer *source) {
             }
           });
   connect(source, &QMediaPlayer::errorOccurred, this,
-          [this, source](QMediaPlayer::Error, const QString &message) {
-            if (source == m_player)
-              fail(message);
+          [this, source](QMediaPlayer::Error error, const QString &message) {
+            if (source->source().isEmpty())
+              return;
+            if (source == m_player) {
+              const bool retryable = error == QMediaPlayer::ResourceError ||
+                                     error == QMediaPlayer::NetworkError;
+              scheduleStreamRecovery(retryable, message);
+            }
             // An empty source means the error belongs to a preload already torn down.
             else if (source == m_nextPlayer && !source->source().isEmpty())
               failPreparedTrack(0);

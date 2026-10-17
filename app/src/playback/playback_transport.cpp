@@ -107,6 +107,7 @@ void PlaybackController::seek(double seconds) {
     }
     if (m_player && m_player->isSeekable()) {
       const double target = qBound(0.0, seconds, duration());
+      m_playerTimelines[m_player].position = target;
       m_resumePosition = 0.0;
       m_audioEngineOutput.flush();
       m_player->setPosition(static_cast<qint64>(target * 1000));

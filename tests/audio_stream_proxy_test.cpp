@@ -19,6 +19,7 @@
 
 #include "playback/audio_stream_proxy.h"
 #include <QNetworkReply>
+#include <QRegularExpression>
 #include <QSignalSpy>
 #include <QTcpSocket>
 #include <QTimer>
@@ -125,6 +126,40 @@ private slots:
         reply->deleteLater();
     }
 
+    void resumesRepeatedDisconnectsWhileTheDownloadMakesProgress() {
+        QTcpServer upstream;
+        QVERIFY(upstream.listen(QHostAddress::LocalHost));
+        const QByteArray audio("abcdefgh");
+        QList<qint64> offsets;
+        connect(&upstream, &QTcpServer::newConnection, this, [&] {
+            auto *socket = upstream.nextPendingConnection();
+            connect(socket, &QTcpSocket::readyRead, socket, [&, socket, request = QByteArray()]() mutable {
+                request += socket->readAll();
+                if (!request.endsWith("\r\n\r\n")) return;
+                const auto range = QRegularExpression("Range: bytes=(\\d+)-").match(QString::fromLatin1(request));
+                const qint64 start = range.captured(1).toLongLong();
+                offsets.append(start);
+                // Each connection drops after one byte of a longer response.
+                socket->write("HTTP/1.1 206 Partial Content\r\nContent-Length: " + QByteArray::number(audio.size() - start) +
+                    "\r\nContent-Range: bytes " + QByteArray::number(start) + "-7/8\r\nConnection: close\r\n\r\n" +
+                    audio.mid(start, 1));
+                socket->disconnectFromHost();
+            });
+        });
+        AudioStreamProxy proxy;
+        QSignalSpy failures(&proxy, &AudioStreamProxy::streamFailed);
+        const auto url = proxy.open({{"url", QString("http://127.0.0.1:%1/audio").arg(upstream.serverPort())},
+                                     {"contentLength", audio.size()}});
+        QNetworkAccessManager client;
+        auto *reply = client.get(QNetworkRequest(url));
+        QTRY_VERIFY(reply->isFinished());
+        QCOMPARE(failures.count(), 0);
+        QCOMPARE(reply->error(), QNetworkReply::NoError);
+        QCOMPARE(reply->readAll(), audio);
+        QCOMPARE(offsets, (QList<qint64>{0, 1, 2, 3, 4, 5, 6, 7}));
+        reply->deleteLater();
+    }
+
     void suspendedStreamResumesWithoutSpendingRetryBudget() {
         QTcpServer upstream;
         QVERIFY(upstream.listen(QHostAddress::LocalHost));
@@ -214,7 +249,14 @@ private slots:
         reply->deleteLater();
     }
 
+    void interruptedRetriesAreBounded_data() {
+        QTest::addColumn<bool>("initialProgress");
+        QTest::newRow("no progress") << false;
+        QTest::newRow("stalls after progress") << true;
+    }
+
     void interruptedRetriesAreBounded() {
+        QFETCH(bool, initialProgress);
         QTcpServer upstream;
         QVERIFY(upstream.listen(QHostAddress::LocalHost));
         int requests = 0;
@@ -224,7 +266,10 @@ private slots:
                 request += socket->readAll();
                 if (!request.endsWith("\r\n\r\n")) return;
                 ++requests;
-                socket->write("HTTP/1.1 206 Partial Content\r\nContent-Length: 8\r\nContent-Range: bytes 0-7/8\r\nConnection: close\r\n\r\n");
+                const int start = initialProgress && requests > 1 ? 1 : 0;
+                socket->write("HTTP/1.1 206 Partial Content\r\nContent-Length: " + QByteArray::number(8 - start) +
+                    "\r\nContent-Range: bytes " + QByteArray::number(start) + "-7/8\r\nConnection: close\r\n\r\n");
+                if (initialProgress && requests == 1) socket->write("a");
                 socket->disconnectFromHost();
             });
         });
@@ -234,8 +279,9 @@ private slots:
         QNetworkAccessManager client;
         auto *reply = client.get(QNetworkRequest(url));
         QTRY_VERIFY(reply->isFinished());
-        QCOMPARE(requests, 4);
+        QCOMPARE(requests, initialProgress ? 5 : 4);
         QCOMPARE(failures.count(), 1);
+        QCOMPARE(failures.first().at(0).toInt(), 0);
         QVERIFY(failures.first().at(1).toString().contains("interrupted"));
         reply->deleteLater();
     }
