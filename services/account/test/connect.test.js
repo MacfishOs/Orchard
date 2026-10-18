@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
 
-import { ConnectHub, cleanLan, iceServers, protocolError } from "../src/connect.js";
+import { ConnectHub, cleanLan, distinctLan, iceServers, protocolError } from "../src/connect.js";
 import worker from "../src/index.js";
 import { signJwt } from "../src/jwt.js";
 import { createD1 } from "./d1.js";
@@ -106,7 +106,7 @@ describe("Connect hub", () => {
 
   it("grants both ends the same key and routes signals only between them", async () => {
     const pc = await join("pc", "linux");
-    const phone = await join("phone", "android");
+    const phone = await join("phone", "android", [{ host: "192.168.1.6", port: 32147 }]);
     const tablet = await join("tablet", "android");
     await hub.webSocketMessage(phone, JSON.stringify({ type: "session.request", request_id: "r1", to: "pc" }));
     const mine = phone.last("session.grant");
@@ -130,6 +130,48 @@ describe("Connect hub", () => {
     // Nor can signaling create a session on its own.
     await hub.webSocketMessage(tablet, JSON.stringify({ type: "signal", to: "pc", session_id: "made-up", data: offer }));
     assert.equal(pc.sent.filter((m) => m.type === "signal").length, 1);
+  });
+
+  it("sends grants to a reconnected device, not its dead socket", async () => {
+    const phone = await join("phone", "android");
+    const stale = await join("pc", "linux");
+    // A dead link never finishes the close handshake, so the socket stays listed.
+    stale.close = (code, reason) => void (stale.closeRequested = { code, reason });
+    const pc = await join("pc", "linux");
+    assert.equal(stale.closeRequested.code, 4001);
+    assert.equal(hub.ctx.getWebSockets("pc").length, 2);
+
+    await hub.webSocketMessage(phone, JSON.stringify({ type: "session.request", request_id: "r1", to: "pc" }));
+    assert.equal(pc.last("session.grant").role, "target");
+    assert.equal(stale.last("session.grant"), undefined);
+    assert.deepEqual(phone.last("presence").devices.map((d) => d.device.id).sort(), ["pc", "phone"]);
+    // A late hello on the replaced socket cannot list it again.
+    await hub.webSocketMessage(stale, JSON.stringify({ type: "hello", ...v2, device: device("pc", "linux") }));
+    await hub.webSocketMessage(phone, JSON.stringify({ type: "session.request", request_id: "r2", to: "pc" }));
+    assert.equal(stale.last("session.grant"), undefined);
+  });
+
+  it("sends the target its grant before the controller", async () => {
+    const pc = await join("pc", "linux");
+    const phone = await join("phone", "android");
+    const order = [];
+    for (const [name, socket] of [["pc", pc], ["phone", phone]]) {
+      const send = socket.send.bind(socket);
+      socket.send = (text) => {
+        if (JSON.parse(text).type === "session.grant") order.push(name);
+        send(text);
+      };
+    }
+    await hub.webSocketMessage(phone, JSON.stringify({ type: "session.request", request_id: "r1", to: "pc" }));
+    assert.deepEqual(order, ["pc", "phone"]);
+
+    // A target whose socket fails mid-send never leaves the controller holding a grant.
+    pc.send = () => {
+      throw new Error("closed");
+    };
+    await hub.webSocketMessage(phone, JSON.stringify({ type: "session.request", request_id: "r2", to: "pc" }));
+    assert.deepEqual(phone.last("error"), { type: "error", code: "peer_offline", request_id: "r2" });
+    assert.equal(phone.sent.filter((m) => m.type === "session.grant").length, 1);
   });
 
   it("reports offline peers and declines", async () => {
@@ -163,6 +205,18 @@ describe("Connect hub", () => {
       cleanLan([{ host: "printer.local", port: 80 }, { host: "10.0.0.2", port: 32147 }, { host: "1.2.3.4", port: 70000 }]),
       [{ host: "10.0.0.2", port: 32147 }],
     );
+  });
+
+  it("never grants an address both devices hold", async () => {
+    const warp = { host: "172.16.0.2", port: 32147 };
+    const pc = await join("pc", "linux", [{ host: "10.0.0.31", port: 32147 }, warp]);
+    const phone = await join("phone", "android", [{ host: "10.0.0.172", port: 32147 }, warp]);
+    await hub.webSocketMessage(phone, JSON.stringify({ type: "session.request", request_id: "r1", to: "pc" }));
+    assert.deepEqual(phone.last("session.grant").peer_lan, [{ host: "10.0.0.31", port: 32147 }]);
+    assert.deepEqual(pc.last("session.grant").peer_lan, [{ host: "10.0.0.172", port: 32147 }]);
+    assert.deepEqual(phone.last("presence").devices.find((d) => d.device.id === "pc").lan, [{ host: "10.0.0.31", port: 32147 }]);
+    assert.deepEqual(phone.last("presence").devices.find((d) => d.device.id === "phone").lan.length, 2);
+    assert.deepEqual(distinctLan([warp], []), [[warp], []]);
   });
 
   it("adds Cloudflare TURN credentials when configured", async () => {
