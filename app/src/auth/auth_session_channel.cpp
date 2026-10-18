@@ -19,6 +19,7 @@
 
 #include "auth_session_channel.h"
 
+#include <QCoreApplication>
 #include <QJsonDocument>
 #include <QUuid>
 #include <utility>
@@ -120,4 +121,11 @@ void AuthSessionClient::finish(bool accepted) {
   m_message.clear();
   m_socket.abort();
   emit finished(accepted);
+}
+
+void sendSessionAndQuit(const QString &serverName, const QJsonObject &result) {
+  auto *client = new AuthSessionClient(qApp);
+  QObject::connect(client, &AuthSessionClient::finished, qApp,
+                   [](bool accepted) { QCoreApplication::exit(accepted ? 0 : 1); });
+  client->send(serverName, result);
 }

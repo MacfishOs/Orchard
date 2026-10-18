@@ -33,13 +33,19 @@
 #include <QQuickStyle>
 #include <QQuickView>
 #include <QTimer>
+#ifdef ORCHARD_WEBVIEW2_AUTH
+#include "webview2_item.h"
+#include <QQmlEngine>
+#else
 #include <QtWebView/QtWebView>
+#endif
 
 int main(int argc, char *argv[]) {
-#ifdef Q_OS_WIN
-  qputenv("QT_WEBVIEW_PLUGIN", "webengine");
-#endif
+#ifdef ORCHARD_WEBVIEW2_AUTH
+  qmlRegisterType<WebView2Item>("Orchard.Auth", 1, 0, "WebView2Item");
+#else
   QtWebView::initialize();
+#endif
 
   QCoreApplication::setOrganizationDomain(QStringLiteral("sfg.dev"));
   QCoreApplication::setOrganizationName(QStringLiteral("SFG545"));

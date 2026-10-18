@@ -27,9 +27,5 @@ printf -v BINDGEN_EXTRA_CLANG_ARGS -- '-isystem %q -isystem %q' \
   "${bindgen_include_dirs[0]}" "${bindgen_include_dirs[1]}"
 export BINDGEN_EXTRA_CLANG_ARGS
 
-# Qt 6.11.2 ships the WebEngine backend with the Windows kit.
-[[ -f "$ORCHARD_MSVC_QT_ROOT/plugins/webview/qtwebview_webengine.dll" ]] ||
-  orchard_die "QtWebView WebEngine plugin missing from $ORCHARD_MSVC_QT_ROOT"
-
 # Build Orchard.
 meson compile -C "$ORCHARD_MSVC_BUILD_DIR" -j "$ORCHARD_BUILD_JOBS" "$@"

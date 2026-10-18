@@ -105,23 +105,10 @@ if meson.is_cross_build() and host_machine.system() == 'windows'
       modules: ['Qt6::' + module])
   endforeach
   qt_dep = declare_dependency(dependencies: target_qt_deps)
-  qt_web_dep = declare_dependency(dependencies: [
-    dependency('Qt6WebView', method: 'cmake', modules: ['Qt6::WebView']),
-    dependency('Qt6WebViewQuick', method: 'cmake', modules: ['Qt6::WebViewQuick']),
-  ])
-  qt_webengine_dep = declare_dependency(dependencies: [
-    dependency('Qt6WebEngineCore', method: 'cmake', modules: ['Qt6::WebEngineCore']),
-    dependency('Qt6WebEngineQuick', method: 'cmake', modules: ['Qt6::WebEngineQuick']),
-  ])
   qt_entry_dep = dependency('Qt6Core', method: 'cmake',
     modules: ['Qt6::EntryPointPrivate'])
 else
   qt_dep = dependency('qt6', version: '>=6.8', modules: qt_modules, main: true)
-  qt_web_dep = dependency('qt6', version: '>=6.8', modules: ['WebView', 'WebViewQuick'])
-  if host_machine.system() == 'windows' or host_machine.system() == 'linux'
-    qt_webengine_dep = dependency('qt6', version: '>=6.8',
-      modules: ['WebEngineCore', 'WebEngineQuick'])
-  endif
   qt_entry_dep = []
 endif
 qt_gui_private = dependency('Qt6GuiPrivate', method: 'cmake', modules: ['Qt6::GuiPrivate'])
@@ -295,7 +282,9 @@ docs_qrc = qt6.compile_resources(sources: files('meson/app_docs.qrc'), extra_arg
 release_notes_qrc = qt6.compile_resources(sources: files('meson/release_notes.qrc'), extra_args: rcc_args)
 assets_qrc = qt6.compile_resources(sources: files('meson/qml_assets.qrc'), extra_args: rcc_args)
 qml_files_qrc = qt6.compile_resources(sources: files('meson/qml_files.qrc'), extra_args: rcc_args)
-auth_qrc = qt6.compile_resources(sources: files('meson/auth_qml.qrc'), extra_args: rcc_args)
+# Windows sign-in hosts WebView2 directly; other platforms use QtWebView.
+auth_qrc = qt6.compile_resources(sources: files(host_machine.system() == 'windows'
+  ? 'meson/auth_qml_windows.qrc' : 'meson/auth_qml.qrc'), extra_args: rcc_args)
 
 app_inc = include_directories('app/src', 'app/src/auth',
   'app/src/appearance', 'core/native', 'vendor/litert/include')
@@ -398,17 +387,35 @@ orchard = executable('orchard', files(app_executable_sources) + exe_moc +
   link_depends: adaptive_stage,
   win_subsystem: 'windows', install: true)
 
-auth_dependencies = [qt_dep, qt_web_dep, rust_dep, qjs_dep, keychain_dep] + platform_deps
+auth_dependencies = [qt_dep, rust_dep, qjs_dep, keychain_dep] + platform_deps
 auth_args = []
-if host_machine.system() == 'windows' or host_machine.system() == 'linux'
-  auth_dependencies += [qt_webengine_dep]
-  auth_args += ['-DORCHARD_WEBENGINE_COOKIE_ADAPTER', '-DORCHARD_NATIVE_COOKIE_AUTH']
+auth_sources = helper_sources
+auth_moc_headers = helper_moc_headers
+if host_machine.system() == 'windows'
+  auth_sources += helper_webview2_sources
+  auth_moc_headers += helper_webview2_moc_headers
+  auth_dependencies += [declare_dependency(
+    include_directories: include_directories('vendor/webview2/include'),
+    dependencies: [cpp.find_library('ole32'), cpp.find_library('shlwapi'),
+      cpp.find_library('user32')])]
+  auth_args += ['-DORCHARD_WEBVIEW2_AUTH', '-DORCHARD_NATIVE_COOKIE_AUTH']
+  webview2_arch = host_machine.cpu_family() == 'aarch64' ? 'arm64' : 'x64'
+  configure_file(input: 'vendor/webview2/lib' / webview2_arch / 'WebView2Loader.dll',
+    output: 'WebView2Loader.dll', copy: true, install: true, install_dir: get_option('bindir'))
+else
+  auth_sources += helper_webengine_sources
+  auth_dependencies += [dependency('qt6', version: '>=6.8', modules: ['WebView', 'WebViewQuick'])]
+  if host_machine.system() == 'linux'
+    auth_dependencies += [dependency('qt6', version: '>=6.8',
+      modules: ['WebEngineCore', 'WebEngineQuick'])]
+    auth_args += ['-DORCHARD_WEBENGINE_COOKIE_ADAPTER', '-DORCHARD_NATIVE_COOKIE_AUTH']
+  endif
 endif
-helper_moc = qt6.compile_moc(headers: helper_moc_headers,
+helper_moc = qt6.compile_moc(headers: auth_moc_headers,
   sources: ['app/src/providers/runtime/provider_runtime.cpp'],
   include_directories: app_inc, dependencies: auth_dependencies,
   extra_args: auth_args)
-auth_helper = executable('orchard-auth-helper', files(helper_sources) + helper_moc +
+auth_helper = executable('orchard-auth-helper', files(auth_sources) + helper_moc +
   auth_qrc + [auth_provider_resources],
   include_directories: app_inc,
   dependencies: auth_dependencies + [qt_entry_dep], cpp_args: auth_args,

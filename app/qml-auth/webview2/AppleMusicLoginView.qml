@@ -18,10 +18,10 @@
  */
 
 import QtQuick
-import QtWebView
+import Orchard.Auth
 
-// Spotify login for Canvas loops. The helper watches the cookie store, so this
-// page only has to look like a browser and get out of the way.
+// Apple Music sign-in through MusicKit JS. WebView2 opens Apple's authorize popups
+// as its own windows; the page answers through chrome.webview.postMessage.
 Item {
     id: root
 
@@ -41,7 +41,7 @@ Item {
             anchors.leftMargin: 16
             anchors.right: closeButton.left
             anchors.verticalCenter: parent.verticalCenter
-            text: webView.title ? webView.title : qsTr("Log in to Spotify")
+            text: qsTr("Sign in to Apple Music")
             color: "#9ca3af"
             font.family: "Inter"
             font.pixelSize: 13
@@ -73,23 +73,16 @@ Item {
                 onClicked: root.closeRequested()
             }
         }
-
-        Rectangle {
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            width: parent.width * (webView.loadProgress / 100.0)
-            height: 2
-            color: "#1ed760"
-            visible: webView.loading
-        }
     }
 
-    WebView {
-        id: webView
+    BrowserView {
         anchors.top: navBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        url: "https://accounts.spotify.com/en/login"
+        profile: appleProfileName
+        userScripts: appleScripts
+        onWebMessageReceived: message => loginBridge.receive(message)
+        Component.onCompleted: loadHtml(signInHtml, signInUrl)
     }
 }

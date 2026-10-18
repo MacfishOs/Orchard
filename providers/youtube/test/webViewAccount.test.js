@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const qml = readFileSync(new URL('../../../app/qml/views/login/AuthWebView.qml', import.meta.url), 'utf8');
+const qml = readFileSync(new URL('../../../app/qml-auth/AuthWebView.qml', import.meta.url), 'utf8');
 const requestBody = qml.split('function requestAccount(token, authorization) {')[1]
   .split('\n    Timer {')[0].replace(/\}\s*$/, '');
 

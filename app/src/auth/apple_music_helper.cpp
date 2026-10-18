@@ -18,13 +18,10 @@
  */
 
 #include "apple_music_helper.h"
+#include "apple_music_page.h"
 #include "auth_session_channel.h"
 
 #include <QCoreApplication>
-#include <QFile>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QTimer>
 #include <QUrl>
 
@@ -39,21 +36,11 @@
 #include <QWebEngineScript>
 #endif
 
-namespace {
-
-// The developer token's origin claim names this origin; Android serves the same page from it.
-constexpr auto kPageOrigin = "https://appassets.androidplatform.net";
-constexpr auto kPageUrl = "https://appassets.androidplatform.net/assets/applemusic/signin.html";
-constexpr auto kProfileName = "AppleMusic";
-
-void sendAndQuit(const QString &socketName, const QJsonObject &result) {
-  auto *client = new AuthSessionClient(qApp);
-  QObject::connect(client, &AuthSessionClient::finished, qApp,
-                   [](bool accepted) { QCoreApplication::exit(accepted ? 0 : 1); });
-  client->send(socketName, result);
-}
+using namespace apple_music_page;
 
 #ifdef ORCHARD_WEBENGINE_COOKIE_ADAPTER
+namespace {
+
 // Apple's sign-in widget awaits getClientCapabilities(), which never settles in Qt WebEngine.
 constexpr auto kCapabilitiesShim = R"JS(
 (() => {
@@ -79,10 +66,6 @@ constexpr auto kBridge = R"JS(
 })();
 )JS";
 
-QString jsString(const QString &value) {
-  return QString::fromUtf8(QJsonDocument(QJsonArray{value}).toJson(QJsonDocument::Compact)).mid(1).chopped(1);
-}
-
 QWebEngineScript userScript(const QString &name, const QString &source, bool subFrames) {
   QWebEngineScript script;
   script.setName(name);
@@ -92,29 +75,16 @@ QWebEngineScript userScript(const QString &name, const QString &source, bool sub
   script.setRunsOnSubFrames(subFrames);
   return script;
 }
-
-QString signInHtml() {
-  QFile page(QStringLiteral(":/auth/applemusic-signin.html"));
-  return page.open(QIODevice::ReadOnly) ? QString::fromUtf8(page.readAll()) : QString();
-}
-#endif
-
-QString readDeveloperToken() {
-  QFile input;
-  if (!input.open(stdin, QIODevice::ReadOnly))
-    return {};
-  return QJsonDocument::fromJson(input.readLine(32 * 1024)).object().value(QStringLiteral("developerToken")).toString();
-}
-
 } // namespace
+#endif
 
 int runAppleMusicLogin(const QString &socketName) {
   const QString developerToken = readDeveloperToken();
   if (developerToken.isEmpty())
     return 1;
 #ifdef ORCHARD_WEBENGINE_COOKIE_ADAPTER
-  const QString html = signInHtml();
-  if (html.isEmpty())
+  const QString page = html();
+  if (page.isEmpty())
     return 1;
   auto *profile = new QQuickWebEngineProfile(qApp);
   profile->setStorageName(QString::fromLatin1(kProfileName));
@@ -124,31 +94,22 @@ int runAppleMusicLogin(const QString &socketName) {
   view.rootContext()->setContextProperty(QStringLiteral("appleScripts"), QVariant::fromValue(QList<QWebEngineScript>{
       userScript(QStringLiteral("orchard-apple-capabilities"), QString::fromLatin1(kCapabilitiesShim), true),
       userScript(QStringLiteral("orchard-apple-bridge"),
-                 QString::fromLatin1(kBridge).arg(jsString(QString::fromLatin1(kPageOrigin)), jsString(developerToken)), false)
+                 QString::fromLatin1(kBridge).arg(jsString(QString::fromLatin1(kOrigin)), jsString(developerToken)), false)
   }));
   view.rootContext()->setContextProperty(QStringLiteral("appleProfile"), profile);
-  view.rootContext()->setContextProperty(QStringLiteral("signInHtml"), html);
-  view.rootContext()->setContextProperty(QStringLiteral("signInUrl"), QUrl(QString::fromLatin1(kPageUrl)));
+  view.rootContext()->setContextProperty(QStringLiteral("signInHtml"), page);
+  view.rootContext()->setContextProperty(QStringLiteral("signInUrl"), QUrl(QString::fromLatin1(kUrl)));
   view.setResizeMode(QQuickView::SizeRootObjectToView);
   view.resize(520, 720);
   view.setTitle(QObject::tr("Sign in to Apple Music"));
   bool sent = false;
   AppleMusicLoginBridge bridge([&sent, &view, socketName](const QString &raw) {
-    if (sent)
-      return;
-    const QJsonObject message = QJsonDocument::fromJson(raw.toUtf8()).object();
-    const QString type = message.value(QStringLiteral("type")).toString();
-    const QString token = message.value(QStringLiteral("token")).toString();
-    QJsonObject result;
-    if (type == QStringLiteral("authorized") && !token.isEmpty() && token.size() <= 16384)
-      result.insert(QStringLiteral("token"), token);
-    else if (type == QStringLiteral("error"))
-      result.insert(QStringLiteral("error"), message.value(QStringLiteral("message")).toString());
-    else
+    const QJsonObject message = result(raw);
+    if (sent || message.isEmpty())
       return;
     sent = true;
     view.hide();
-    sendAndQuit(socketName, result);
+    sendSessionAndQuit(socketName, message);
   });
   view.rootContext()->setContextProperty(QStringLiteral("loginBridge"), &bridge);
   view.setSource(QUrl(QStringLiteral("qrc:/auth/AppleMusicLoginView.qml")));
@@ -169,10 +130,10 @@ int runAppleMusicLogout(const QString &socketName) {
   // MusicKit keeps the Music User Token in the page origin's storage.
   QObject::connect(&page, &QWebEnginePage::loadFinished, qApp, [&profile, socketName] {
     profile.cookieStore()->deleteAllCookies();
-    QTimer::singleShot(500, qApp, [socketName] { sendAndQuit(socketName, {{QStringLiteral("ok"), true}}); });
+    QTimer::singleShot(500, qApp, [socketName] { sendSessionAndQuit(socketName, {{QStringLiteral("ok"), true}}); });
   });
   page.setHtml(QStringLiteral("<script>localStorage.clear();sessionStorage.clear();</script>"),
-               QUrl(QString::fromLatin1(kPageUrl)));
+               QUrl(QString::fromLatin1(kUrl)));
   return QCoreApplication::exec();
 #else
   Q_UNUSED(socketName);

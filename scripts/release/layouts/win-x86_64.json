@@ -18,32 +18,28 @@
     "msvc-runtime": {"version": "14.51.36231-1", "map": [
       {"from": "concrt140.dll"}, {"from": "msvcp140*.dll"}, {"from": "vccorlib140.dll"}, {"from": "vcruntime140*.dll"}
     ]},
-    "qt": {"version": "6.11.2-6", "map": [
+    "qt": {"version": "6.11.2-7", "map": [
       {"from": "Qt6*.dll"}, {"from": "d3dcompiler_47.dll"}, {"from": "D3Dcompiler_47.dll"},
       {"from": "icu.dll"}, {"from": "icuuc.dll"}, {"from": "icuin.dll"}, {"from": "opengl32sw.dll"},
-      {"from": "QtWebEngineProcess.exe"},
-      {"from": "qml", "to": "qml"}, {"from": "resources", "to": "resources"}, {"from": "translations", "to": "translations"},
+      {"from": "qml", "to": "qml"}, {"from": "translations", "to": "translations"},
       {"from": "platforms", "to": "plugins/platforms"}, {"from": "imageformats", "to": "plugins/imageformats"},
       {"from": "iconengines", "to": "plugins/iconengines"}, {"from": "sqldrivers", "to": "plugins/sqldrivers"},
       {"from": "styles", "to": "plugins/styles"}, {"from": "tls", "to": "plugins/tls"},
       {"from": "multimedia", "to": "plugins/multimedia"}, {"from": "networkinformation", "to": "plugins/networkinformation"},
-      {"from": "generic", "to": "plugins/generic"}, {"from": "webview", "to": "plugins/webview"},
+      {"from": "generic", "to": "plugins/generic"},
       {"from": "position", "to": "plugins/position"}, {"from": "qmltooling", "to": "plugins/qmltooling"}
     ]}
   },
   "app": {"map": [
-    {"from": "orchard.exe"}, {"from": "orchard-auth-helper.exe"}, {"from": "orchard-adaptive-mix.exe"},
+    {"from": "orchard.exe"}, {"from": "orchard-auth-helper.exe"}, {"from": "WebView2Loader.dll"}, {"from": "orchard-adaptive-mix.exe"},
     {"from": "discord_partner_sdk.dll"}, {"from": "libLiteRt.dll"},
-    {"from": "LICENSE"}, {"from": "THIRD_PARTY_NOTICES.md"}, {"from": "DiscordSocialSdk-Notices.txt"}
+    {"from": "LICENSE"}, {"from": "THIRD_PARTY_NOTICES.md"}, {"from": "DiscordSocialSdk-Notices.txt"}, {"from": "WebView2-LICENSE.txt"}
   ]},
   "launch": {
     "executable": "orchard.exe",
     "env": {
       "QT_PLUGIN_PATH": "{component:qt}/plugins",
       "QML_IMPORT_PATH": "{component:qt}/qml",
-      "QTWEBENGINEPROCESS_PATH": "{component:qt}/QtWebEngineProcess.exe",
-      "QTWEBENGINE_RESOURCES_PATH": "{component:qt}/resources",
-      "QTWEBENGINE_LOCALES_PATH": "{component:qt}/translations/qtwebengine_locales",
       "ORCHARD_MODELS_DIR": "{component:models}",
       "ORCHARD_FFMPEG": "{component:ffmpeg}/ffmpeg.exe"
     },
