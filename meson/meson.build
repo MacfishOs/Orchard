@@ -250,10 +250,10 @@ helper_sources = [
   'app/src/auth/auth_session_channel.h',
   'app/src/auth/browser_cookie_adapter.cpp',
   'app/src/auth/browser_cookie_adapter.h',
-  'app/src/auth/spotify_helper.cpp',
   'app/src/auth/spotify_helper.h',
-  'app/src/auth/apple_music_helper.cpp',
+  'app/src/auth/spotify_page.h',
   'app/src/auth/apple_music_helper.h',
+  'app/src/auth/apple_music_page.h',
   'app/src/providers/runtime/provider_runtime.cpp',
   'app/src/providers/runtime/provider_runtime.h',
   'core/native/provider_host/provider_host.cpp',
@@ -262,6 +262,28 @@ helper_sources = [
   'app/src/providers/youtube/youtube_provider.cpp',
   'app/src/providers/youtube/youtube_provider.h',
   'app/src/orchard_core.h',
+]
+
+helper_webengine_sources = [
+  'app/src/auth/spotify_helper.cpp',
+  'app/src/auth/apple_music_helper.cpp',
+]
+
+helper_webview2_sources = [
+  'app/src/auth/spotify_helper_webview2.cpp',
+  'app/src/auth/apple_music_helper_webview2.cpp',
+  'app/src/auth/webview2_cookies.cpp',
+  'app/src/auth/webview2_environment.cpp',
+  'app/src/auth/webview2_item.cpp',
+  'app/src/auth/webview2_item.h',
+  'app/src/auth/webview2_native.h',
+  'app/src/auth/webview2_view.cpp',
+  'app/src/auth/webview2_view.h',
+]
+
+helper_webview2_moc_headers = [
+  'app/src/auth/webview2_item.h',
+  'app/src/auth/webview2_view.h',
 ]
 
 subdir('qml')

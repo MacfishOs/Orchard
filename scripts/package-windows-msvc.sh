@@ -39,14 +39,13 @@ command -v 7z >/dev/null 2>&1 || die "7z is required to create and verify the ar
 
 require_file "$executable"
 require_file "$auth_helper_executable"
+require_file "$build_dir/WebView2Loader.dll"
 python3 "$script_dir/windows-msvc/check-configured-qt.py" "$build_dir" "$qt_root"
 for adaptive_file in "${adaptive_files[@]}"; do
     require_file "$build_dir/$adaptive_file"
 done
 [[ -d "$build_dir/models" ]] || die "adaptive mix models not found: $build_dir/models"
 require_file "$qt_bin/windeployqt.exe"
-require_file "$qt_bin/QtWebEngineProcess.exe"
-require_file "$qt_root/plugins/webview/qtwebview_webengine.dll"
 require_file "$qt_root/plugins/sqldrivers/qsqlite.dll"
 [[ -d "$qt_root/qml" ]] || die "Qt QML directory not found: $qt_root/qml"
 
@@ -115,31 +114,22 @@ win_deployment_dir="$(windows_path "$deployment_dir")"
 win_executable="$(windows_path "$executable")"
 win_auth_helper_executable="$(windows_path "$auth_helper_executable")"
 
-echo "Deploying Qt runtime for $executable"
-# The auth helper selects its backend at runtime, so deploy it explicitly.
-wine "$qt_bin/windeployqt.exe" \
-    --release \
-    --no-compiler-runtime \
-    --include-plugins qtwebview_webengine \
-    --exclude-plugins qtwebview_webview2 \
-    --qmldir "$win_qml_dir" \
-    --dir "$win_deployment_dir" \
-    "$win_executable"
-
-echo "Deploying Qt WebEngine runtime for $auth_helper_executable"
-wine "$qt_bin/windeployqt.exe" \
-    --release \
-    --no-compiler-runtime \
-    --include-plugins qtwebview_webengine \
-    --exclude-plugins qtwebview_webview2 \
-    --qmldir "$win_qml_dir" \
-    --dir "$win_deployment_dir" \
-    "$win_auth_helper_executable"
+for target in "$win_executable" "$win_auth_helper_executable"; do
+    echo "Deploying Qt runtime for $target"
+    wine "$qt_bin/windeployqt.exe" \
+        --release \
+        --no-compiler-runtime \
+        --qmldir "$win_qml_dir" \
+        --dir "$win_deployment_dir" \
+        "$target"
+done
 
 # windeployqt copies the executable, but copy it explicitly so the archive
 # always contains exactly the build output selected above.
 cp -p "$executable" "$deployment_dir/orchard.exe"
 cp -p "$auth_helper_executable" "$deployment_dir/orchard-auth-helper.exe"
+cp -p "$build_dir/WebView2Loader.dll" "$deployment_dir/WebView2Loader.dll"
+cp -p "$source_dir/vendor/webview2/LICENSE.txt" "$deployment_dir/WebView2-LICENSE.txt"
 for adaptive_file in "${adaptive_files[@]}"; do
     cp -p "$build_dir/$adaptive_file" "$deployment_dir/$adaptive_file"
 done
@@ -158,6 +148,7 @@ required_files=(
     icuuc.dll
     icuin.dll
     orchard-auth-helper.exe
+    WebView2Loader.dll
     orchard-adaptive-mix.exe
     webgpu_dawn.dll
     dxil.dll
@@ -168,29 +159,19 @@ required_files=(
     models/docs-search/model_quantized.onnx
     models/docs-search/vocab.txt
     models/slop/fakeprint_lr.f32
-    Qt6WebEngineCore.dll
-    Qt6WebEngineQuick.dll
-    QtWebEngineProcess.exe
     Qt6Multimedia.dll
     Qt6Sql.dll
     multimedia/ffmpegmediaplugin.dll
     multimedia/windowsmediaplugin.dll
     sqldrivers/qsqlite.dll
     platforms/qwindows.dll
-    qml/QtWebView/qmldir
-    qml/QtWebEngine/qmldir
-    qml/QtWebEngine/qtwebenginequickplugin.dll
-    webview/qtwebview_webengine.dll
-    resources/icudtl.dat
-    resources/qtwebengine_devtools_resources.pak
-    resources/qtwebengine_resources.pak
-    resources/qtwebengine_resources_100p.pak
-    resources/qtwebengine_resources_200p.pak
-    resources/v8_context_snapshot.bin
-    translations/qtwebengine_locales/en-US.pak
 )
 for required_file in "${required_files[@]}"; do
     require_file "$deployment_dir/$required_file"
+done
+# Sign-in uses the system WebView2 runtime; a bundled Chromium means a stray QML import.
+for unexpected_file in Qt6WebEngineCore.dll Qt6WebView.dll QtWebEngineProcess.exe; do
+    [[ ! -e "$deployment_dir/$unexpected_file" ]] || die "unexpected Qt web runtime in package: $unexpected_file"
 done
 python3 "$script_dir/windows_qt_runtime.py" --stage "$deployment_dir"
 

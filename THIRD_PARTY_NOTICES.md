@@ -15,6 +15,14 @@ headers from `litert_cc_sdk.zip` and the prebuilt runtimes from
 LiteRT is licensed under the Apache License 2.0, preserved in
 [`vendor/litert/LICENSE`](vendor/litert/LICENSE) and shipped with packages.
 
+## Microsoft Edge WebView2 SDK
+
+The Windows sign-in helper uses the WebView2 SDK 1.0.4258.31 headers and loader
+(`WebView2Loader.dll`), vendored under `vendor/webview2`. They are licensed under
+the BSD 3-Clause license, preserved in
+[`vendor/webview2/LICENSE.txt`](vendor/webview2/LICENSE.txt) and shipped with
+Windows packages.
+
 ## Lyric translation models
 
 Translation models are not bundled; Orchard downloads one language pack the

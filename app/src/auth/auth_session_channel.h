@@ -61,3 +61,6 @@ private:
   QByteArray m_message;
   bool m_finished{false};
 };
+
+// Sends result to the parent, then exits the event loop: 0 when accepted.
+void sendSessionAndQuit(const QString &serverName, const QJsonObject &result);

@@ -13,6 +13,8 @@ keywords:
   - discord not showing
   - lastfm not connecting
   - docs search
+  - sign in
+  - webview2
 platforms:
   - desktop
 order: 150
@@ -21,6 +23,10 @@ order: 150
 # Troubleshooting
 
 Each section starts with what you see. Find the matching symptom and follow the first fix.
+
+## The sign-in window says "Sign-in needs the Microsoft Edge WebView2 Runtime."
+
+This appears on Windows only. The Google, Spotify, and Apple Music sign-in windows use the Microsoft Edge WebView2 Runtime, which is part of Windows 11 and most Windows 10 installs. Install the Evergreen WebView2 Runtime from Microsoft, then select **Sign in** again. If the window instead says "The sign-in browser could not start," close it and try again, then [Report a bug](report-a-bug.md) with the code it shows.
 
 ## The music video player says "No music video for this song."
 

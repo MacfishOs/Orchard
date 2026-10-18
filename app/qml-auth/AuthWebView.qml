@@ -19,7 +19,6 @@
 
 import QtQuick
 import QtQuick.Controls
-import QtWebView
 
 Item {
     id: root
@@ -415,18 +414,14 @@ Item {
             }
         }
 
-        // WebView displaying Google / YouTube sign-in
-        WebView {
+        // Google / YouTube sign-in
+        BrowserView {
             id: webView
             width: parent.width
             height: parent.height - navBar.height
             url: OrchardAuth.switchMode ? OrchardAuth.channelSwitcherUrl : OrchardAuth.loginUrl
 
-            onLoadingChanged: function (loadRequest) {
-                if (loadRequest.status === WebView.LoadSucceededStatus) {
-                    root.checkAuth();
-                }
-            }
+            onLoadFinished: root.checkAuth()
 
             onUrlChanged: {
                 root.checkAuth();

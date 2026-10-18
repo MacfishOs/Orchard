@@ -47,7 +47,7 @@ def main() -> None:
         shutil.rmtree(stage)
     stage.mkdir(parents=True)
 
-    binaries = ("orchard.exe", "orchard-auth-helper.exe", "orchard-adaptive-mix.exe",
+    binaries = ("orchard.exe", "orchard-auth-helper.exe", "WebView2Loader.dll", "orchard-adaptive-mix.exe",
                 "webgpu_dawn.dll", "dxil.dll", "dxcompiler.dll", "discord_partner_sdk.dll", "libLiteRt.dll", "ffmpeg.exe",
                 "ffmpeg-LICENSE.txt")
     for name in binaries:
@@ -57,28 +57,21 @@ def main() -> None:
         shutil.copy2(source / name, stage / name)
     shutil.copy2(source / "vendor/discord_social_sdk/License-Notices.txt",
                  stage / "DiscordSocialSdk-Notices.txt")
+    shutil.copy2(source / "vendor/webview2/LICENSE.txt", stage / "WebView2-LICENSE.txt")
     # The updater launches app-local CRT DLLs without running a system installer.
     copy_msvc_runtime(stage)
     copy_icu_runtime(stage)
 
     deploy = require(qt / "bin" / "windeployqt.exe")
-    require(qt / "plugins" / "webview" / "qtwebview_webengine.dll")
-    # The helper selects WebEngine at runtime, so deployment must include its plugin.
     for exe in ("orchard.exe", "orchard-auth-helper.exe"):
-        subprocess.run([str(deploy), "--release", "--no-compiler-runtime",
-                        "--include-plugins", "qtwebview_webengine",
-                        "--exclude-plugins", "qtwebview_webview2", "--qmldir",
+        subprocess.run([str(deploy), "--release", "--no-compiler-runtime", "--qmldir",
                         str(source / "app" / "qml"), "--dir", str(stage),
                         str(stage / exe)], check=True)
     (stage / "sqldrivers").mkdir(exist_ok=True)
     shutil.copy2(require(qt / "plugins" / "sqldrivers" / "qsqlite.dll"),
                  stage / "sqldrivers" / "qsqlite.dll")
 
-    required = ("QtWebEngineProcess.exe", "Qt6WebEngineCore.dll", "Qt6WebEngineQuick.dll",
-                "platforms/qwindows.dll", "webview/qtwebview_webengine.dll",
-                "qml/QtWebEngine/qtwebenginequickplugin.dll", "resources/icudtl.dat",
-                "resources/qtwebengine_resources.pak", "translations/qtwebengine_locales/en-US.pak",
-                "multimedia/ffmpegmediaplugin.dll", "models/beat-this/beat_this_webgpu.onnx",
+    required = ("platforms/qwindows.dll", "multimedia/ffmpegmediaplugin.dll", "models/beat-this/beat_this_webgpu.onnx",
                 "models/vocal-separation/vocals_umxhq_fp32.onnx",
                 "models/docs-search/model_quantized.onnx", "models/docs-search/vocab.txt",
                 "models/slop/fakeprint_lr.f32")
@@ -86,6 +79,10 @@ def main() -> None:
         require(stage / name)
     for name in ICU_DLLS:
         require(stage / name)
+    # Sign-in uses the system WebView2 runtime; a bundled Chromium means a stray QML import.
+    for name in ("Qt6WebEngineCore.dll", "Qt6WebView.dll", "QtWebEngineProcess.exe"):
+        if (stage / name).exists():
+            raise SystemExit(f"Unexpected Qt web runtime in package: {name}")
     validate_qt_runtime(stage)
 
     package.parent.mkdir(parents=True, exist_ok=True)
@@ -95,7 +92,7 @@ def main() -> None:
                  str(Path("C:/Program Files/7-Zip/7z.exe")))
     if not Path(seven_zip).exists():
         raise SystemExit("7z is required to create the Windows archive")
-    # Solid LZMA2 keeps Chromium and FFmpeg from eating the whole release shelf.
+    # Solid LZMA2 keeps FFmpeg and the models from eating the whole release shelf.
     subprocess.run([seven_zip, "a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on",
                     str(package), stage.name], cwd=package.parent, check=True)
     subprocess.run([seven_zip, "t", str(package)], check=True)

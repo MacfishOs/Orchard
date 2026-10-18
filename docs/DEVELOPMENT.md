@@ -8,7 +8,7 @@ Requirements:
 
 - Meson 1.12+, CMake 3.24+ for the vendored CMake submodules, and Ninja.
 - A C++20 toolchain and Rust 1.96+ (required by the native YouTube player parser).
-- Qt 6.8+ with QML, Quick, Network, Multimedia, WebView, and WebEngine. The release workflow uses Qt 6.12.0 on Linux and Qt 6.11.2 on Windows.
+- Qt 6.8+ with QML, Quick, Network, and Multimedia. Linux also needs WebView and WebEngine for sign-in. The release workflow uses Qt 6.12.0 on Linux and Qt 6.11.2 on Windows.
 - Node.js/npm for build-time provider bundling.
 - On Linux, Qt DBus and libsecret development packages for the keychain backend.
 
@@ -26,9 +26,9 @@ The `orchard` executable launches the embedded Qt Quick interface. The Rust core
 
 ### Sign-in backend
 
-Windows sign-in uses QtWebView's Qt WebEngine backend, initialized in the short-lived authentication helper. Use an MSVC Qt installation containing Qt WebEngine Quick and the `qtwebview_webengine` plugin.
+Windows sign-in hosts Microsoft Edge WebView2 directly in the short-lived authentication helper (`app/src/auth/webview2_*`), with no Qt web modules. The YouTube session comes from the WebView2 cookie manager, which includes HttpOnly cookies. Spotify and Apple Music use the same views. Apple Music keeps its own `AppleMusic` profile. Browser data lives in `%LOCALAPPDATA%\SFG545\Orchard\WebView2`.
 
-The Windows packaging script deploys the WebEngine libraries, helper process, QML module, resources, and locales. Saved Orchard sessions remain in the keychain. WebView2 browser profiles are not migrated to WebEngine.
+The helper loads `WebView2Loader.dll` from its own directory. Meson copies it from `vendor/webview2` (SDK headers and loader, see its README), and packaging ships it next to `orchard-auth-helper.exe`. The browser is the installed WebView2 Runtime. Packaging fails if Qt WebEngine or QtWebView DLLs get staged. Saved Orchard sessions remain in the keychain. Qt WebEngine browser profiles from older builds are not migrated.
 
 On Linux, QtWebView's WebEngine cookie store supplies the native session. The release workflow builds QtWebView 6.12.0 with its WebEngine backend enabled. For an SDK without that plugin, run:
 
@@ -36,7 +36,7 @@ On Linux, QtWebView's WebEngine cookie store supplies the native session. The re
 python scripts/build-qt-webview.py --qt-root /path/to/Qt/6.12.0/gcc_64 --build-dir build/qt-webview
 ```
 
-On Windows, use the Qt 6.11.2 `msvc2022_64` SDK from an MSVC developer shell, including its bundled QtWebView WebEngine plugin. Windows packaging checks that all imported Qt symbols exist in the staged DLLs. A complete native YouTube cookie session completes sign-in on both platforms. Account name/avatar probing is best effort and cannot reject a session with an `accounts_list` error.
+On Windows, use the Qt 6.11.2 `msvc2022_64` SDK from an MSVC developer shell. Windows packaging checks that all imported Qt symbols exist in the staged DLLs. A complete native YouTube cookie session completes sign-in on both platforms. Account name/avatar probing is best effort and cannot reject a session with an `accounts_list` error.
 
 ### Cross compilation
 
