@@ -38,6 +38,11 @@ void PlaybackController::playSong(const QVariantMap &track) {
 
 void PlaybackController::startTrack(const QVariantMap &track, bool replaceQueue,
                                     double initialPosition, bool startPaused) {
+  if (isAppleTrack(track)) {
+    m_error = tr("Apple Music playback is not available yet.");
+    emit stateChanged();
+    return;
+  }
   const QString type = track.value("type").toString();
   // Video rows still have playable audio. The resolver checks their duration;
   // the type label is not a bouncer with a very small guest list.

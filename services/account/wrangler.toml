@@ -14,6 +14,8 @@ B2_BUCKET = "replace-with-b2-bucket"
 # `wrangler secret put GOOGLE_CLIENT_SECRET`, the signing key via
 # `npm run generate-key | wrangler secret put SIGNING_KEY`.
 GOOGLE_CLIENT_ID = "replace-with-google-oauth-client-id"
+# Optional Apple Music tokens: set APPLE_MUSIC_TEAM_ID, APPLE_MUSIC_KEY_ID,
+# and APPLE_MUSIC_PRIVATE_KEY through Wrangler secrets.
 # Bug reports become issues here. Secrets: GITHUB_TOKEN (Issues read/write on
 # this repo), GITHUB_CLIENT_SECRET, and optionally GITHUB_WEBHOOK_SECRET.
 GITHUB_REPOSITORY = "your-org/your-repo"
@@ -41,6 +43,12 @@ name = "AUTH_LIMITER"
 namespace_id = "9999"
 simple = { limit = 30, period = 60 }
 
+# Per-account limit on Apple Music developer tokens.
+[[ratelimits]]
+name = "APPLE_LIMITER"
+namespace_id = "9998"
+simple = { limit = 5, period = 60 }
+
 # Orchard Connect presence and signaling: one hub per account.
 [[durable_objects.bindings]]
 name = "CONNECT_HUB"
@@ -56,3 +64,12 @@ new_sqlite_classes = ["ConnectHub"]
 [triggers]
 # Hourly purge, and the support sweep that pulls GitHub issue activity.
 crons = ["17 * * * *", "*/10 * * * *"]
+
+[ai]
+binding = "AI"
+
+[observability]
+enabled = true
+
+[observability.traces]
+enabled = true

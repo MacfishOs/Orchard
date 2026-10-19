@@ -147,6 +147,8 @@ fun AnimatedArtworkVideo(
     alignment: Alignment = Alignment.Center,
     /** Display width over height, reported once the stream's size is known. */
     onVideoAspect: ((Float) -> Unit)? = null,
+    /** Small frames at a steady rate while playing, for a backdrop that has to show the video. */
+    onGlassFrame: ((Bitmap) -> Unit)? = null,
 ) {
     if (url.isBlank()) return
     // GIF covers chosen by the user are not video; the platform decoder animates them.
@@ -271,6 +273,21 @@ fun AnimatedArtworkVideo(
         }
     }
 
+    if (onGlassFrame != null) {
+        val currentOnGlassFrame by rememberUpdatedState(onGlassFrame)
+        LaunchedEffect(playerView, firstFrameReady, url, active) {
+            val texture = playerView?.videoSurfaceView as? TextureView ?: return@LaunchedEffect
+            if (!firstFrameReady || !active) return@LaunchedEffect
+            while (true) {
+                if (texture.isAvailable && texture.width > 0 && texture.height > 0) {
+                    val height = (GLASS_FRAME_WIDTH * texture.height / texture.width).coerceAtLeast(1)
+                    texture.getBitmap(GLASS_FRAME_WIDTH, height)?.let(currentOnGlassFrame)
+                }
+                delay(GLASS_FRAME_INTERVAL_MS)
+            }
+        }
+    }
+
     AndroidView(
         factory = { targetContext ->
             val layoutParent = android.widget.FrameLayout(targetContext)
@@ -318,6 +335,10 @@ private fun PlayerView.setVideoSurfaceAlignment(alignment: Alignment) {
 }
 
 private const val FRAME_SAMPLE_WIDTH = 64
+
+// Glass blurs this further, so a few dozen pixels across is enough to stay recognizable.
+private const val GLASS_FRAME_WIDTH = 72
+private const val GLASS_FRAME_INTERVAL_MS = 150L
 // Each sample retints the whole backdrop over 500 ms; motion covers rarely change palette faster than this.
 private const val FRAME_SAMPLE_INTERVAL_MS = 4_000L
 

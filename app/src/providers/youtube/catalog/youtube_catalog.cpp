@@ -91,6 +91,12 @@ quint64 YouTubeCatalog::fetchPlaylistPage(const QString &continuation,
                  {QStringLiteral("startIndex"), qMax(0, startIndex)}});
 }
 
+quint64 YouTubeCatalog::fetchBrowse(const QJsonObject &payload, const QJsonObject &session) {
+  QJsonObject request = payload;
+  request.insert(QStringLiteral("session"), session);
+  return invoke(RequestKind::Browse, QStringLiteral("catalog.browse"), request);
+}
+
 quint64 YouTubeCatalog::invoke(RequestKind kind, const QString &method,
                                QJsonObject payload) {
   const quint64 requestId = m_provider->invoke(method, std::move(payload));
@@ -125,6 +131,9 @@ void YouTubeCatalog::handleResult(quint64 requestId, const QJsonValue &result) {
       return;
     case RequestKind::Artist:
       emit artistReady(requestId, object);
+      return;
+    case RequestKind::Browse:
+      emit browseReady(requestId, object);
       return;
     case RequestKind::Album:
       emit albumReady(requestId, object);

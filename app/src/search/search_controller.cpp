@@ -20,6 +20,8 @@
 #include "search_controller.h"
 
 #include "auth/auth_manager.h"
+#include "integrations/apple_music.h"
+#include "integrations/catalog_source.h"
 #include "offline/offline_library.h"
 #include "providers/youtube/catalog/youtube_catalog.h"
 
@@ -65,6 +67,20 @@ void SearchController::search(const QString &query, const QString &filter) {
     emit stateChanged();
     return;
   }
+  if (m_source && m_source->apple()) {
+    // The high bit keeps these ids apart from YouTubeCatalog's request counter.
+    const quint64 id = (quint64{1} << 63) | ++m_appleRequests;
+    m_requestId = id;
+    m_loading = true;
+    m_appleMusic->search(m_query, m_filter, [this, id](const QJsonObject &result, const QString &error) {
+      if (!error.isEmpty())
+        receiveFailure(id, error);
+      else
+        receiveSearch(id, result);
+    });
+    emit stateChanged();
+    return;
+  }
   if (!m_auth->isSignedIn()) {
     m_errorMessage = tr("Sign in to search YouTube Music.");
     emit stateChanged();
@@ -77,6 +93,12 @@ void SearchController::search(const QString &query, const QString &filter) {
   m_requestId = m_catalog->fetchSearch(m_query, m_filter,
                                        m_auth->sessionObject());
   emit stateChanged();
+}
+
+void SearchController::setAppleMusic(AppleMusic *appleMusic, CatalogSource *source) {
+  m_appleMusic = appleMusic;
+  m_source = source;
+  connect(source, &CatalogSource::changed, this, &SearchController::retry);
 }
 
 void SearchController::retry() {

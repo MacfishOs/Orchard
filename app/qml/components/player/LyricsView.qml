@@ -404,7 +404,7 @@ Item {
                                              : line.current ? root.tint(root.primaryText, 0.28) : line.restColor
                                     fillColor: line.translated ? root.tint(root.accentColor, 0.9) : root.fillColor
                                     doneColor: root.primaryText
-                                    clock: root.wordClock
+                                    clockSource: root
                                 }
 
                                 Text {
@@ -432,7 +432,7 @@ Item {
                                     baseColor: root.tint(root.primaryText, line.current ? 0.48 : 0.2)
                                     fillColor: root.tint(root.accentColor, 0.9)
                                     doneColor: root.primaryText
-                                    clock: root.wordClock
+                                    clockSource: root
                                 }
                             }
                         }

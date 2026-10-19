@@ -10,3 +10,5 @@
 
 // Empty means the API answer could not be mapped one-to-one to the source lines.
 QStringList parseRemoteTranslation(const QByteArray &body, const QString &provider, int expected);
+
+QString remoteTranslationEndpoint(const QString &provider, const QString &custom);

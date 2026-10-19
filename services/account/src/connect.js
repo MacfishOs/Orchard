@@ -116,6 +116,13 @@ export function cleanLan(raw) {
     .map((item) => ({ host: String(item.host), port: item.port }));
 }
 
+// An address both devices hold is a tunnel address (Cloudflare WARP gives every
+// device 172.16.0.2); dialing it reaches the dialer's own listener.
+export function distinctLan(left = [], right = []) {
+  const shared = new Set(left.filter((a) => right.some((b) => a.host === b.host)).map((a) => a.host));
+  return [left.filter((a) => !shared.has(a.host)), right.filter((b) => !shared.has(b.host))];
+}
+
 // Short-lived TURN credentials from Cloudflare Realtime, when configured. Without
 // them, devices behind strict NATs still fall back to LAN-only.
 export async function iceServers(env, fetcher = fetch) {
@@ -156,8 +163,13 @@ export class ConnectHub {
   }
 
   accept(socket, { userId, deviceId, expiresAt }) {
-    // One live socket per device; a reconnect replaces the old one.
-    for (const old of this.ctx.getWebSockets(deviceId)) old.close(4001, "replaced");
+    // One live socket per device. A replaced socket stays listed until its close
+    // handshake ends, which never happens on a dead link, so unlist it first.
+    for (const old of this.ctx.getWebSockets(deviceId)) {
+      const state = old.deserializeAttachment();
+      if (state) old.serializeAttachment({ ...state, announced: false, replaced: true });
+      old.close(4001, "replaced");
+    }
     this.ctx.acceptWebSocket(socket, [deviceId]);
     socket.serializeAttachment({ userId, deviceId, expiresAt, announced: false });
   }
@@ -165,8 +177,10 @@ export class ConnectHub {
   send(socket, message) {
     try {
       socket.send(JSON.stringify(message));
+      return true;
     } catch {
       // A socket closing underneath us is cleaned up by webSocketClose.
+      return false;
     }
   }
 
@@ -183,12 +197,17 @@ export class ConnectHub {
       const stored = await this.ctx.storage.get(`device:${deviceId}`);
       if (stored) devices.push(stored);
     }
-    for (const socket of sockets) this.send(socket, { type: "presence", devices });
+    for (const socket of sockets) {
+      const { deviceId } = socket.deserializeAttachment();
+      const own = devices.find((entry) => entry.device.id === deviceId)?.lan || [];
+      const seen = devices.map((entry) => (entry.device.id === deviceId ? entry : { ...entry, lan: distinctLan(entry.lan, own)[0] }));
+      this.send(socket, { type: "presence", devices: seen });
+    }
   }
 
   async webSocketMessage(socket, raw) {
     const state = socket.deserializeAttachment();
-    if (!state) return;
+    if (!state || state.replaced) return;
     if (state.expiresAt && state.expiresAt <= nowSeconds()) {
       socket.close(4401, "token_expired");
       return;
@@ -280,8 +299,14 @@ export class ConnectHub {
       expiresAt: nowSeconds() + SESSION_SECONDS,
     });
     const grant = { type: "session.grant", session_id: sessionId, key, ice_servers: ice, expires_in: GRANT_SECONDS };
-    this.send(socket, { ...grant, role: "controller", request_id: requestId, peer: theirs.device, peer_lan: theirs.lan });
-    this.send(target, { ...grant, role: "target", peer: mine.device, peer_lan: mine.lan });
+    const [mineLan, theirLan] = distinctLan(mine.lan, theirs.lan);
+    // Target first: the controller dials as soon as it has its grant, and a target
+    // without one rejects the hello as unauthorized.
+    if (!this.send(target, { ...grant, role: "target", peer: mine.device, peer_lan: mineLan })) {
+      await this.ctx.storage.delete(`session:${sessionId}`);
+      return fail("peer_offline");
+    }
+    this.send(socket, { ...grant, role: "controller", request_id: requestId, peer: theirs.device, peer_lan: theirLan });
   }
 
   async session(sessionId) {

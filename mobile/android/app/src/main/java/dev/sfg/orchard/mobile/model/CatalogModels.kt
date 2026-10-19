@@ -90,6 +90,10 @@ data class Track(
 /** [Track.playbackSource] of songs imported from the phone's own storage. */
 const val LOCAL_SOURCE = "local"
 
+/** [Track.playbackSource] ids that the now playing source mark recognizes. */
+const val YOUTUBE_SOURCE = "youtube"
+const val APPLE_MUSIC_SOURCE = "apple_music"
+
 const val MUSIC_VIDEO_TYPE_ATV = "MUSIC_VIDEO_TYPE_ATV"
 const val MUSIC_VIDEO_TYPE_OMV = "MUSIC_VIDEO_TYPE_OMV"
 const val MUSIC_VIDEO_TYPE_UGC = "MUSIC_VIDEO_TYPE_UGC"
@@ -119,7 +123,21 @@ data class Playlist(
     val description: String = "",
     val tracks: List<Track> = emptyList(),
     val explicit: Boolean = false,
+    /** Full length from the library grid; [tracks] may hold only the first page. */
+    val trackCount: Int? = null,
 )
+
+/** Best known length, or null when neither the grid count nor any tracks are known. */
+val Playlist.songCount: Int?
+    get() = trackCount ?: tracks.size.takeIf { it > 0 }
+
+/** "21 songs · mari", or the creator alone when the length is unknown. */
+val Playlist.subtitle: String
+    get() {
+        val count = songCount ?: return author
+        val songs = if (count == 1) "1 song" else "%,d songs".format(count)
+        return if (author.isBlank()) songs else "$songs · $author"
+    }
 
 /** A heterogeneous catalog item used by home, search, and library shelves. */
 sealed interface CatalogItem {
@@ -195,6 +213,10 @@ data class BrowseDetail(
     val explicit: Boolean = false,
     /** True when YouTube identifies this as a playlist the signed-in listener may edit. */
     val editable: Boolean = false,
+    /** The catalog supplying the page, such as "apple_music". */
+    val source: String = "",
+    /** The artist's name as artwork, when Apple has one. */
+    val logoUrl: String = "",
 )
 
 data class SearchResults(

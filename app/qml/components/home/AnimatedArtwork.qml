@@ -32,6 +32,8 @@ Item {
     property int fillMode: VideoOutput.PreserveAspectCrop
 
     readonly property bool hasVideo: Boolean(source && source.toString().length > 0)
+    // Local copy of source; empty while it downloads.
+    property string playableSource: ""
     // True once frames are on screen, so hosts can reshape around the loop without flashing the cover.
     readonly property bool live: videoOutput.visible && videoOutput.sourceRect.height > 0
     readonly property real videoAspect: live ? videoOutput.sourceRect.width / videoOutput.sourceRect.height : 0
@@ -39,21 +41,41 @@ Item {
     MediaPlayer {
         id: player
 
-        source: root.source
+        source: root.playableSource
         videoOutput: videoOutput
         audioOutput: null // Keep it strictly silent; the music stream handles the auditory pleasure.
         loops: MediaPlayer.Infinite
-        // A stored URL that stopped loading is stale; drop it so the next play asks the mirrors.
-        // Network errors are skipped so going offline doesn't wipe good entries.
+        // A loop that won't decode is dropped from both caches so the next play asks the mirrors.
         onErrorOccurred: function(error, errorString) {
-            if (error !== MediaPlayer.NetworkError && root.hasVideo)
+            if (error !== MediaPlayer.NetworkError && root.hasVideo) {
+                OrchardArtworkVideos.discard(root.source.toString());
                 OrchardAnimatedArtwork.forgetUrl(root.source.toString());
+            }
+        }
+    }
+
+    function resolvePlayable() {
+        playableSource = hasVideo ? OrchardArtworkVideos.localUrl(source.toString()) : "";
+        if (playableSource.length > 0 && playing)
+            player.play();
+        else if (playableSource.length === 0)
+            player.stop();
+    }
+
+    Component.onCompleted: resolvePlayable()
+
+    Connections {
+        target: OrchardArtworkVideos
+
+        function onReady(remote, local) {
+            if (root.hasVideo && remote === root.source.toString())
+                root.resolvePlayable();
         }
 
-        Component.onCompleted: {
-            if (root.playing && root.hasVideo) {
-                player.play();
-            }
+        // Only content errors mean a stale URL; going offline must not wipe good entries.
+        function onFailed(remote, permanent) {
+            if (permanent && root.hasVideo && remote === root.source.toString())
+                OrchardAnimatedArtwork.forgetUrl(remote);
         }
     }
 
@@ -61,7 +83,7 @@ Item {
         target: root
 
         function onPlayingChanged() {
-            if (!root.hasVideo) return;
+            if (root.playableSource.length === 0) return;
             if (root.playing) {
                 player.play();
             } else {
@@ -70,11 +92,7 @@ Item {
         }
 
         function onSourceChanged() {
-            if (root.hasVideo && root.playing) {
-                player.play();
-            } else {
-                player.stop();
-            }
+            root.resolvePlayable();
         }
     }
 

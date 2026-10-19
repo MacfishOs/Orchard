@@ -32,4 +32,8 @@ QList<QColor> grid(const QImage &frame, const QRectF &crop, int cols, int rows);
 // Darkens a sampled color into a background tone that keeps light text readable.
 QColor backgroundTone(const QColor &color);
 
+// Artist pages extend the visible picture's lower edge into the content background.
+QList<QColor> artistEdge(const QImage &frame, const QRectF &crop);
+QColor artistTone(const QColor &color);
+
 } // namespace videoambient

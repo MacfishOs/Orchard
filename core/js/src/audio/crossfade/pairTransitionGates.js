@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // Class ceilings, gates and strategy policy shared by every pair evaluation.
 import {
@@ -13,6 +13,7 @@ export const CLASS_RANK = Object.freeze({
   normal_boundary: 0,
   silence_trim: 1,
   simple_crossfade: 2,
+  beatless_bridge: 2.5,
   conservative_beatmatched: 3,
   full_beatmatched: 4
 });
@@ -189,8 +190,10 @@ export function candidateGates({
     lower('voice-over-voice', 'normal_boundary', 'veto');
   }
   // Fading the outgoing singer out mid-line sounds forced even over a clean incoming,
-  // unless the voice never stops before the song does.
-  if (measuredVoice && voice.outgoing >= 0.3 && !voice.singsOut) lower('voice-cut', 'normal_boundary', 'veto');
+  // unless the voice never stops before the song does. A drop-in pulls the outgoing out
+  // within four beats, too fast for any line to ride over.
+  const waived = voice.singsOut && pair.alignment !== 'start';
+  if (measuredVoice && voice.outgoing >= 0.3 && !waived) lower('voice-cut', 'normal_boundary', 'veto');
   // Blends that only work behind a filter sound forced; they play out.
   if (needsFilter(harmonic, spectral, collision, measuredVoice)) lower('needs-filter', 'simple_crossfade', 'veto');
 
@@ -291,7 +294,7 @@ export function strategyFor(evaluation) {
 }
 
 export function renderModeFor(transitionClass) {
-  if (['full_beatmatched', 'conservative_beatmatched'].includes(transitionClass)) return 'native';
+  if (['full_beatmatched', 'conservative_beatmatched', 'beatless_bridge'].includes(transitionClass)) return 'native';
   if (transitionClass === 'simple_crossfade') return 'live';
   return 'boundary';
 }

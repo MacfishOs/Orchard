@@ -1,9 +1,10 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // Beat continuity, voices cut mid-line and the bass handover for one candidate overlap.
 // Every measure is neutral when the worker sent no bass or vocal curves.
 import { curveMean } from '../../../shared/trackAnalysis.js';
 import { glideOffsets } from './pairTempoHarmony.js';
+import { fadeSpansFor } from './transitionArrangement.js';
 
 const FLOW_SAMPLES = 16;
 // Bass curve levels (1 = the song's usual level) for "no beat" and "beat fully in".
@@ -131,6 +132,10 @@ function recentBeat(analysis, time) {
   return level;
 }
 
+function within(fraction, [start, end]) {
+  return end > start ? clamp((fraction - start) / (end - start)) : fraction >= start ? 1 : 0;
+}
+
 function sourceOffsets(pair, time) {
   return pair.tempoRamp
     ? glideOffsets(time, pair.durationSeconds, pair.outgoingRatio, pair.incomingRatio)
@@ -156,14 +161,16 @@ export function beatFlow(pair, outgoing, incoming) {
   let secondHalf = 0;
   // A short unmatched fade is heard as a switch: only the beat after it counts.
   const samples = pair.beatmatched ? FLOW_SAMPLES : 0;
+  const spans = fadeSpansFor(pair);
   for (let index = samples ? 0 : 1; index <= Math.max(1, samples); index += 1) {
     const fraction = samples ? index / samples : 1;
     const offsets = sourceOffsets(pair, fraction * pair.durationSeconds);
     const left = beatPresence(outgoing, pair.outgoingStart + offsets.outgoing);
     const right = beatPresence(incoming, pair.incomingStart + offsets.incoming + (samples ? 0 : 0.5));
     if (left === null || right === null || reference === null) continue;
-    const angle = fraction * Math.PI / 2;
-    const loss = Math.max(0, reference - Math.min(1, Math.cos(angle) * left + Math.sin(angle) * right));
+    const out = Math.cos(within(fraction, spans.outgoing) * Math.PI / 2);
+    const into = Math.sin(within(fraction, spans.incoming) * Math.PI / 2);
+    const loss = Math.max(0, reference - Math.min(1, out * left + into * right));
     deficit += loss;
     worst = Math.max(worst, loss);
     if (samples && fraction >= 0.5) {
@@ -205,14 +212,28 @@ function voiceRisk(analysis, from, to) {
   return activity === null ? null : rounded(clamp((activity - VOICE_FLOOR) / VOICE_SPAN));
 }
 
-/** Fading the incoming in on a line already in progress: the voice arrives from nowhere. */
+/**
+ * Fading the incoming in on a line already in progress: the voice arrives from nowhere. A
+ * drop-in enters at full level on its anchor, so only a line already running before it counts.
+ */
 export function incomingVoiceRisk(pair, incoming) {
-  return voiceRisk(incoming, pair.incomingStart - 0.5, pair.incomingStart + 1);
+  if (pair.alignment !== 'start') return voiceRisk(incoming, pair.incomingStart - 0.5, pair.incomingStart + 1);
+  // Nothing sings before a song starts.
+  const curve = incoming.curves?.vocal;
+  if (curve && pair.incomingStart - 1 < curve.start) return 0;
+  return voiceRisk(incoming, pair.incomingStart - 1, pair.incomingStart - 0.1);
+}
+
+/** Source time where the outgoing falls silent: the overlap's end, or a drop-in's fader end. */
+export function outgoingExit(pair) {
+  const [, end] = fadeSpansFor(pair).outgoing;
+  return pair.outgoingStart + (pair.outgoingEnd - pair.outgoingStart) * end;
 }
 
 /** Fading the outgoing out in the middle of a line. */
 export function outgoingVoiceRisk(pair, outgoing) {
-  return voiceRisk(outgoing, pair.outgoingEnd - 1.5, pair.outgoingEnd);
+  const exit = outgoingExit(pair);
+  return voiceRisk(outgoing, exit - 1.5, exit);
 }
 
 // A pause this long lets a line finish before the song ends.
@@ -245,6 +266,8 @@ export function singsOut(analysis, time) {
  * near the middle where the incoming has a bass to hand to.
  */
 export function bassSwapFraction(pair, incoming) {
+  // A drop-in brings its bass with it.
+  if (pair.alignment === 'start') return 0.05;
   const bars = pair.beats >= 8 ? Math.round(pair.beats / 4) : 0;
   if (!bars || !incoming.curves?.bass) return 0.5;
   for (let bar = 1; bar < bars; bar += 1) {

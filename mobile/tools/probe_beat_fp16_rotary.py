@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL.
+# Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD.
 """Isolate Beat This's FP16 rotary phase error on a real mel excerpt.
 
 Run with `uv run --no-project --python 3.13 --with torch==2.11.0

@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 //! One decoded song, built from the decoder's native-rate stereo on every platform.
 //! Desktop (FFmpeg) and Android (MediaCodec/libopus) only decode; every conversion after

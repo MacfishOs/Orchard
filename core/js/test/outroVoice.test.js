@@ -1,3 +1,4 @@
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 

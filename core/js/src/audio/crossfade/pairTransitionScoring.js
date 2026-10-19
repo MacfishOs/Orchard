@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // Measures one candidate overlap and turns the evidence into a classed evaluation.
 import {
@@ -6,7 +6,8 @@ import {
   summarizeTrackWindow
 } from '../../../shared/trackAnalysis.js';
 import { MEASURED_CHANGES, mappedVocalCollision } from './pairTransitionEvidence.js';
-import { beatFlow, incomingVoiceRisk, outgoingVoiceRisk, singsOut } from './transitionFlow.js';
+import { beatFlow, incomingVoiceRisk, outgoingExit, outgoingVoiceRisk, singsOut } from './transitionFlow.js';
+import { fadeSpansFor } from './transitionArrangement.js';
 import {
   PAIR_TRANSITION_POLICY,
   candidateGates,
@@ -147,10 +148,12 @@ export function evaluatePair(pair, context) {
     pair.durationSeconds,
     pair.incomingRatio
   );
+  // Voices only meet while the outgoing is still audible.
+  const audible = fadeSpansFor(pair).outgoing[1];
   const collision = mappedVocalCollision(outgoing, incoming, {
     outgoingStart: pair.outgoingStart,
     incomingStart: pair.incomingStart,
-    durationSeconds: pair.durationSeconds,
+    durationSeconds: pair.durationSeconds * audible,
     outgoingRatio: pair.outgoingRatio,
     incomingRatio: pair.incomingRatio,
     tempoRamp: pair.tempoRamp,
@@ -159,7 +162,7 @@ export function evaluatePair(pair, context) {
   const voice = {
     incoming: incomingVoiceRisk(pair, incoming),
     outgoing: outgoingVoiceRisk(pair, outgoing),
-    singsOut: singsOut(outgoing, pair.outgoingEnd)
+    singsOut: singsOut(outgoing, outgoingExit(pair))
   };
   const vocal = vocalScore(collision, outgoingSummary, incomingSummary, voice);
   const flow = beatFlow(pair, outgoing, incoming);

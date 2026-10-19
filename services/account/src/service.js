@@ -17,6 +17,7 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { appleDeveloperToken, purgeAppleTokenUsage } from "./apple.js";
 import { isArtworkPath, listArtwork, purgeArtwork, serveArtwork, uploadArtwork } from "./artwork.js";
 import { openHub } from "./connect.js";
 import { hashSecret, pkceChallenge, randomToken } from "./crypto.js";
@@ -26,6 +27,7 @@ import { HttpError, htmlPage, issuer, json, nowSeconds, readJson, requireSession
 import { ACCESS_TOKEN_AUDIENCE, publicJwk, signJwt } from "./jwt.js";
 import { createReport, getReport, isScreenshotPath, listReports, markReportRead, serveScreenshot } from "./support.js";
 import { githubWebhook } from "./support_sync.js";
+import { translateSong, purgeTranslations } from "./translation.js";
 
 export const ACCESS_TOKEN_SECONDS = 15 * 60;
 export const AUTH_REQUEST_SECONDS = 10 * 60;
@@ -307,6 +309,15 @@ async function route(request, env, ctx) {
   if (method === "GET" && pathname === "/auth/google/callback") return finishGoogleSignIn(request, env);
   if (method === "POST" && pathname === "/auth/token") return token(request, env);
   if (method === "POST" && pathname === "/auth/logout") return logout(request, env);
+  if (method === "GET" && pathname === "/apple/developer-token") {
+    await rateLimit(env, request, "apple");
+    return appleDeveloperToken(request, env);
+  }
+  if (method === "POST" && pathname === "/lyrics/translate") {
+    const translation = translateSong(request, env);
+    ctx?.waitUntil(translation.catch(() => {}));
+    return translation;
+  }
   if (method === "GET" && pathname === "/me") return me(request, env);
   if (method === "GET" && pathname === "/devices") return listDevices(request, env);
   const deviceMatch = pathname.match(/^\/devices\/([0-9a-f-]{36})$/);
@@ -337,6 +348,8 @@ export async function purgeExpired(env, now = nowSeconds()) {
     env.DB.prepare("DELETE FROM devices WHERE last_seen_at <= ?").bind(now - REFRESH_IDLE_SECONDS),
   ]);
   await purgeArtwork(env, now);
+  await purgeTranslations(env, now);
+  await purgeAppleTokenUsage(env, now);
 }
 
 export async function handleRequest(request, env, ctx) {

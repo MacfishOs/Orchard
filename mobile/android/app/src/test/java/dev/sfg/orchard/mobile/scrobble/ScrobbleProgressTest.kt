@@ -27,6 +27,14 @@ import org.junit.Test
 
 class ScrobbleProgressTest {
     @Test
+    fun `cleans metadata whitespace before applying the length limit`() {
+        assertEquals("Artist feat. Singer", "  Artist\t feat.\n Singer  ".cleanScrobbleText())
+        assertEquals("Artist", "  Artist\t feat. Singer  ".cleanScrobbleText(6))
+        assertEquals("", " \t\n ".cleanScrobbleText())
+        assertEquals("Beyoncé 東京", "  Beyoncé   東京  ".cleanScrobbleText())
+    }
+
+    @Test
     fun `uses half-track threshold for ordinary songs`() {
         assertTrue(shouldScrobble(durationMs = 180_000, playedMs = 90_000))
     }

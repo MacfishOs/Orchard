@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Transition planning: generate, score, select, describe.
 //!
 //! The planner never touches PCM beyond measuring it. Its output is a [`TransitionPlan`] that

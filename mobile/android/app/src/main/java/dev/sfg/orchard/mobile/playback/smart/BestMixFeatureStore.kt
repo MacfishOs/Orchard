@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 package dev.sfg.orchard.mobile.playback.smart
 
@@ -104,7 +104,8 @@ class BestMixFeatureStore(context: Context) : SQLiteOpenHelper(
         internal const val DATABASE_NAME = "best-mix-analysis.db"
         // Version 3: saver-quality audio, the encode desktop analyzes for its feature version 2.
         // Version 4: edge bass curves, desktop's feature version 3.
-        private const val DATABASE_VERSION = 4
+        // Version 5: edge chroma curves and a working key, desktop's feature version 4.
+        private const val DATABASE_VERSION = 5
         private const val MAX_BYTES = 32L * 1024 * 1024
     }
 }

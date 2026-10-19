@@ -86,6 +86,8 @@ fun PlayerTransportControls(
     onShuffle: () -> Unit,
     onRepeat: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The player keeps shuffle and repeat in the queue; screens without one show them here. */
+    showModes: Boolean = true,
 ) {
     val previousSource = remember { MutableInteractionSource() }
     val playSource = remember { MutableInteractionSource() }
@@ -102,14 +104,16 @@ fun PlayerTransportControls(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TransportToggleOption(
-            icon = Icons.Rounded.Shuffle,
-            description = if (shuffle) "Turn shuffle off" else "Turn shuffle on",
-            active = shuffle,
-            enabled = localControls,
-            onClick = onShuffle,
-        )
-        Spacer(Modifier.width(10.dp))
+        if (showModes) {
+            TransportToggleOption(
+                icon = Icons.Rounded.Shuffle,
+                description = if (shuffle) "Turn shuffle off" else "Turn shuffle on",
+                active = shuffle,
+                enabled = localControls,
+                onClick = onShuffle,
+            )
+            Spacer(Modifier.width(10.dp))
+        }
         Row(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -140,18 +144,20 @@ fun PlayerTransportControls(
                 modifier = Modifier.weight(nextWeight),
             )
         }
-        Spacer(Modifier.width(10.dp))
-        TransportToggleOption(
-            icon = if (repeatMode == RepeatMode.ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
-            description = when (repeatMode) {
-                RepeatMode.OFF -> "Repeat all"
-                RepeatMode.ALL -> "Repeat one"
-                RepeatMode.ONE -> "Turn repeat off"
-            },
-            active = repeatMode != RepeatMode.OFF,
-            enabled = localControls,
-            onClick = onRepeat,
-        )
+        if (showModes) {
+            Spacer(Modifier.width(10.dp))
+            TransportToggleOption(
+                icon = if (repeatMode == RepeatMode.ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                description = when (repeatMode) {
+                    RepeatMode.OFF -> "Repeat all"
+                    RepeatMode.ALL -> "Repeat one"
+                    RepeatMode.ONE -> "Turn repeat off"
+                },
+                active = repeatMode != RepeatMode.OFF,
+                enabled = localControls,
+                onClick = onRepeat,
+            )
+        }
     }
 }
 
@@ -242,7 +248,7 @@ private val PillShape = RoundedCornerShape(percent = 50)
 private val PILL_HEIGHT = 56.dp
 private val PlayGlyph = Color(0xFF111214)
 private const val SIDE_WEIGHT = 1f
-private const val PLAY_WEIGHT = 1.4f
+private const val PLAY_WEIGHT = 1f
 private const val PRESSED_GROWTH = 1.3f
 private const val NEIGHBOUR_SHRINK = 0.85f
 

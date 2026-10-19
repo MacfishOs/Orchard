@@ -156,7 +156,7 @@ class OrchardPlaybackService : MediaLibraryService() {
             .setBitmapLoader(
                 DataSourceBitmapLoader.Builder(this)
                     .setDataSourceFactory(OkHttpDataSource.Factory(graph.http))
-                    .setMaximumOutputDimension(512)
+                    .setMaximumOutputDimension(1024)
                     .setMakeShared(true)
                     .build()
             )

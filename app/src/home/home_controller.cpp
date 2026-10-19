@@ -20,6 +20,8 @@
 #include "home_controller.h"
 
 #include "auth/auth_manager.h"
+#include "integrations/apple_music.h"
+#include "integrations/catalog_source.h"
 #include "providers/youtube/catalog/youtube_catalog.h"
 
 #include <QJsonArray>
@@ -116,11 +118,8 @@ void HomeController::refreshPlaylists() {
 }
 
 void HomeController::refresh() {
-  if (!m_auth->isSignedIn() || m_loading)
+  if (m_loading)
     return;
-
-  // Preflight cookie check. Stale cookies mean no music.
-  m_auth->refreshSession();
 
   if (m_libraryRequested)
     loadLibrary();
@@ -128,8 +127,73 @@ void HomeController::refresh() {
   refreshPlaylists();
   m_loading = true;
   m_errorMessage.clear();
-  m_requestId = m_catalog->fetchHome(m_auth->sessionObject());
+  if (m_source && m_source->apple()) {
+    if (!m_appleMusic || !m_appleMusic->connected()) {
+      m_requestId = 0;
+      m_loading = false;
+      m_errorMessage = tr("Connect Apple Music in Settings to load Home.");
+      emit stateChanged();
+      return;
+    }
+    const quint64 id = (quint64{1} << 63) | ++m_appleRequests;
+    m_requestId = id;
+    m_appleMusic->home([this, id](const QJsonObject &home, const QString &error) {
+      if (m_requestId != id) return;
+      if (!error.isEmpty() || home.value(QStringLiteral("sections")).toArray().isEmpty())
+        receiveFailure(id, error.isEmpty() ? tr("Apple Music Home could not load.") : error);
+      else
+        receiveHome(id, home);
+    });
+  } else {
+    fetchNormalHome();
+  }
   emit stateChanged();
+}
+
+void HomeController::fetchNormalHome() {
+  if (!m_auth->isSignedIn()) {
+    m_requestId = 0;
+    m_loading = false;
+    m_errorMessage = tr("Sign in to YouTube Music to load Home.");
+    emit stateChanged();
+    return;
+  }
+  m_auth->refreshSession();
+  m_requestId = m_catalog->fetchHome(m_auth->sessionObject());
+}
+
+void HomeController::setAppleMusic(AppleMusic *appleMusic, CatalogSource *source) {
+  m_appleMusic = appleMusic;
+  m_source = source;
+  connect(source, &CatalogSource::changed, this, [this] {
+    m_requestId = 0;
+    m_loading = false;
+    m_sections.clear();
+    m_artists.clear();
+    m_hero.clear();
+    emit homeSourceChanged();
+    refresh();
+  });
+  m_appleConnected = appleMusic->connected();
+  connect(appleMusic, &AppleMusic::changed, this, [this] {
+    const bool connected = m_appleMusic->connected();
+    if (connected == m_appleConnected) return;
+    m_appleConnected = connected;
+    if (m_source->apple()) {
+      m_requestId = 0;
+      m_loading = false;
+      refresh();
+    }
+  });
+}
+
+QString HomeController::homeSource() const {
+  return m_source ? m_source->source() : QStringLiteral("youtube");
+}
+
+void HomeController::setHomeSource(const QString &source) {
+  if (m_source)
+    m_source->setSource(source);
 }
 
 void HomeController::loadLibrary() {
@@ -171,6 +235,7 @@ void HomeController::receiveHome(quint64 requestId, const QJsonObject &home) {
     return;
 
   m_loading = false;
+  m_requestId = 0;
   m_errorMessage.clear();
   m_sections = home.value(QStringLiteral("sections")).toArray().toVariantList();
   m_artists = home.value(QStringLiteral("artists")).toArray().toVariantList();

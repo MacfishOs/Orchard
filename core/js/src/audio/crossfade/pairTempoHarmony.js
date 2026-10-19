@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // Tempo fits, glide offsets and key/chroma compatibility for a track pair.
 export const MAX_STRETCH_DEVIATION = 0.04;
@@ -36,6 +36,15 @@ function clamp(value, minimum = 0, maximum = 1) {
 function rounded(value, places = 6) {
   const scale = 10 ** places;
   return Math.round(value * scale) / scale;
+}
+
+// Halves or doubles the incoming tempo until it is as close as possible to the
+// outgoing, the way a DJ counts a 63 BPM track against a 126 BPM one.
+export function alignTempoOctave(outgoingBpm, incomingBpm) {
+  let aligned = incomingBpm;
+  while (aligned / outgoingBpm > 1.5) aligned /= 2;
+  while (aligned / outgoingBpm < 0.67) aligned *= 2;
+  return aligned;
 }
 
 export function ratioDeviation(...ratios) {
@@ -101,9 +110,7 @@ export function tempoFit(outgoingBpm, incomingBpm, { tempoRamp = false } = {}) {
       beatmatched: false
     };
   }
-  while (incoming / outgoing > 1.5) incoming /= 2;
-  while (incoming / outgoing < 0.67) incoming *= 2;
-  incoming = rounded(incoming);
+  incoming = rounded(alignTempoOctave(outgoing, incoming));
   if (tempoRamp) return rampFit(outgoing, incoming);
   const outgoingRatio = incoming / outgoing;
   const incomingRatio = 1;
@@ -192,6 +199,7 @@ export function harmonicEvidence(outgoing = {}, incoming = {}) {
     confidence: rounded(confidence),
     keyScore: keyScore === null ? null : rounded(keyScore),
     chromaScore: chromaScore === null ? null : rounded(chromaScore),
+    source: 'track',
     severeClash: confidence >= 0.65 && score < 0.2
   };
 }

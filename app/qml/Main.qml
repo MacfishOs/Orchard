@@ -70,8 +70,16 @@ Window {
         property real time: 0.0
         property vector2d extent: Qt.vector2d(width, height)
 
+        // One frame per second while idle.
+        Timer {
+            running: meshBackground.visible && OrchardWindowState.idle && mainWindow.visible
+            interval: 1000
+            repeat: true
+            onTriggered: meshBackground.time = (meshBackground.time + 1.0) % 1000.0
+        }
+
         NumberAnimation on time {
-            running: meshBackground.visible && mainWindow.visibility !== Window.Minimized && mainWindow.visible
+            running: meshBackground.visible && !OrchardWindowState.idle && mainWindow.visible
             loops: Animation.Infinite
             from: 0.0
             to: 1000.0
@@ -174,10 +182,20 @@ Window {
             }
         }
 
+        // Grows in from just under full size and stays loaded until its fade-out ends.
         Loader {
+            id: theater
+
+            readonly property bool shown: OrchardMusicVideo.open && homeShell.visible
+
             anchors.fill: parent
-            active: OrchardMusicVideo.open && homeShell.visible
+            active: shown || opacity > 0
+            opacity: shown ? 1 : 0
+            scale: shown ? 1 : 0.94
             sourceComponent: Component { MusicVideoTheater {} }
+
+            Behavior on opacity { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } }
+            Behavior on scale { NumberAnimation { duration: 560; easing.type: Easing.OutExpo } }
         }
     }
 

@@ -24,6 +24,8 @@
 #include <QSettings>
 #include <QTimer>
 
+#include "window_occlusion.h"
+
 class QWindow;
 
 // Remembers the main window size and maximized state between launches.
@@ -34,6 +36,9 @@ class WindowState final : public QObject
     Q_PROPERTY(int initialWidth READ initialWidth CONSTANT)
     Q_PROPERTY(int initialHeight READ initialHeight CONSTANT)
     Q_PROPERTY(bool initialMaximized READ initialMaximized CONSTANT)
+    Q_PROPERTY(bool idle READ idle NOTIFY idleChanged)
+    Q_PROPERTY(bool unfocused READ unfocused NOTIFY unfocusedChanged)
+    Q_PROPERTY(bool backgroundIdle READ backgroundIdle NOTIFY backgroundIdleChanged)
 
 public:
     explicit WindowState(QObject *parent = nullptr);
@@ -44,16 +49,37 @@ public:
     [[nodiscard]] int initialHeight() const { return m_height; }
     [[nodiscard]] bool initialMaximized() const { return m_maximized; }
     void setWindow(QWindow *window);
+    // True when the window is hidden, minimized, or reported as covered by the platform.
+    [[nodiscard]] bool idle() const { return m_idle; }
+    // True once the app has stayed unfocused past a short grace.
+    [[nodiscard]] bool unfocused() const { return m_unfocused; }
+    // Idle, or unfocused outside fullscreen. Drives the immersive background frame rate.
+    [[nodiscard]] bool backgroundIdle() const { return m_backgroundIdle; }
 
 signals:
     void enabledChanged();
+    void idleChanged();
+    void unfocusedChanged();
+    void backgroundIdleChanged();
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
     void save();
+    void updateState();
+    void setIdle(bool value);
+    void setUnfocused(bool value);
+    void syncBackgroundIdle();
 
     QSettings m_settings;
     QPointer<QWindow> m_window;
     QTimer m_saveTimer;
+    QTimer m_unfocusedTimer;
+    WindowOcclusion m_occlusion;
+    bool m_idle{false};
+    bool m_unfocused{false};
+    bool m_backgroundIdle{false};
     bool m_enabled{true};
     int m_width{1360};
     int m_height{820};

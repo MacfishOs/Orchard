@@ -109,10 +109,16 @@ data class OrchardSettings(
     /** What to do about talking intros, skits and applause that SponsorBlock volunteers marked. */
     val nonMusicSkip: NonMusicSkipMode = NonMusicSkipMode.BUTTON,
     val slopAction: dev.sfg.orchard.mobile.playback.slop.SlopAction = dev.sfg.orchard.mobile.playback.slop.SlopAction.MARK,
+    /** Deprecated fakeprint audio analysis, opt-in. */
+    val slopAudioScan: Boolean = false,
     /** Configuration for the 10-band audio equalizer and audio effects. */
     val equalizerConfig: EqualizerConfig = EqualizerConfig(),
     /** Enable swipe and tap gestures on the player artwork. */
     val playerGesturesEnabled: Boolean = true,
+    /** Whether the phone bottom bar has a Settings tab. */
+    val showSettingsTab: Boolean = false,
+    /** [HomeSource][dev.sfg.orchard.mobile.home.HomeSource] id that fills Home; others are fallbacks. */
+    val homeSource: String = YOUTUBE_SOURCE,
     /** Online layout configuration. */
     val homeLayoutOnline: List<HomeSectionConfig> = listOf(
         HomeSectionConfig(BuiltInHomeSection.YOUR_PLAYLISTS, true),
@@ -181,7 +187,7 @@ enum class LyricTranslationQuality(val key: String) { STANDARD("standard"), HIGH
 
 enum class LyricTranslationProvider(val key: String, val label: String) {
     LOCAL("local", "Local"), OPENAI("openai", "OpenAI"), CLAUDE("claude", "Claude"),
-    GEMINI("gemini", "Gemini"), CUSTOM("custom", "Custom API");
+    GEMINI("gemini", "Gemini"), CUSTOM("custom", "Custom API"), ORCHARD("orchard", "Orchard Account");
 }
 
 /** How playback treats non-music sections; the same three choices as desktop. */

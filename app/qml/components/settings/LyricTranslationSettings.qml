@@ -23,6 +23,7 @@ import QtQuick
 LyricTranslationSettingsForm {
     id: root
 
+    accountSignedIn: OrchardAccount.isSignedIn
     translationEnabled: OrchardTranslation.enabled
     quality: OrchardTranslation.quality
     provider: OrchardTranslation.provider
@@ -41,7 +42,7 @@ LyricTranslationSettingsForm {
     enableSwitch.onToggled: OrchardTranslation.enabled = enableSwitch.checked
     qualityPicker.onPicked: value => OrchardTranslation.quality = value
     providerPicker.onActivated: index => {
-        OrchardTranslation.provider = ["local", "openai", "claude", "gemini", "custom"][index];
+        OrchardTranslation.provider = root.providerValues[index];
         keyField.clear();
     }
     modelField.onEditingFinished: OrchardTranslation.model = modelField.text

@@ -1,7 +1,7 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 //! V2's playback analysis: whole-track Earmark evidence, then Beat This picks bar phase.
-use crate::{beats::Grid, song::{ANALYSIS_RATE, Track}};
+use crate::{beats::Grid, evidence, song::{ANALYSIS_RATE, Track}};
 use earmark::{WholeTrackAnalysis, WholeTrackAnalyzer};
 use serde_json::{Value, json};
 
@@ -160,11 +160,14 @@ fn refine(raw: &Value, windows: &[(Result<Grid, String>, f64)]) -> Option<Value>
     Some(merged)
 }
 
-/// Whole-track analysis for one playback deck, shaped like V2's cached analysis.
-pub fn track(track: &Track, grids: &[(Result<Grid, String>, f64)]) -> Result<Value, String> {
+/// Whole-track analysis for one playback deck, shaped like V2's cached analysis. Local chroma
+/// covers only `chroma_span`, the part of the song a mix can reach.
+pub fn track(track: &Track, grids: &[(Result<Grid, String>, f64)], chroma_span: (f64, f64))
+    -> Result<Value, String> {
     let measured = WholeTrackAnalyzer::new().map_err(|e| e.to_string())?
         .analyze(&track.mono, ANALYSIS_RATE as f64, track.duration).map_err(|e| e.to_string())?;
     let mut value = to_json(&measured);
+    value["chromaCurve"] = evidence::chroma_curve(&measured.chroma_frames, chroma_span);
     let bpm = value["bpm"].as_f64().unwrap_or(0.0);
     if !(40.0..=240.0).contains(&bpm) {
         return Err("Native audio analysis returned an invalid BPM".into());

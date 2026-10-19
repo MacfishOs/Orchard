@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! The contract between planning and rendering.
 //!
 //! A [`TransitionPlan`] is complete: given the same plan and the same PCM, the renderer produces
@@ -53,7 +53,13 @@ pub struct FadePlan {
     pub incoming_curve: FadeCurve,
     pub outgoing_gain: AutomationCurve,
     pub incoming_gain: AutomationCurve,
+    /// Fractions of the transition each side's fade moves over; `(0, 1)` fades across all of it.
+    pub outgoing_span: (f32, f32),
+    pub incoming_span: (f32, f32),
 }
+
+/// A fade spanning the whole transition.
+pub const FULL_SPAN: (f32, f32) = (0.0, 1.0);
 
 impl Default for FadePlan {
     fn default() -> Self {
@@ -62,6 +68,8 @@ impl Default for FadePlan {
             incoming_curve: FadeCurve::EqualPower,
             outgoing_gain: AutomationCurve::constant(1.0),
             incoming_gain: AutomationCurve::constant(1.0),
+            outgoing_span: FULL_SPAN,
+            incoming_span: FULL_SPAN,
         }
     }
 }

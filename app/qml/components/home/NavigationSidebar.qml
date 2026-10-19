@@ -27,12 +27,18 @@ Item {
 
     property string currentPage: "home"
     property bool compact: false
-    readonly property var navKeys: ["home", "search", "library"]
+    property alias query: sidebarSearch.query
+    readonly property var navKeys: ["home", "library"]
     readonly property int navIndex: navKeys.indexOf(currentPage)
     // Labels fade with the width animation; clip keeps them inside while it runs.
     property real labelOpacity: compact ? 0 : 1
     signal pageRequested(string page)
     signal playlistRequested(var playlist)
+    signal searchChanged(string query)
+    signal spotlightRequested
+
+    function focusSearch() { sidebarSearch.focusSearch(); }
+    function clearSearch() { sidebarSearch.clearSearch(); }
 
     clip: true
 
@@ -47,7 +53,7 @@ Item {
         property int shownIndex: 0
 
         x: mainColumn.x
-        y: mainColumn.y + 66 + mainColumn.spacing + shownIndex * (42 + mainColumn.spacing)
+        y: mainColumn.y + sidebarSearch.y + sidebarSearch.height + mainColumn.spacing + shownIndex * (42 + mainColumn.spacing)
         width: mainColumn.width
         height: 42
         radius: 9
@@ -103,15 +109,21 @@ Item {
 
         }
 
+        SidebarSearch {
+            id: sidebarSearch
+
+            width: root.compact ? 34 : parent.width
+            x: (parent.width - width) / 2
+            compact: root.compact
+            onSearchChanged: function(query) { root.searchChanged(query); }
+            onSpotlightRequested: root.spotlightRequested()
+        }
+
         Repeater {
             model: [{
                 "key": "home",
                 "title": qsTr("Home"),
                 "icon": "home"
-            }, {
-                "key": "search",
-                "title": qsTr("Search"),
-                "icon": "search"
             }, {
                 "key": "library",
                 "title": qsTr("Your library"),

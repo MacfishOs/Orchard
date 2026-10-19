@@ -47,7 +47,8 @@ internal class SlopPlayback(
         }
     }
     private val policyJob = scope.launch(Dispatchers.Main) {
-        combine(graph.slopVerdicts.probabilities, graph.settings.settings) { _, _ -> Unit }.collect { refresh() }
+        combine(graph.slopVerdicts.probabilities, graph.slopVerdicts.labels, graph.settings.settings) { _, _, _ -> Unit }
+            .collect { refresh() }
     }
 
     init { refresh() }
@@ -73,15 +74,15 @@ internal class SlopPlayback(
     }
 
     private fun apply(player: Player, action: SlopAction) {
-        val known = graph.slopVerdicts.probabilities.value
+        val known = known(graph)
         val ids = (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId }
         val current = player.currentMediaItemIndex
-        val currentFlagged = ids.getOrNull(current)?.let { SlopPolicy.flagged(it, known) } == true
-        val nextFlagged = ids.getOrNull(player.nextMediaItemIndex)?.let { SlopPolicy.flagged(it, known) } == true
-        if (currentFlagged || nextFlagged || (action == SlopAction.REMOVE && ids.any { SlopPolicy.flagged(it, known) })) beforeSkip()
+        val currentFlagged = ids.getOrNull(current)?.let(known::flagged) == true
+        val nextFlagged = ids.getOrNull(player.nextMediaItemIndex)?.let(known::flagged) == true
+        if (currentFlagged || nextFlagged || (action == SlopAction.REMOVE && ids.any(known::flagged))) beforeSkip()
         if (action == SlopAction.REMOVE) {
             for (index in ids.indices.reversed()) {
-                if (SlopPolicy.flagged(ids[index], known)) player.removeMediaItem(index)
+                if (known.flagged(ids[index])) player.removeMediaItem(index)
             }
         } else if (currentFlagged) {
             val next = SlopPolicy.nextAllowed(ids, current, known)
@@ -90,10 +91,12 @@ internal class SlopPlayback(
     }
 
     companion object {
+        fun known(graph: OrchardGraph): SlopKnown = SlopKnown(graph.slopVerdicts.labels.value,
+            graph.slopVerdicts.probabilities.value, graph.settings.settings.value.slopAudioScan)
+
         fun allowsTransition(graph: OrchardGraph, id: String): Boolean =
             graph.settings.settings.value.slopAction.let { action ->
-                (action != SlopAction.SKIP && action != SlopAction.REMOVE) ||
-                    !SlopPolicy.flagged(id, graph.slopVerdicts.probabilities.value)
+                (action != SlopAction.SKIP && action != SlopAction.REMOVE) || !known(graph).flagged(id)
             }
     }
 

@@ -26,18 +26,25 @@ import android.database.sqlite.SQLiteOpenHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class SlopVerdicts(context: Context) : SQLiteOpenHelper(context.applicationContext, "slop-verdicts.db", null, 1) {
+class SlopVerdicts(context: Context) : SQLiteOpenHelper(context.applicationContext, "slop-verdicts.db", null, 2) {
     private val mutableProbabilities = MutableStateFlow<Map<String, Float>>(emptyMap())
     val probabilities = mutableProbabilities.asStateFlow()
+    // True for YouTube "Made with AI", false for a recent unlabelled check.
+    private val mutableLabels = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val labels = mutableLabels.asStateFlow()
     private var loaded = false
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("CREATE TABLE verdicts (id TEXT PRIMARY KEY, probability REAL NOT NULL, seconds REAL NOT NULL, scored_at INTEGER NOT NULL)")
+        createLabels(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, old: Int, new: Int) {
-        db.execSQL("DROP TABLE IF EXISTS verdicts")
-        onCreate(db)
+        if (old < 2) createLabels(db)
+    }
+
+    private fun createLabels(db: SQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS labels (id TEXT PRIMARY KEY, ai INTEGER NOT NULL, checked_at INTEGER NOT NULL)")
     }
 
     // Only the service scanner calls load/record, on its single IO coroutine.
@@ -49,6 +56,36 @@ class SlopVerdicts(context: Context) : SQLiteOpenHelper(context.applicationConte
                 buildMap { while (rows.moveToNext()) put(rows.getString(0), rows.getFloat(1)) }
             }
         }.getOrDefault(emptyMap())
+        // Uploaders can add the disclosure later, so a "no" expires.
+        val fresh = System.currentTimeMillis() / 1000 - UNLABELLED_TTL_SECONDS
+        mutableLabels.value = runCatching {
+            readableDatabase.rawQuery("SELECT id,ai FROM labels WHERE ai=1 OR checked_at>? ORDER BY checked_at ASC LIMIT $MAX_LABELS",
+                arrayOf(fresh.toString())).use { rows ->
+                buildMap { while (rows.moveToNext()) put(rows.getString(0), rows.getInt(1) != 0) }
+            }
+        }.getOrDefault(emptyMap())
+    }
+
+    fun recordLabel(id: String, ai: Boolean) {
+        val known = mutableLabels.value.toMutableMap().apply {
+            remove(id)
+            if (size >= MAX_LABELS) remove(keys.first())
+            put(id, ai)
+        }
+        runCatching {
+            writableDatabase.insertWithOnConflict("labels", null, ContentValues().apply {
+                put("id", id)
+                put("ai", if (ai) 1 else 0)
+                put("checked_at", System.currentTimeMillis() / 1000)
+            }, SQLiteDatabase.CONFLICT_REPLACE)
+            writableDatabase.execSQL("DELETE FROM labels WHERE id NOT IN (SELECT id FROM labels ORDER BY checked_at DESC LIMIT $MAX_LABELS)")
+        }
+        mutableLabels.value = known
+    }
+
+    private companion object {
+        const val MAX_LABELS = 20000
+        const val UNLABELLED_TTL_SECONDS = 7L * 24 * 3600
     }
 
     fun record(id: String, probability: Float, seconds: Float) {

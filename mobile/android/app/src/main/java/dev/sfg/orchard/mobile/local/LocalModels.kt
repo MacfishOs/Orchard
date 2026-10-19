@@ -118,9 +118,10 @@ fun LocalPlaylist.toPlaylist(snapshot: LocalSnapshot? = null): Playlist {
     return Playlist(
         id = id,
         title = title,
-        author = if (count == 1) "Local · 1 song" else "Local · $count songs",
+        author = "This phone",
         artworkUrl = formatLocalFileUri(artworkPath),
         description = description,
         tracks = snapshot?.let { snap -> trackIds.mapNotNull { snap.songsById[it]?.toTrack() } }.orEmpty(),
+        trackCount = count,
     )
 }

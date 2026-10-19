@@ -23,7 +23,7 @@
 import { handleRequest, purgeExpired } from "./service.js";
 import { sweepSupport } from "./support_sync.js";
 
-export const SUPPORT_SWEEP_CRON = "*/10 * * * *";
+const SUPPORT_SWEEP_CRON = "*/10 * * * *";
 
 // Durable Object classes must be exported from the entry module.
 export { ConnectHub } from "./connect.js";

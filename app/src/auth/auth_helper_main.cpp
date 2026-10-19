@@ -21,6 +21,7 @@
 #include "auth_diagnostics.h"
 #include "auth_session_channel.h"
 #include "providers/youtube/youtube_provider.h"
+#include "apple_music_helper.h"
 #include "spotify_helper.h"
 
 #include <QCoreApplication>
@@ -32,13 +33,19 @@
 #include <QQuickStyle>
 #include <QQuickView>
 #include <QTimer>
+#ifdef ORCHARD_WEBVIEW2_AUTH
+#include "webview2_item.h"
+#include <QQmlEngine>
+#else
 #include <QtWebView/QtWebView>
+#endif
 
 int main(int argc, char *argv[]) {
-#ifdef Q_OS_WIN
-  qputenv("QT_WEBVIEW_PLUGIN", "webengine");
-#endif
+#ifdef ORCHARD_WEBVIEW2_AUTH
+  qmlRegisterType<WebView2Item>("Orchard.Auth", 1, 0, "WebView2Item");
+#else
   QtWebView::initialize();
+#endif
 
   QCoreApplication::setOrganizationDomain(QStringLiteral("sfg.dev"));
   QCoreApplication::setOrganizationName(QStringLiteral("SFG545"));
@@ -56,6 +63,10 @@ int main(int argc, char *argv[]) {
     return runSpotifyLogin(socketName);
   if (arguments.contains(QStringLiteral("--spotify-token")))
     return runSpotifyToken(socketName);
+  if (arguments.contains(QStringLiteral("--apple-music-login")))
+    return runAppleMusicLogin(socketName);
+  if (arguments.contains(QStringLiteral("--apple-music-logout")))
+    return runAppleMusicLogout(socketName);
 
   const bool switchAccount = arguments.contains(QStringLiteral("--switch-account"));
 

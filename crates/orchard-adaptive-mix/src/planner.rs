@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 //! QuickJS owns musical decisions; Rust only adapts its exact render contract.
 use earmark::{AudioBuffer, EngineConfig, SmartCrossfadeEngine, TransitionPlan, TransitionStrategy};
@@ -33,10 +33,25 @@ fn dump(input: &Value, live: &Value, native: &Value) {
     let _ = std::fs::write(std::path::Path::new(&directory).join(name), record.to_string());
 }
 
+fn fade_span(value: &Value) -> Option<(f64, f64)> {
+    Some((value[0].as_f64()?, value[1].as_f64()?))
+}
+
+/// `code: detail` for a refusal; hosts key their status on the code before the colon.
+fn refusal(live: &Value) -> String {
+    let code = live["reason"].as_str().unwrap_or("no overlap");
+    match live["explain"]["detail"].as_str() {
+        Some(detail) if detail != code => format!("{code}: {detail}"),
+        _ => code.to_owned(),
+    }
+}
+
 /// The selected plan, plus the outgoing window rebuilt with its beat loop when it has one.
 pub struct Planned {
     pub plan: TransitionPlan,
     pub looped: Option<(BeatLoop, AudioBuffer)>,
+    /// The shared planner's technique name, empty for live fallbacks.
+    pub technique: String,
 }
 
 pub fn plan(engine: &mut SmartCrossfadeEngine, outgoing: &AudioBuffer, incoming: &AudioBuffer,
@@ -49,6 +64,7 @@ pub fn plan(engine: &mut SmartCrossfadeEngine, outgoing: &AudioBuffer, incoming:
     let native = if context { serde_json::json!({"ok": false}) }
         else { orchard_transition_planner::invoke("native", input)? };
     dump(input, &live, &native);
+    let technique = native["technique"].as_str().unwrap_or_default().to_owned();
     let (plan, looped) = if native["ok"] == true {
         let selected = SelectedPlan {
             outgoing_start: number(&native, "transitionStart")? - offset,
@@ -66,6 +82,8 @@ pub fn plan(engine: &mut SmartCrossfadeEngine, outgoing: &AudioBuffer, incoming:
             bed_position: native["bedPosition"].as_f64(),
             bass_swap_fraction: native["bassSwapFraction"].as_f64(),
             filter_sweep: native["filterSweep"].as_f64(),
+            outgoing_fade_span: fade_span(&native["arrangement"]["outgoingFade"]),
+            incoming_fade_span: fade_span(&native["arrangement"]["incomingFade"]),
         };
         // Past the loop end the planned outgoing times are loop time, so earmark must see that audio.
         let looped = match BeatLoop::from_plan(&native, offset) {
@@ -84,8 +102,7 @@ pub fn plan(engine: &mut SmartCrossfadeEngine, outgoing: &AudioBuffer, incoming:
         // Mobile's live adapter selects ordinary fades or an explicit refusal.
         // Neither is a CPU-inference fallback; both use the same measured GPU grid.
         if live["markerVisible"] != true {
-            return Err(format!("{NATURAL_BOUNDARY} ({})",
-                live["reason"].as_str().unwrap_or("no overlap")));
+            return Err(format!("{NATURAL_BOUNDARY} ({})", refusal(&live)));
         }
         let length = number(input, "duration")?;
         let mut start = number(&live, "transitionStart")?;
@@ -122,5 +139,27 @@ pub fn plan(engine: &mut SmartCrossfadeEngine, outgoing: &AudioBuffer, incoming:
     if !plan.tempo_ramp && (plan.incoming_tempo_ratio - 1.0).abs() > 1e-6 {
         return Err("Shared transition requires an ongoing incoming tempo change".into());
     }
-    Ok(Planned { plan, looped })
+    Ok(Planned { plan, looped, technique })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn refusals_name_their_code_then_the_reason() {
+        let live = json!({"reason": "tempo-distance",
+            "explain": {"code": "tempo-distance", "detail": "96 vs 128 BPM, 33.3% apart"}});
+        assert_eq!(refusal(&live), "tempo-distance: 96 vs 128 BPM, 33.3% apart");
+        // Context refusals carry no explanation.
+        assert_eq!(refusal(&json!({"reason": "same-album-gapless"})), "same-album-gapless");
+    }
+
+    #[test]
+    fn fade_spans_need_both_ends() {
+        assert_eq!(fade_span(&json!([0.0, 0.5])), Some((0.0, 0.5)));
+        assert_eq!(fade_span(&json!(null)), None);
+        assert_eq!(fade_span(&json!([0.2])), None);
+    }
 }

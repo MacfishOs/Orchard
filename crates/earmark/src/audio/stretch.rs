@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Time stretching and pitch shifting via Signalsmith Stretch.
 //!
 //! Tempo and pitch are independent: a stretch ratio changes duration without touching pitch

@@ -44,6 +44,7 @@ export * from './catalog/searchUtils.js';
 export * from './catalog/subscribedArtists.js';
 export * from './catalog/youtubeLikes.js';
 
+export * from './integrations/aiLabel.js';
 export * from './integrations/sponsorblock.js';
 
 export * from './playback/authenticatedYouTubePlayback.js';

@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Grid corrections for sub-bass-led mixes, where syncopated 808s and hats can pull a
 //! stretch of the grid onto the "and"s or get a half-time groove counted at double tempo.
 //! The snare and clap stay on the beat.

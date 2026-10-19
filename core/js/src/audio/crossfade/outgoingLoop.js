@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // Beat loops: when the outgoing beat stops before the song does, its last clean bars
 // repeat under the mix. Past `loop.end` the outgoing timeline is virtual: time t plays

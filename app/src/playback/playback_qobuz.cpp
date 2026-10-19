@@ -21,6 +21,7 @@
 #include "local/local_track.h"
 #include "offline/download_manager.h"
 #include "playback_controller.h"
+#include "playback_helpers.h"
 #include "providers/qobuz/qobuz_service.h"
 #include "providers/youtube/youtube_provider.h"
 
@@ -170,6 +171,10 @@ void PlaybackController::resolveQobuz(const QVariantMap &track,
 }
 
 void PlaybackController::requestStream(bool refreshStream, bool tryQobuz) {
+  if (isAppleTrack(m_track)) {
+    fail(tr("Apple Music playback is not available yet."));
+    return;
+  }
   if (!refreshStream && tryQobuz && qobuzEligible(m_track)) {
     const quint64 generation = m_generation;
     const QVariantMap track = m_track;
@@ -196,6 +201,8 @@ void PlaybackController::requestStream(bool refreshStream, bool tryQobuz) {
 
 void PlaybackController::requestPreparedStream(bool refreshStream) {
   const QVariantMap track = m_preparedTrack;
+  if (isAppleTrack(track))
+    return;
   if (local::isLocalTrack(track)) {
     openPreparedLocal();
     return;

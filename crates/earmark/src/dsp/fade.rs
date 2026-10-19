@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Fade shapes for overlapping material.
 
 use crate::dsp::automation::{AutomationCurve, CurveShape};
@@ -41,6 +41,16 @@ impl FadeCurve {
         fill(out, |x| self.fade_out(x));
     }
 
+    /// Fade-in that moves only inside `span`, fractions of the buffer: silent before it.
+    pub fn fill_in_span(self, out: &mut [f32], span: (f32, f32)) {
+        fill(out, |x| self.fade_in(within(x, span)));
+    }
+
+    /// Fade-out that moves only inside `span`: unity before it, silent after it.
+    pub fn fill_out_span(self, out: &mut [f32], span: (f32, f32)) {
+        fill(out, |x| self.fade_out(within(x, span)));
+    }
+
     pub fn as_curve_in(self) -> AutomationCurve {
         match self {
             Self::Linear => AutomationCurve::ramp(0.0, 1.0, CurveShape::Linear),
@@ -48,6 +58,14 @@ impl FadeCurve {
             Self::SmoothStep => AutomationCurve::ramp(0.0, 1.0, CurveShape::SmoothStep),
         }
     }
+}
+
+/// Position inside `span`; the full span `(0, 1)` is the identity.
+fn within(x: f32, (start, end): (f32, f32)) -> f32 {
+    if end - start <= f32::EPSILON {
+        return if x < start { 0.0 } else { 1.0 };
+    }
+    ((x - start) / (end - start)).clamp(0.0, 1.0)
 }
 
 fn fill(out: &mut [f32], f: impl Fn(f32) -> f32) {
@@ -97,6 +115,25 @@ mod tests {
                 previous = value;
             }
         }
+    }
+
+    #[test]
+    fn spans_hold_each_side_outside_its_fade() {
+        let mut full = vec![0.0; 101];
+        let mut spanned = vec![0.0; 101];
+        FadeCurve::EqualPower.fill_out(&mut full);
+        FadeCurve::EqualPower.fill_out_span(&mut spanned, (0.0, 1.0));
+        assert_eq!(full, spanned);
+
+        let mut out = vec![0.0; 101];
+        let mut into = vec![0.0; 101];
+        FadeCurve::EqualPower.fill_out_span(&mut out, (0.2, 0.6));
+        FadeCurve::EqualPower.fill_in_span(&mut into, (0.4, 1.0));
+        approx(out[10], 1.0);
+        approx(out[70], 0.0);
+        approx(into[30], 0.0);
+        approx(into[100], 1.0);
+        assert!(out[40] < 1.0 && out[40] > 0.0);
     }
 
     #[test]

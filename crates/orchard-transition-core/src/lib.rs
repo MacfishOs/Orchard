@@ -1,125 +1,20 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
-//! Everything the transition engine needs that earmark itself must not know
-//! about, in plain Rust with no binding types anywhere in it.
-//!
-//! Both bindings -- N-API for the desktop, UniFFI for Android -- are pure
-//! marshalling shells over this crate, so the two platforms run the same engine
-//! by construction rather than by review. That matters most for the duck-curve
-//! rules in [`duck`]: a copy that drifts still renders, still passes any test
-//! that checks a render succeeded, and sounds like mud.
-//!
-//! All times are expressed on the *slice's* timeline, not the track's. Callers
-//! decode and slice before handing PCM over, so a mix-out anchor at 191 s of a
-//! track that was sliced from 175 s arrives here as 16 s.
-//!
-//! Rendering refuses rather than failing whenever the pairing simply cannot be
-//! made, because the caller's fallback -- the ordinary crossfade -- is a
-//! perfectly good transition.
+//! The render shape of a transition the shared planner already chose, in plain Rust that both
+//! hosts reach through `orchard-adaptive-mix`.
 
 mod curve;
-mod duck;
 mod plan;
-mod source;
 
 pub use curve::depth_curve;
-pub use plan::{RegionWindow, SelectedPlan, TransitionRequest};
-pub use source::{MAX_SECONDS, Source, validate_pcm};
+pub use plan::SelectedPlan;
 
 use earmark::dsp::automation::{AutomationCurve, AutomationPoint, CurveShape};
 use earmark::dsp::filters::{FilterAutomation, FilterKind};
-use earmark::{
-    CrossfadeError, EngineConfig, SmartCrossfadeEngine, TransitionOutput, TransitionPlan,
-    TransitionStrategy,
-};
+use earmark::{FULL_SPAN, TransitionPlan, TransitionStrategy};
 
-/// Why a pairing could not be made, in the engine's own words. Callers treat
-/// this as "use the ordinary crossfade", never as an error.
-pub type Refusal = String;
-
-/// A finished overlap plus where each track had reached when it ended.
-pub struct Rendered {
-    pub channels: Vec<Vec<f32>>,
-    pub sample_rate: u32,
-    /// Length of the rendered overlap in seconds.
-    pub duration: f64,
-    pub beats: u32,
-    /// One of the engine's strategy names, for logging.
-    pub strategy: String,
-    pub outgoing_start: f64,
-    pub incoming_start: f64,
-    /// Where each track had reached when the transition ended, on the slice timeline.
-    pub outgoing_resume: f64,
-    pub incoming_resume: f64,
-    pub outgoing_tempo_ratio: f64,
-    pub incoming_tempo_ratio: f64,
-    pub target_bpm: f64,
-    pub summary: String,
-}
-
-impl Rendered {
-    fn new(plan: &TransitionPlan, output: &TransitionOutput) -> Self {
-        Self {
-            channels: (0..output.audio.channel_count())
-                .map(|index| output.audio.channel(index).to_vec())
-                .collect(),
-            sample_rate: output.audio.sample_rate(),
-            duration: plan.duration,
-            beats: plan.beats,
-            strategy: plan.strategy.describe().to_string(),
-            outgoing_start: plan.outgoing_start,
-            incoming_start: plan.incoming_start,
-            outgoing_resume: output.outgoing_resume,
-            incoming_resume: output.incoming_resume,
-            outgoing_tempo_ratio: plan.outgoing_tempo_ratio as f64,
-            incoming_tempo_ratio: plan.incoming_tempo_ratio as f64,
-            target_bpm: plan.target_bpm as f64,
-            summary: plan.summary(),
-        }
-    }
-}
-
-fn describe(error: CrossfadeError) -> Refusal {
-    error.to_string()
-}
-
-/// Plans a transition inside the caller's constraints and renders it.
-pub fn render_constrained(
-    outgoing: &Source,
-    incoming: &Source,
-    request: &TransitionRequest,
-) -> Result<Rendered, Refusal> {
-    let outgoing_audio = outgoing.audio().map_err(describe)?;
-    let incoming_audio = incoming.audio().map_err(describe)?;
-    let outgoing_grid = outgoing.grid().map_err(describe)?;
-    let incoming_grid = incoming.grid().map_err(describe)?;
-
-    let config = EngineConfig {
-        collect_diagnostics: request.diagnostics,
-        ..EngineConfig::default()
-    };
-    let mut engine = SmartCrossfadeEngine::new(config).map_err(describe)?;
-
-    let mut plan = engine
-        .analyze_constrained(
-            &outgoing_audio,
-            &incoming_audio,
-            &outgoing_grid,
-            &incoming_grid,
-            &request.constraints(),
-        )
-        .map_err(describe)?;
-    duck::apply_across_slice(
-        &mut plan,
-        request.duck_curve.as_deref(),
-        outgoing_audio.duration(),
-    );
-
-    let output = engine
-        .render(&outgoing_audio, &incoming_audio, &plan)
-        .map_err(describe)?;
-    Ok(Rendered::new(&plan, &output))
-}
+/// Longest overlap a host accepts; the worker refuses longer plans well before this.
+pub const MAX_SECONDS: f64 = 90.0;
 
 /// Apply the shared native render-shape fields without making a new musical choice.
 pub fn apply_selected_shape(plan: &mut TransitionPlan, selected: &SelectedPlan) {
@@ -167,45 +62,22 @@ pub fn apply_selected_shape(plan: &mut TransitionPlan, selected: &SelectedPlan) 
             .outgoing
             .retain(|f| f.kind != FilterKind::LowPass);
     }
-}
 
-/// Renders the caller's exact transition without invoking earmark analysis,
-/// candidate generation, scoring, or strategy selection.
-pub fn render_selected(
-    outgoing: &Source,
-    incoming: &Source,
-    selected: &SelectedPlan,
-    duck_curve: Option<&[f64]>,
-) -> Result<Rendered, Refusal> {
-    let selected_earmark = selected.to_earmark()?;
-    let outgoing_audio = outgoing.audio().map_err(describe)?;
-    let incoming_audio = incoming.audio().map_err(describe)?;
-
-    let mut engine = SmartCrossfadeEngine::new(EngineConfig::default()).map_err(describe)?;
-    let mut plan = engine
-        .plan_selected(&outgoing_audio, &incoming_audio, &selected_earmark)
-        .map_err(describe)?;
-    apply_selected_shape(&mut plan, selected);
-    duck::apply_across_overlap(&mut plan, duck_curve);
-
-    let output = engine
-        .render(&outgoing_audio, &incoming_audio, &plan)
-        .map_err(describe)?;
-    Ok(Rendered::new(&plan, &output))
+    let span = |value: Option<(f64, f64)>| value.map_or(FULL_SPAN, |(start, end)| {
+        let start = start.clamp(0.0, 1.0) as f32;
+        (start, (end.clamp(0.0, 1.0) as f32).max(start))
+    });
+    plan.fade.outgoing_span = span(selected.outgoing_fade_span);
+    plan.fade.incoming_span = span(selected.incoming_fade_span);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use earmark::{AudioBuffer, EngineConfig, SmartCrossfadeEngine, TransitionOutput};
 
-    fn side(seconds: usize, sample_rate: u32) -> Source {
-        Source {
-            channels: vec![vec![0.0; seconds * sample_rate as usize]; 2],
-            sample_rate,
-            bpm: 120.0,
-            beats: Vec::new(),
-            downbeats: Vec::new(),
-        }
+    fn silence(seconds: usize, sample_rate: u32) -> AudioBuffer {
+        AudioBuffer::new(vec![vec![0.0; seconds * sample_rate as usize]; 2], sample_rate).unwrap()
     }
 
     fn selected(strategy: &str) -> SelectedPlan {
@@ -227,28 +99,31 @@ mod tests {
             bed_position: None,
             bass_swap_fraction: None,
             filter_sweep: None,
+            outgoing_fade_span: None,
+            incoming_fade_span: None,
         }
+    }
+
+    fn render(audio: &AudioBuffer, choice: &SelectedPlan) -> Result<(TransitionPlan, TransitionOutput), String> {
+        let mut engine = SmartCrossfadeEngine::new(EngineConfig::default()).map_err(|e| e.to_string())?;
+        let mut plan = engine.plan_selected(audio, audio, &choice.to_earmark()?).map_err(|e| e.to_string())?;
+        apply_selected_shape(&mut plan, choice);
+        let output = engine.render(audio, audio, &plan).map_err(|e| e.to_string())?;
+        Ok((plan, output))
     }
 
     #[test]
     fn planned_render_returns_the_exact_requested_timing() {
-        let source = side(20, 8_000);
-        let result = render_selected(&source, &source, &selected("beatmatched_crossfade"), None)
-            .expect("a matching pair should render");
-
-        assert_eq!(result.outgoing_start, 4.0);
-        assert_eq!(result.incoming_start, 2.0);
-        assert_eq!(result.duration, 8.0);
-        assert_eq!(result.beats, 16);
-        assert_eq!(result.outgoing_resume, 12.0);
-        assert_eq!(result.incoming_resume, 10.0);
-        assert_eq!(result.outgoing_tempo_ratio, 1.0);
-        assert_eq!(result.incoming_tempo_ratio, 1.0);
+        let (plan, output) = render(&silence(20, 8_000), &selected("beatmatched_crossfade")).unwrap();
+        assert_eq!(plan.outgoing_start, 4.0);
+        assert_eq!(plan.incoming_start, 2.0);
+        assert_eq!(plan.duration, 8.0);
+        assert_eq!(output.outgoing_resume, 12.0);
+        assert_eq!(output.incoming_resume, 10.0);
     }
 
     #[test]
     fn a_selected_glide_resumes_each_side_after_its_own_beats() {
-        let source = side(20, 8_000);
         let log_mean = 10.0 / (130.0f64 / 120.0).ln();
         let mut choice = selected("beatmatched_crossfade");
         choice.duration = 16.0 * 60.0 / log_mean;
@@ -257,25 +132,16 @@ mod tests {
         choice.outgoing_tempo_ratio = log_mean / 120.0;
         choice.incoming_tempo_ratio = log_mean / 130.0;
         choice.tempo_ramp = true;
-        let result = render_selected(&source, &source, &choice, None)
-            .expect("an 8% glide should render");
-
-        assert!((result.outgoing_resume - 12.0).abs() < 1e-4);
-        assert!((result.incoming_resume - (2.0 + 16.0 * 60.0 / 130.0)).abs() < 1e-4);
-        assert!(result.incoming_resume - result.duration >= 0.0);
+        let (_, output) = render(&silence(20, 8_000), &choice).expect("an 8% glide should render");
+        assert!((output.outgoing_resume - 12.0).abs() < 1e-4);
+        assert!((output.incoming_resume - (2.0 + 16.0 * 60.0 / 130.0)).abs() < 1e-4);
     }
 
     #[test]
     fn a_filtered_blend_hands_its_bass_over_at_the_swap() {
-        let audio = side(20, 8_000).audio().unwrap();
         let mut choice = selected("filtered_blend");
         choice.bass_swap_fraction = Some(0.5);
-        let engine = SmartCrossfadeEngine::new(EngineConfig::default()).unwrap();
-        let mut plan = engine
-            .plan_selected(&audio, &audio, &choice.to_earmark().unwrap())
-            .unwrap();
-        apply_selected_shape(&mut plan, &choice);
-
+        let (plan, _) = render(&silence(20, 8_000), &choice).unwrap();
         let cut = plan.filters.outgoing.iter()
             .find(|filter| filter.kind == FilterKind::HighPass)
             .expect("the outgoing bass leaves at the swap");
@@ -291,15 +157,31 @@ mod tests {
     }
 
     #[test]
+    fn fade_spans_reach_the_render() {
+        let rate = 8_000;
+        let tone = |level: f32| AudioBuffer::new(vec![vec![level; 20 * rate as usize]; 2], rate).unwrap();
+        let mut choice = selected("equal_power_crossfade");
+        choice.outgoing_fade_span = Some((0.0, 0.5));
+        choice.incoming_fade_span = Some((0.25, 1.0));
+        let audio = tone(0.25);
+        let (plan, output) = render(&audio, &choice).unwrap();
+        assert_eq!(plan.fade.outgoing_span, (0.0, 0.5));
+        assert_eq!(plan.fade.incoming_span, (0.25, 1.0));
+        let at = |fraction: f64| output.audio.channel(0)[(fraction * 8.0 * rate as f64) as usize];
+        // Only the outgoing plays at the start; only the incoming once the outgoing span ends.
+        assert!((at(0.01) - 0.25).abs() < 0.01);
+        let incoming = (0.65f32 / 0.75 * std::f32::consts::FRAC_PI_2).sin();
+        assert!((at(0.9) - 0.25 * incoming).abs() < 0.02);
+        // Unset spans fade across the whole overlap.
+        let (plain, _) = render(&audio, &selected("equal_power_crossfade")).unwrap();
+        assert_eq!(plain.fade.outgoing_span, FULL_SPAN);
+    }
+
+    #[test]
     fn planned_render_refusal_keeps_the_earmark_reason() {
-        let source = side(20, 8_000);
         let mut choice = selected("beatmatched_crossfade");
         choice.outgoing_tempo_ratio = 1.05;
-        let reason = match render_selected(&source, &source, &choice, None) {
-            Ok(_) => panic!("excessive stretch unexpectedly rendered"),
-            Err(reason) => reason,
-        };
-
+        let reason = render(&silence(20, 8_000), &choice).err().expect("excessive stretch rendered");
         assert_eq!(
             reason,
             "invalid selected transition: tempo ratio deviation 0.0500 exceeds the transparent limit 0.0400"

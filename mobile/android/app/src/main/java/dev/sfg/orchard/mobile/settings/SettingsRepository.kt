@@ -37,6 +37,7 @@ import dev.sfg.orchard.mobile.model.NonMusicSkipMode
 import dev.sfg.orchard.mobile.model.OrchardSettings
 import dev.sfg.orchard.mobile.model.BuiltInHomeSection
 import dev.sfg.orchard.mobile.model.HomeSectionConfig
+import dev.sfg.orchard.mobile.model.YOUTUBE_SOURCE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -80,6 +81,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 autoplayEnabled = values[AUTOPLAY_ENABLED] ?: true,
                 slopAction = dev.sfg.orchard.mobile.playback.slop.SlopAction.entries
                     .firstOrNull { it.name == values[SLOP_ACTION] } ?: dev.sfg.orchard.mobile.playback.slop.SlopAction.MARK,
+                slopAudioScan = values[SLOP_AUDIO_SCAN] ?: false,
                 nonMusicSkip = runCatching { NonMusicSkipMode.valueOf(values[NON_MUSIC_SKIP].orEmpty()) }
                     .getOrDefault(NonMusicSkipMode.BUTTON),
                 equalizerConfig = EqualizerConfig(
@@ -90,6 +92,8 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                     bassBoost = values[EQUALIZER_BASS_BOOST] ?: 0f,
                 ),
                 playerGesturesEnabled = values[PLAYER_GESTURES_ENABLED] ?: true,
+                showSettingsTab = values[SHOW_SETTINGS_TAB] ?: false,
+                homeSource = values[HOME_SOURCE] ?: YOUTUBE_SOURCE,
                 homeLayoutOnline = decodeHomeLayout(values[HOME_LAYOUT_ONLINE], true),
                 homeLayoutOffline = decodeHomeLayout(values[HOME_LAYOUT_OFFLINE], false),
                 customDeviceName = values[CUSTOM_DEVICE_NAME] ?: "",
@@ -140,12 +144,15 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 it[AUTOPLAY_ENABLED] = value.autoplayEnabled
                 it[NON_MUSIC_SKIP] = value.nonMusicSkip.name
                 it[SLOP_ACTION] = value.slopAction.name
+                it[SLOP_AUDIO_SCAN] = value.slopAudioScan
                 it[EQUALIZER_ENABLED] = value.equalizerConfig.enabled
                 it[EQUALIZER_PRESET] = value.equalizerConfig.presetId
                 it[EQUALIZER_GAINS] = value.equalizerConfig.gains.joinToString(",")
                 it[EQUALIZER_PREAMP] = value.equalizerConfig.preampDb
                 it[EQUALIZER_BASS_BOOST] = value.equalizerConfig.bassBoost
                 it[PLAYER_GESTURES_ENABLED] = value.playerGesturesEnabled
+                it[SHOW_SETTINGS_TAB] = value.showSettingsTab
+                it[HOME_SOURCE] = value.homeSource
                 it[HOME_LAYOUT_ONLINE] = encodeHomeLayout(value.homeLayoutOnline)
                 it[HOME_LAYOUT_OFFLINE] = encodeHomeLayout(value.homeLayoutOffline)
                 it[CUSTOM_DEVICE_NAME] = value.customDeviceName
@@ -236,6 +243,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
     private companion object {
         val ANIMATED_ARTWORK = booleanPreferencesKey("animated_artwork")
         val ARTWORK_SOURCE_ORDER = stringPreferencesKey("artwork_source_order")
+        val HOME_SOURCE = stringPreferencesKey("home_source")
         val SEND_YOUTUBE_HISTORY = booleanPreferencesKey("send_youtube_history")
         val DOWNLOAD_ANIMATED_ARTWORK = booleanPreferencesKey("download_animated_artwork")
         val DOWNLOAD_TO_SD_CARD = booleanPreferencesKey("download_to_sd_card")
@@ -263,6 +271,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
         val AUTOPLAY_ENABLED = booleanPreferencesKey("autoplay_enabled")
         val NON_MUSIC_SKIP = stringPreferencesKey("non_music_skip")
         val SLOP_ACTION = stringPreferencesKey("slop_action")
+        val SLOP_AUDIO_SCAN = booleanPreferencesKey("slop_audio_scan")
         val SEARCH_HISTORY = stringPreferencesKey("search_history")
         val EQUALIZER_ENABLED = booleanPreferencesKey("equalizer_enabled")
         val EQUALIZER_PRESET = stringPreferencesKey("equalizer_preset")
@@ -270,6 +279,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
         val EQUALIZER_PREAMP = floatPreferencesKey("equalizer_preamp")
         val EQUALIZER_BASS_BOOST = floatPreferencesKey("equalizer_bass_boost")
         val PLAYER_GESTURES_ENABLED = booleanPreferencesKey("player_gestures_enabled")
+        val SHOW_SETTINGS_TAB = booleanPreferencesKey("show_settings_tab")
         val HOME_LAYOUT_ONLINE = stringPreferencesKey("home_layout_online")
         val HOME_LAYOUT_OFFLINE = stringPreferencesKey("home_layout_offline")
         val CUSTOM_DEVICE_NAME = stringPreferencesKey("custom_device_name")

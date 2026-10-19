@@ -31,6 +31,7 @@
 #include <memory>
 
 class LyricsController;
+class OrchardAccount;
 class QNetworkAccessManager;
 class QNetworkReply;
 class TranslationPacks;
@@ -60,6 +61,7 @@ class LyricsTranslator final : public QObject {
 public:
   explicit LyricsTranslator(LyricsController *lyrics, QObject *parent = nullptr);
   ~LyricsTranslator() override;
+  void setAccount(OrchardAccount *account);
 
   [[nodiscard]] bool enabled() const { return m_enabled; }
   void setEnabled(bool enabled);
@@ -97,6 +99,7 @@ private:
   void start();
   void runModel();
   void runRemote();
+  void runAccountRemote();
   void loadApiKey();
   void cancelRemote();
   [[nodiscard]] QString cacheRevision() const;
@@ -108,6 +111,7 @@ private:
   void packProgress(const QString &id, double fraction);
   void flush();
 
+  OrchardAccount *m_account{nullptr};
   LyricsController *m_lyrics;
   QNetworkAccessManager *m_network;
   TranslationPacks *m_packs;

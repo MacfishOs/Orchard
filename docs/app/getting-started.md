@@ -40,12 +40,11 @@ Clicking an album, playlist, or artist opens its page. Open an album or playlist
 
 The left sidebar lists the main pages of Orchard:
 
-- **Home**: recommendations and shelves of music.
-- **Search**: search results from YouTube Music.
+- **Home**: recommendations and shelves of music. Choose **Normal** or **Apple** under Settings, General, Music source; it also decides search, artist, album and playlist pages. Apple requires an Apple Music connection; see [Integrations](integrations.md).
 - **Your library**: your subscribed artists, albums, songs, and playlists. See [Library and playlists](library-and-playlists.md).
 - **PLAYLISTS**: your saved playlists, listed under the pages.
 
-The top bar has the **Search YouTube Music…** box, the **Docs** button (a book icon), and the **Account and settings** button. The player bar floats at the bottom of the window. See [Play music](playback.md).
+The **Search…** box sits at the top of the sidebar. The top bar has the **Docs** button (a book icon) and the **Account and settings** button. The player bar floats at the bottom in Glade and docks at the top in Canopy. See [Play music](playback.md).
 
 ## Open Settings
 
@@ -54,7 +53,7 @@ Select the **Account and settings** button in the top bar at the top right of th
 - **General**: startup behavior, system tray, listening history, and your accounts. See [Accounts and startup](accounts.md).
 - **Playback**: streaming quality, Audio Engine, crossfade, gapless playback, autoplay, and AI-generated music handling. See [Streaming quality](streaming-quality.md), [Audio Engine](audio-engine.md), [Crossfade and gapless playback](crossfade.md), and [AI-generated music](ai-music.md).
 - **Appearance**: player bar bitrate, animated artwork, and the immersive background. See [Appearance](appearance.md).
-- **Integrations**: Discord Rich Presence and Last.fm. See [Integrations](integrations.md).
+- **Integrations**: Discord Rich Presence, Last.fm, Spotify Canvas, Qobuz, and Apple Music. See [Integrations](integrations.md).
 - **Shortcuts**: the keyboard shortcut list. See [Keyboard shortcuts](shortcuts.md).
 - **About**: version, credits, and open source licenses.
 

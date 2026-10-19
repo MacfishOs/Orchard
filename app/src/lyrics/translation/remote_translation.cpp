@@ -8,10 +8,24 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+QString remoteTranslationEndpoint(const QString &provider, const QString &custom) {
+  if (provider == QStringLiteral("openai")) return QStringLiteral("https://api.openai.com/v1/chat/completions");
+  if (provider == QStringLiteral("claude")) return QStringLiteral("https://api.anthropic.com/v1/messages");
+  if (provider == QStringLiteral("gemini")) return QStringLiteral("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+  QString url = custom.trimmed();
+  while (url.endsWith(QLatin1Char('/'))) url.chop(1);
+  if (!url.endsWith(QStringLiteral("/chat/completions"))) {
+    url += QStringLiteral("/chat/completions");
+  }
+  return url;
+}
+
 QStringList parseRemoteTranslation(const QByteArray &body, const QString &provider, int expected) {
   const QJsonDocument response = QJsonDocument::fromJson(body);
   QString content;
-  if (provider == QStringLiteral("claude")) {
+  if (provider == QStringLiteral("orchard")) {
+    content = QString::fromUtf8(QJsonDocument(response.object().value(QStringLiteral("lines")).toArray()).toJson(QJsonDocument::Compact));
+  } else if (provider == QStringLiteral("claude")) {
     for (const QJsonValue &block : response.object().value(QStringLiteral("content")).toArray())
       content += block.toObject().value(QStringLiteral("text")).toString();
   } else {

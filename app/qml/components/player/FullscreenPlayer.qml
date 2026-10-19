@@ -201,6 +201,7 @@ FullscreenPlayerForm {
     dragHandler.enabled: root.Window.window !== null && root.Window.window.visibility !== Window.FullScreen
     dragHandler.onActiveChanged: if (dragHandler.active) root.Window.window.startSystemMove()
 
+    backdrop.warpThrottled: OrchardWindowState.backgroundIdle
     backdrop.warpRunning: root.visible && OrchardPlayback.playing && root.Window.window !== null && root.Window.window.visibility !== Window.Minimized
     backdrop.warpSpeed: OrchardAppearance.speed
     backdrop.warpIntensity: OrchardAppearance.intensity

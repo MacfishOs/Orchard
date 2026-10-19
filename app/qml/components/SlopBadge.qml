@@ -50,6 +50,8 @@ Rectangle {
     HoverHandler { id: hover }
     ToolTip.visible: hover.hovered
     ToolTip.delay: 400
-    ToolTip.text: qsTr("Orchard detected AI-generation artifacts in this track (%1% confidence).")
-                  .arg(Math.round(OrchardPlayback.slop.probability(trackId) * 100))
+    ToolTip.text: root.flagged && OrchardPlayback.slop.isLabelled(trackId)
+                  ? qsTr("YouTube labels this track \"Made with AI\".")
+                  : qsTr("Orchard detected AI-generation artifacts in this track (%1% confidence).")
+                    .arg(Math.round(OrchardPlayback.slop.probability(trackId) * 100))
 }

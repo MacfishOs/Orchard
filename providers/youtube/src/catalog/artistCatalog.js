@@ -104,11 +104,22 @@ export function createArtistCatalog({
     return cacheArtistResult(collection, data, { hydrated: false });
   }
 
+  function primaryArtistSection(title) {
+    return /^(?:albums|singles(?:\s*&\s*eps)?|eps|top songs|(?:music )?videos)$/i.test(String(title || '').trim());
+  }
+
+  function matchesSection(item, artistName, artistBrowseId, title) {
+    return !primaryArtistSection(title) || (
+      artistBrowseSectionItemMatches(item, artistName, artistBrowseId, title) &&
+      itemMatchesReleaseSection(item, title)
+    );
+  }
+
   async function completeBrowseSectionItems(collection, section, artistName, artistBrowseId, maxRequests = 12) {
     let expandedSection = {
       ...section,
       items: section.items
-        .filter((item) => artistBrowseSectionItemMatches(item, artistName, artistBrowseId, section.title))
+        .filter((item) => matchesSection(item, artistName, artistBrowseId, section.title))
         .filter((item) => itemMatchesReleaseSection(item, section.title))
     };
 
@@ -134,7 +145,7 @@ export function createArtistCatalog({
 
         const items = rawItems
           .map((item, index) => normalizeRawBrowseItem(item, index))
-          .filter((item) => item && artistBrowseSectionItemMatches(item, artistName, artistBrowseId, section.title))
+          .filter((item) => item && matchesSection(item, artistName, artistBrowseId, section.title))
           .filter((item) => itemMatchesReleaseSection(item, section.title));
 
         if (items.length > expandedSection.items.length) {
@@ -145,7 +156,7 @@ export function createArtistCatalog({
       }
     }
 
-    if (!expandedSection.items.length && collection?.search) {
+    if (!expandedSection.items.length && primaryArtistSection(section.title) && collection?.search) {
       const fallbackItems = await searchArtistShelfFallback(collection, artistName, artistBrowseId, section.title);
       if (fallbackItems.length) {
         expandedSection = {
@@ -248,25 +259,6 @@ export function createArtistCatalog({
     }
 
     return [...releases.values()];
-  }
-
-  function partitionArtistReleaseSections(sections) {
-    const albumSection = sections.find((section) => /albums?/i.test(section.title));
-    const singlesSection = sections.find((section) => /singles?|eps?/i.test(section.title));
-    if (!albumSection && !singlesSection) return sections;
-
-    const releases = dedupeArtistReleases([
-      ...(albumSection?.items || []),
-      ...(singlesSection?.items || [])
-    ]);
-    const albums = releases.filter((item) => !isSingleOrEpRelease(item));
-    const singles = releases.filter(isSingleOrEpRelease);
-
-    return sections.map((section) => {
-      if (section === albumSection) return { ...section, items: albums };
-      if (section === singlesSection) return { ...section, items: singles };
-      return section;
-    });
   }
 
   function isAlbumReleaseItem(item) {
@@ -394,7 +386,7 @@ export function createArtistCatalog({
       .map((section) => ({
         ...section,
         items: section.items.filter((item) =>
-          artistBrowseSectionItemMatches(item, artistName, browseId, section.title)
+          matchesSection(item, artistName, browseId, section.title)
         )
       }))
       .filter((section) => section.items.length > 0);
@@ -402,24 +394,13 @@ export function createArtistCatalog({
 
   function initialArtistResult(collection) {
     const sections = initialArtistSections(collection.data, collection.browseId);
-    const visibleSections = [
-      ...sections.filter((section) => /top songs/i.test(section.title)).slice(0, 1),
-      ...sections.filter((section) => !/top songs/i.test(section.title)).slice(0, 4)
-    ];
-    const partitionedSections = partitionArtistReleaseSections(visibleSections).map(sortArtistSection);
-
-    return artistResult(collection.data, collection.browseId, partitionedSections);
+    return artistResult(collection.data, collection.browseId, sections.map(sortArtistSection));
   }
 
   async function normalizeArtist(collection) {
     const artist = collection.data;
     const initialSections = initialArtistSections(artist, collection.browseId);
-    const visibleSections = [
-      ...initialSections.filter((section) => /top songs/i.test(section.title)).slice(0, 1),
-      ...initialSections.filter((section) => !/top songs/i.test(section.title)).slice(0, 4)
-    ];
-
-    const sections = partitionArtistReleaseSections(visibleSections).map(sortArtistSection);
+    const sections = initialSections.map(sortArtistSection);
     const initialResult = artistResult(artist, collection.browseId, sections);
     const [releaseMetadata, searchMetadata] = await Promise.all([
       artistReleaseTrackMetadata(collection, sections),

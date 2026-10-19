@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 // Tempo of the section around a cue; songs drift, slow down or switch sections.
 import { tempoFit } from './pairTempoHarmony.js';
@@ -39,11 +39,23 @@ function beatSlope(beats, interval) {
   return variance > 0 ? covariance / variance : null;
 }
 
+const sections = new WeakMap();
+
 /**
  * Tempo the listener hears over `from..to`, padded to SECTION_BEATS: the song tempo when the
  * section agrees with it, the section's own when it holds a different one, null when it moves.
  */
 export function sectionBpm(analysis, from, to) {
+  // Every cue pair asks again for the same cues.
+  if (!analysis || typeof analysis !== 'object') return measureSectionBpm(analysis, from, to);
+  let cache = sections.get(analysis);
+  if (!cache) sections.set(analysis, cache = new Map());
+  const key = `${from}:${to}`;
+  if (!cache.has(key)) cache.set(key, measureSectionBpm(analysis, from, to));
+  return cache.get(key);
+}
+
+function measureSectionBpm(analysis, from, to) {
   const bpm = finite(analysis?.timing?.bpm);
   const beats = analysis?.timing?.beats || [];
   if (!(bpm > 0)) return null;

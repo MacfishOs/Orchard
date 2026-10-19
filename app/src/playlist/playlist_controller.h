@@ -34,6 +34,8 @@ class LocalLibrary;
 class OfflineLibrary;
 class YouTubeCatalog;
 class QNetworkReply;
+class AppleMusic;
+class CatalogSource;
 
 class PlaylistController final : public QObject {
   Q_OBJECT
@@ -71,6 +73,11 @@ public:
   void setOfflineLibrary(OfflineLibrary *library);
 
   Q_INVOKABLE void openPlaylist(const QVariantMap &item);
+  // Opens am.playlists pages from Apple Music artist pages.
+  void setAppleMusic(AppleMusic *appleMusic, CatalogSource *source) {
+    m_appleMusic = appleMusic;
+    m_source = source;
+  }
   Q_INVOKABLE void fetchNextPage();
   Q_INVOKABLE void retry();
   Q_INVOKABLE void clear();
@@ -111,6 +118,9 @@ private:
   YouTubeCatalog *m_catalog;
   AuthManager *m_auth;
   LocalLibrary *m_local;
+  AppleMusic *m_appleMusic{nullptr};
+  CatalogSource *m_source{nullptr};
+  quint64 m_appleRequests{0};
   OfflineLibrary *m_offline{nullptr};
   QString m_offlineId;
   bool m_localOpen{false};

@@ -32,6 +32,7 @@ class KawarpBackground : public QQuickItem {
     QML_ELEMENT
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(bool running READ running WRITE setRunning NOTIFY runningChanged)
+    Q_PROPERTY(bool throttled READ throttled WRITE setThrottled NOTIFY throttledChanged)
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
     Q_PROPERTY(double speed READ speed WRITE setSpeed NOTIFY parametersChanged)
     Q_PROPERTY(double intensity READ intensity WRITE setIntensity NOTIFY parametersChanged)
@@ -41,6 +42,7 @@ public:
     explicit KawarpBackground(QQuickItem *parent = nullptr);
     QUrl source() const { return m_source; }
     bool running() const { return m_running; }
+    bool throttled() const { return m_throttled; }
     bool ready() const { return !m_next.isNull(); }
     double speed() const { return m_speed; }
     double intensity() const { return m_intensity; }
@@ -48,6 +50,7 @@ public:
     double brightness() const { return m_brightness; }
     void setSource(const QUrl &source);
     void setRunning(bool value);
+    void setThrottled(bool value);
     void setSpeed(double value);
     void setIntensity(double value);
     void setSaturation(double value);
@@ -55,6 +58,7 @@ public:
 signals:
     void sourceChanged();
     void runningChanged();
+    void throttledChanged();
     void readyChanged();
     void parametersChanged();
 protected:
@@ -75,4 +79,5 @@ private:
     double m_intensity{0.92}, m_saturation{1.24}, m_brightness{1.0};
     float m_blend{1};
     bool m_running{false};
+    bool m_throttled{false};
 };

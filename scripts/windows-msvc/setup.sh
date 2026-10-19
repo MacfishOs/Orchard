@@ -60,8 +60,6 @@ setup_qt() {
   if [[ -f "$ORCHARD_MSVC_QT_ROOT/lib/cmake/Qt6/Qt6Config.cmake" ]]; then
     [[ -f "$ORCHARD_MSVC_QT_ROOT/bin/Qt6SerialPort.dll" ]] ||
       orchard_die "Qt Serial Port missing; install qtserialport into $ORCHARD_MSVC_QT_ROOT"
-    [[ -f "$ORCHARD_MSVC_QT_ROOT/plugins/webview/qtwebview_webengine.dll" ]] ||
-      orchard_die "QtWebView WebEngine plugin missing from $ORCHARD_MSVC_QT_ROOT"
     echo "Qt already present: $ORCHARD_MSVC_QT_ROOT"
     return
   fi

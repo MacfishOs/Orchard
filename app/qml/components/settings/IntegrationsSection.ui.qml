@@ -58,4 +58,14 @@ ColumnLayout {
             Layout.fillWidth: true
         }
     }
+
+    SettingsSection {
+        Layout.fillWidth: true
+        title: qsTr("Apple Music")
+
+        AppleMusic {
+            Layout.fillWidth: true
+        }
+    }
+
 }

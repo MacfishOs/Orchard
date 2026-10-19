@@ -28,6 +28,20 @@ export function createBrowseItemNormalizers({
 }) {
   const durationText = (value = '') => String(value || '').match(/\b\d{1,2}:\d{2}(?::\d{2})?\b/)?.[0] || '';
 
+  // A release tile can have both a browse endpoint (open the album) and a
+  // thumbnail play endpoint (start its first song). The play endpoint must not
+  // turn that tile into a track or hide its album navigation actions.
+  function browseMediaType(browsePayload) {
+    const pageType = browsePayload?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType || '';
+    const browseId = browsePayload?.browseId || '';
+    if (pageType === 'MUSIC_PAGE_TYPE_ALBUM' || browseId.startsWith('MPR') ||
+        browseId.startsWith('FEmusic_library_privately_owned_release')) return 'album';
+    if (pageType === 'MUSIC_PAGE_TYPE_ARTIST' || pageType === 'MUSIC_PAGE_TYPE_LIBRARY_ARTIST' ||
+        browseId.startsWith('FEmusic_library_privately_owned_artist')) return 'artist';
+    if (pageType === 'MUSIC_PAGE_TYPE_PLAYLIST' || pageType === 'MUSIC_PAGE_TYPE_USER_PLAYLIST') return 'playlist';
+    return '';
+  }
+
   function isArtistBrowseRun(run) {
     const browseId = run?.navigationEndpoint?.browseEndpoint?.browseId || '';
     const pageType = run?.navigationEndpoint?.browseEndpoint?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType;
@@ -80,20 +94,21 @@ export function createBrowseItemNormalizers({
       }
       : null;
     const browsePayload = titleRun.navigationEndpoint?.browseEndpoint || renderer.navigationEndpoint?.browseEndpoint || null;
+    const collectionType = browseMediaType(browsePayload);
     const thumbnail = renderer.thumbnail?.musicThumbnailRenderer?.thumbnail || renderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail || renderer.thumbnail || [];
     const artistNames = artistRuns.map((run) => asText(run.text)).filter(Boolean);
     const artistBrowseIds = artistRuns.map((run) => run.navigationEndpoint?.browseEndpoint?.browseId).filter(Boolean);
     const artistName = artistNames[0] || fallbackArtist || '';
 
     const normalized = {
-      id: watchEndpoint?.videoId || renderer.playlistItemData?.videoId || null,
+      id: collectionType ? null : (watchEndpoint?.videoId || renderer.playlistItemData?.videoId || null),
       browseId: browsePayload?.browseId || null,
       browsePayload: browsePayload ? { ...browsePayload } : null,
-      // Match youtubei.js: official and user-uploaded music videos are videos.
-      // A play button is not a song ID's fake mustache.
-      type: watchEndpoint?.videoId
+      // A release's thumbnail play button can point at a song. Prefer the
+      // release browse endpoint when both are present.
+      type: collectionType || (watchEndpoint?.videoId
         ? (['MUSIC_VIDEO_TYPE_OMV', 'MUSIC_VIDEO_TYPE_UGC'].includes(musicVideoType) ? 'video' : 'track')
-        : (browsePayload?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType || 'track').replace('MUSIC_PAGE_TYPE_', '').toLowerCase(),
+        : (browsePayload?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType || 'track').replace('MUSIC_PAGE_TYPE_', '').toLowerCase()),
       musicVideoType,
       isAudioOnly: musicVideoType === 'MUSIC_VIDEO_TYPE_ATV',
       title: asText(titleColumn) || 'Untitled',
@@ -133,26 +148,20 @@ export function createBrowseItemNormalizers({
       overlayWatchEndpoint ||
       null;
     const browsePayload = renderer.navigationEndpoint?.browseEndpoint || titleRun.navigationEndpoint?.browseEndpoint || null;
+    const collectionType = browseMediaType(browsePayload);
     const musicVideoType = watchEndpoint?.watchEndpointMusicSupportedConfigs?.watchEndpointMusicConfig?.musicVideoType || '';
-    const pageType = browsePayload?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType;
     const artistRuns = subtitleRuns.filter(isArtistBrowseRun);
     const artistNames = artistRuns.map((run) => asText(run.text)).filter(Boolean);
     const thumbnail = renderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail || renderer.thumbnail || [];
     const hasVideo = Boolean(watchEndpoint?.videoId);
 
     const normalized = {
-      id: watchEndpoint?.videoId || null,
+      id: collectionType ? null : (watchEndpoint?.videoId || null),
       browseId: browsePayload?.browseId || null,
       browsePayload: browsePayload ? { ...browsePayload } : null,
-      type: hasVideo
+      type: collectionType || (hasVideo
         ? (musicVideoType === 'MUSIC_VIDEO_TYPE_ATV' ? 'track' : 'video')
-        : pageType === 'MUSIC_PAGE_TYPE_ARTIST'
-        ? 'artist'
-        : pageType === 'MUSIC_PAGE_TYPE_ALBUM'
-          ? 'album'
-          : pageType === 'MUSIC_PAGE_TYPE_PLAYLIST'
-            ? 'playlist'
-            : 'media',
+        : 'media'),
       musicVideoType,
       isAudioOnly: musicVideoType === 'MUSIC_VIDEO_TYPE_ATV',
       title: asText(renderer.title) || 'Untitled',
@@ -163,7 +172,7 @@ export function createBrowseItemNormalizers({
       album: '',
       albumId: null,
       playlistId: watchEndpoint?.playlistId || null,
-      audioPlaylistId: (pageType === 'MUSIC_PAGE_TYPE_ALBUM' && watchEndpoint?.playlistId) ? watchEndpoint.playlistId : null,
+      audioPlaylistId: collectionType === 'album' ? (watchEndpoint?.playlistId || null) : null,
       duration: '',
       durationSeconds: 0,
       explicit: hasExplicitBadge(renderer),

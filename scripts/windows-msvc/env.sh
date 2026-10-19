@@ -8,7 +8,7 @@ orchard_source_dir="$(cd -- "$orchard_win_dir/../.." && pwd)"
 
 # Other pinned inputs (override only to test a new toolchain).
 : "${ORCHARD_QT_ARCH:=win64_msvc2022_64}"
-: "${ORCHARD_QT_MODULES:=qtmultimedia qtshadertools qtwebengine qtwebview qtwebchannel qtpositioning qtserialport qtwebsockets}"
+: "${ORCHARD_QT_MODULES:=qtmultimedia qtshadertools qtserialport qtwebsockets}"
 # Released aqtinstall lacks the Qt 6.11 repository layout; pin a git commit.
 : "${ORCHARD_AQT_SPEC:=git+https://github.com/miurahr/aqtinstall@076e1659807d0b362a3ed684d54c2e9c775eb9c7}"
 : "${ORCHARD_MSVC_WINE_REV:=514f8ea34842cd6d831804d0e9658d3a32870ae1}"

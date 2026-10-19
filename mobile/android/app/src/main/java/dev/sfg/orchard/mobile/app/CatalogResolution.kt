@@ -19,12 +19,14 @@
 
 package dev.sfg.orchard.mobile.app
 
+import dev.sfg.orchard.mobile.model.Artist
 import dev.sfg.orchard.mobile.model.BrowseDetail
 import dev.sfg.orchard.mobile.model.CatalogItem
 import dev.sfg.orchard.mobile.model.CatalogSection
 import dev.sfg.orchard.mobile.model.LibrarySnapshot
 import dev.sfg.orchard.mobile.model.LoadState
 import dev.sfg.orchard.mobile.model.SearchResults
+import dev.sfg.orchard.mobile.model.Track
 
 internal fun findCatalogItem(
     id: String,
@@ -51,6 +53,18 @@ internal fun findCatalogItem(
         ?: libraryState.savedPlaylists.firstOrNull { it.id == id }?.let(CatalogItem::Collection)
         ?: libraryState.recentlyPlayed.firstOrNull { it.id == id }?.let(CatalogItem::Song)
         ?: (detailState as? LoadState.Content)?.value?.related?.firstOrNull { it.stableId == id }
+}
+
+/** An artist named by a loaded track's credits, for artist links that only carry an id. */
+internal fun artistFromTracks(id: String, tracks: Sequence<Track>): CatalogItem? {
+    for (track in tracks) {
+        track.artists.firstOrNull { it.id == id && it.name.isNotBlank() }?.let { return CatalogItem.Performer(it) }
+        // Without per-artist credits the joined artist string is only safe when it names one artist.
+        if (track.artistId == id && track.artists.isEmpty() && track.artist.isNotBlank()) {
+            return CatalogItem.Performer(Artist(id = id, name = track.artist))
+        }
+    }
+    return null
 }
 
 internal fun BrowseDetail.withSeed(seed: CatalogItem?): BrowseDetail {

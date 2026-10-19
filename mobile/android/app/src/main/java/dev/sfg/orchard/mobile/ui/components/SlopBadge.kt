@@ -34,19 +34,22 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.sfg.orchard.mobile.OrchardGraph
-import dev.sfg.orchard.mobile.playback.slop.SLOP_THRESHOLD
 import dev.sfg.orchard.mobile.playback.slop.SlopAction
+import dev.sfg.orchard.mobile.playback.slop.SlopKnown
 
 @Composable
 internal fun SlopBadge(trackId: String) {
     val graph = OrchardGraph.from(LocalContext.current)
     val probabilities by graph.slopVerdicts.probabilities.collectAsStateWithLifecycle()
+    val labels by graph.slopVerdicts.labels.collectAsStateWithLifecycle()
     val settings by graph.settings.settings.collectAsStateWithLifecycle()
-    val probability = probabilities[trackId] ?: return
-    if (settings.slopAction == SlopAction.OFF || probability < SLOP_THRESHOLD) return
+    val known = SlopKnown(labels, probabilities, settings.slopAudioScan)
+    if (settings.slopAction == SlopAction.OFF || !known.flagged(trackId)) return
+    val description = if (known.labelled(trackId)) "Labelled made with AI by YouTube"
+    else "Likely AI-generated, ${((probabilities[trackId] ?: 0f) * 100).toInt()} percent confidence"
     Text("AI", style = MaterialTheme.typography.labelSmall, color = Color(0xFFFFC58A),
         modifier = Modifier.padding(start = 6.dp)
             .background(Color(0xFFFFC58A).copy(alpha = 0.15f), RoundedCornerShape(4.dp))
             .padding(horizontal = 4.dp, vertical = 1.dp)
-            .semantics { contentDescription = "Likely AI-generated, ${(probability * 100).toInt()} percent confidence" })
+            .semantics { contentDescription = description })
 }

@@ -130,6 +130,7 @@ internal fun SearchOverlay(
     backdropArtworkUrl: String,
     backdropPlaying: Boolean,
     showBackdrop: Boolean,
+    youtubeCatalog: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(open, modifier, enter = fadeIn(tween(160)), exit = fadeOut(tween(120))) {
@@ -162,11 +163,12 @@ internal fun SearchOverlay(
                     .imePadding()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
-                SearchBar(query, actions, focus)
+                SearchBar(query, actions, focus, youtubeCatalog)
                 Spacer(Modifier.height(8.dp))
                 // Wraps its rows and stops at the keyboard; the empty remainder falls through to the scrim.
                 SearchPanel(
                     query, state, history, downloadedTrackIds, downloadingTrackIds, actions,
+                    youtubeCatalog,
                     Modifier.weight(1f, fill = false),
                 )
             }
@@ -175,7 +177,7 @@ internal fun SearchOverlay(
 }
 
 @Composable
-private fun SearchBar(query: String, actions: SearchActions, focus: FocusRequester) {
+private fun SearchBar(query: String, actions: SearchActions, focus: FocusRequester, youtubeCatalog: Boolean) {
     val shape = RoundedCornerShape(16.dp)
     Row(verticalAlignment = Alignment.CenterVertically) {
         Row(
@@ -192,7 +194,7 @@ private fun SearchBar(query: String, actions: SearchActions, focus: FocusRequest
             Box(Modifier.weight(1f).padding(horizontal = 12.dp), contentAlignment = Alignment.CenterStart) {
                 val textStyle = MaterialTheme.typography.bodyLarge.copy(color = SettingsStyle.Title)
                 if (query.isEmpty()) {
-                    Text("Search songs, artists, links", style = textStyle, color = SettingsStyle.Description)
+                    Text(if (youtubeCatalog) "Search YouTube Music" else "Search Apple Music", style = textStyle, color = SettingsStyle.Description)
                 }
                 BasicTextField(
                     value = query,
@@ -228,6 +230,7 @@ private fun SearchPanel(
     downloadedTrackIds: Set<String>,
     downloadingTrackIds: Set<String>,
     actions: SearchActions,
+    youtubeCatalog: Boolean,
     modifier: Modifier,
 ) {
     var scope by rememberSaveable { mutableStateOf(SearchScope.All) }
@@ -240,7 +243,7 @@ private fun SearchPanel(
     ) {
         LazyColumn(contentPadding = PaddingValues(bottom = 6.dp)) {
             when (state) {
-                LoadState.Idle -> idle(history, actions)
+                LoadState.Idle -> idle(history, actions, youtubeCatalog)
                 LoadState.Loading -> items(4) { TrackRowShimmer() }
                 is LoadState.Content -> results(state.value, query, scope, { scope = it }, downloadedTrackIds, downloadingTrackIds, actions)
                 is LoadState.Empty -> item {
@@ -262,9 +265,13 @@ private fun SearchPanel(
     }
 }
 
-private fun LazyListScope.idle(history: List<String>, actions: SearchActions) {
-    item { PanelCaption("Browse") }
-    item { BrowseTiles(actions.onOpenDetail) }
+private fun LazyListScope.idle(history: List<String>, actions: SearchActions, youtubeCatalog: Boolean) {
+    if (youtubeCatalog) {
+        item { PanelCaption("Browse") }
+        item { BrowseTiles(actions.onOpenDetail) }
+    } else {
+        item { PanelCaption("Apple Music") }
+    }
     if (history.isEmpty()) return
     item { Column { PanelDivider(); PanelCaption("Recent", "Clear all", actions.onClearHistory) } }
     items(history.size, key = { history[it] }) { index ->

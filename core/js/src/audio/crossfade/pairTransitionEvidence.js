@@ -1,9 +1,6 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
-import {
-  interpolateTrackFrame,
-  summarizeTrackWindow
-} from '../../../shared/trackAnalysis.js';
+import { summarizeTrackWindow } from '../../../shared/trackAnalysis.js';
 import {
   MAX_RAMP_DEVIATION,
   MAX_STRETCH_DEVIATION,
@@ -18,13 +15,12 @@ export {
   harmonicEvidence,
   tempoFit
 } from './pairTempoHarmony.js';
-import { glideOffsets } from './pairTempoHarmony.js';
 import { bassArrival, beatEntry, beatFlow, incomingVoiceRisk } from './transitionFlow.js';
+export { VOCAL_ACTIVE_THRESHOLD, mappedVocalCollision } from './vocalCollision.js';
 
 export const MAX_ROLE_CANDIDATES = 12;
 export const MAX_DETAILED_CANDIDATES = 64;
 export const MAX_DISCARDED_AUDIBLE_SECONDS = 12;
-export const VOCAL_ACTIVE_THRESHOLD = 0.6;
 export const ORDINARY_BEAT_LENGTHS = Object.freeze([4, 8, 16]);
 const MIN_BEATMATCH_BEATS = 8;
 const MIN_BEATMATCH_SECONDS = 4;
@@ -57,70 +53,6 @@ function clamp(value, minimum = 0, maximum = 1) {
 function rounded(value, places = 6) {
   const scale = 10 ** places;
   return Math.round(value * scale) / scale;
-}
-
-function frameCadence(analysis) {
-  const frames = Array.isArray(analysis?.frames) ? analysis.frames : [];
-  const differences = [];
-  for (let index = 1; index < frames.length; index += 1) {
-    const difference = frames[index].time - frames[index - 1].time;
-    if (difference > 0) differences.push(difference);
-  }
-  differences.sort((left, right) => left - right);
-  return differences.length ? differences[Math.floor(differences.length / 2)] : 0.25;
-}
-
-export function mappedVocalCollision(outgoing, incoming, mapping = {}) {
-  const duration = Math.max(0, finite(mapping.durationSeconds) ?? 0);
-  const outgoingStart = finite(mapping.outgoingStart) ?? 0;
-  const incomingStart = finite(mapping.incomingStart) ?? 0;
-  const outgoingRatio = finite(mapping.outgoingRatio) ?? 1;
-  const incomingRatio = finite(mapping.incomingRatio) ?? 1;
-  const targetBpm = finite(mapping.targetBpm) ?? 0;
-  const step = Math.max(0.05, Math.min(0.25, frameCadence(outgoing), frameCadence(incoming)));
-  const sampleCount = Math.max(1, Math.ceil(duration / step) + 1);
-  let known = 0;
-  let simultaneousTotal = 0;
-  let active = 0;
-  let currentRun = 0;
-  let longestRun = 0;
-  for (let index = 0; index < sampleCount; index += 1) {
-    const time = Math.min(duration, index * step);
-    const offsets = mapping.tempoRamp
-      ? glideOffsets(time, duration, outgoingRatio, incomingRatio)
-      : { outgoing: time * outgoingRatio, incoming: time * incomingRatio };
-    const outgoingVocal = interpolateTrackFrame(
-      outgoing,
-      'vocal',
-      outgoingStart + offsets.outgoing
-    );
-    const incomingVocal = interpolateTrackFrame(
-      incoming,
-      'vocal',
-      incomingStart + offsets.incoming
-    );
-    if (outgoingVocal === null || incomingVocal === null) {
-      currentRun = 0;
-      continue;
-    }
-    known += 1;
-    simultaneousTotal += Math.min(outgoingVocal, incomingVocal);
-    if (outgoingVocal >= VOCAL_ACTIVE_THRESHOLD && incomingVocal >= VOCAL_ACTIVE_THRESHOLD) {
-      active += 1;
-      currentRun += 1;
-      longestRun = Math.max(longestRun, currentRun);
-    } else {
-      currentRun = 0;
-    }
-  }
-  const longestRunSeconds = Math.min(duration, longestRun * step);
-  return {
-    simultaneousMean: known ? rounded(simultaneousTotal / known) : null,
-    activeFraction: known ? rounded(active / known) : null,
-    longestRunSeconds: rounded(longestRunSeconds),
-    longestRunBeats: targetBpm > 0 ? rounded(longestRunSeconds * targetBpm / 60) : 0,
-    coverage: rounded(known / sampleCount)
-  };
 }
 
 function candidateWindow(analysis, role) {
@@ -377,9 +309,10 @@ export function buildCandidatePairs(
   const latestIn = Math.min(incomingRange.end, (finite(options.incomingWindowEnd) ?? Infinity) - WINDOW_MARGIN);
   const pairs = [];
   const rejected = { bounds: 0, tempo: 0, duration: 0 };
+  const fits = { matched: 0, moving: 0, far: 0 };
   let combinations = 0;
   if (!((finite(fit.targetBpm) ?? 0) > 0)) {
-    return { finalists: [], diagnostics: { combinations, rejected, detailed: 0 } };
+    return { finalists: [], diagnostics: { combinations, rejected, fits, detailed: 0 } };
   }
   // Tempo comes from the beats around each cue; songs drift, slow down or switch sections.
   const measured = outgoingAnalysis.timing?.beats?.length && incomingAnalysis.timing?.beats?.length;
@@ -393,6 +326,7 @@ export function buildCandidatePairs(
       const targetBpm = finite(cueFit.targetBpm) ?? 0;
       if (!(targetBpm > 0)) continue;
       const matched = Boolean(cueFit.beatmatched);
+      fits[matched ? 'matched' : cueFit.movingTempo ? 'moving' : 'far'] += 1;
       // Unmatched fits keep native ratios and plan ordinary short blends.
       const outgoingRatio = matched ? finite(cueFit.outgoingRatio) ?? 1 : 1;
       const incomingRatio = matched ? finite(cueFit.incomingRatio) ?? 1 : 1;
@@ -416,11 +350,16 @@ export function buildCandidatePairs(
         }
         // "end" lands the incoming anchor as the old song leaves; "mid" drops it on the
         // bass swap so a beatless intro never fills the whole overlap.
-        const alignments = matched && beats % 8 === 0 ? ['end', 'mid'] : ['end'];
+        // A drop-in lands the new song on its anchor for a two-bar overlap; it is asked for
+        // separately, only when no ordinary blend survives.
+        const alignments = options.dropIn
+          ? (matched && beats === 8 ? ['start'] : [])
+          : matched && beats % 8 === 0 ? ['end', 'mid'] : ['end'];
         for (const alignment of alignments) {
           combinations += 1;
           const outgoingStart = outgoing.anchorTime - durationSeconds * outgoingRatio;
-          const lead = durationSeconds * incomingRatio * (alignment === 'mid' ? 0.5 : 1);
+          const lead = durationSeconds * incomingRatio *
+            (alignment === 'mid' ? 0.5 : alignment === 'start' ? 0 : 1);
           const incomingStart = incoming.anchorTime - lead;
           const incomingEnd = incomingStart + durationSeconds * incomingRatio;
           if (
@@ -443,7 +382,7 @@ export function buildCandidatePairs(
           }
           const length = beats > 0 ? beats : durationSeconds.toFixed(1);
           const pair = {
-            id: `${outgoing.id}>${incoming.id}:${length}s${alignment === 'mid' ? ':mid' : ''}`,
+            id: `${outgoing.id}>${incoming.id}:${length}s${alignment === 'end' ? '' : `:${alignment}`}`,
             outgoingCandidate: outgoing,
             incomingCandidate: incoming,
             outgoingStart: rounded(outgoingStart),
@@ -477,6 +416,7 @@ export function buildCandidatePairs(
     diagnostics: {
       combinations,
       rejected,
+      fits,
       detailed: finalists.length
     }
   };

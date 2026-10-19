@@ -19,37 +19,155 @@
 
 package dev.sfg.orchard.mobile.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.sfg.orchard.mobile.download.DownloadItem
 import dev.sfg.orchard.mobile.download.DownloadStatus
 import dev.sfg.orchard.mobile.model.CatalogItem
 import dev.sfg.orchard.mobile.model.LibraryFilter
 import dev.sfg.orchard.mobile.model.Track
-import dev.sfg.orchard.mobile.ui.motion.riseIn
+import dev.sfg.orchard.mobile.ui.components.ArtworkTile
 import dev.sfg.orchard.mobile.ui.components.CatalogCard
 import dev.sfg.orchard.mobile.ui.components.TrackRow
+import dev.sfg.orchard.mobile.ui.components.catalogSubtitle
+import dev.sfg.orchard.mobile.ui.motion.riseIn
 
-/** Empty shelf with an optional jump to the new releases page. */
-private fun LazyListScope.emptyShelf(
-    icon: ImageVector,
-    title: String,
-    message: String,
-    onBrowse: (() -> Unit)?,
+/** What an empty shelf says, plus an optional jump to the new releases page. */
+internal data class ShelfEmpty(
+    val icon: ImageVector,
+    val title: String,
+    val message: String,
+    val onBrowse: (() -> Unit)? = null,
+)
+
+internal fun LazyListScope.emptyShelf(key: String, empty: ShelfEmpty) {
+    item(key = "$key:empty") {
+        LibraryEmpty(empty.icon, empty.title, empty.message, empty.onBrowse?.let { "Browse new releases" }, empty.onBrowse ?: {})
+    }
+}
+
+/** Playlists, albums or artists as a grid of cards or a list of rows. */
+internal fun LazyListScope.collections(
+    key: String,
+    values: List<CatalogItem>,
+    grid: Boolean,
+    columns: Int,
+    onOpen: (String) -> Unit,
 ) {
-    item { LibraryEmpty(icon, title, message, onBrowse?.let { "Browse new releases" }, onBrowse ?: {}) }
+    if (!grid) {
+        items(values, key = { "$key:${it.stableId}" }) { item ->
+            CollectionRow(item, { onOpen(item.stableId) }, Modifier.animateItem(fadeInSpec = null))
+        }
+        return
+    }
+    val rows = values.chunked(columns)
+    itemsIndexed(rows, key = { _, row -> "$key:" + row.joinToString("|") { it.stableId } }) { _, row ->
+        Row(
+            Modifier
+                .animateItem(fadeInSpec = null)
+                .fillMaxWidth()
+                .padding(horizontal = LibraryGutter)
+                .padding(top = 8.dp, bottom = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (columns > 2) 14.dp else 16.dp),
+        ) {
+            row.forEachIndexed { col, item ->
+                Box(Modifier.weight(1f).riseIn(col, fromScale = 0.9f, cascadeOnScroll = true)) {
+                    CatalogCard(item, { onOpen(item.stableId) }, modifier = Modifier.fillMaxWidth())
+                }
+            }
+            repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+        }
+    }
+}
+
+@Composable
+private fun CollectionRow(item: CatalogItem, onClick: () -> Unit, modifier: Modifier) {
+    val round = item is CatalogItem.Performer
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = LibraryGutter, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ArtworkTile(item.artworkUrl, item.title, Modifier.size(56.dp), if (round) 999 else 10)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                item.title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                color = SettingsStyle.Title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val subtitle = catalogSubtitle(item)
+            if (subtitle.isNotBlank()) {
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                    color = SettingsStyle.Description,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+internal fun LazyListScope.tracks(
+    key: String,
+    values: List<Track>,
+    downloadedTrackIds: Set<String>,
+    downloadingTrackIds: Set<String> = emptySet(),
+    onPlay: (Track) -> Unit,
+    onPlayNext: ((Track) -> Unit)?,
+    onAdd: ((Track) -> Unit)?,
+    onDownloadTrack: ((Track) -> Unit)? = null,
+    onRemoveDownloadTrack: ((String) -> Unit)? = null,
+    onShare: ((Track) -> Unit)? = null,
+    onOpen: ((String) -> Unit)? = null,
+) {
+    itemsIndexed(values, key = { index, track -> "$key:${track.id}_$index" }) { index, track ->
+        TrackRow(
+            track = track,
+            onPlay = { onPlay(track) },
+            modifier = Modifier
+                .animateItem(fadeInSpec = null)
+                .riseIn(index, cascadeOnScroll = true),
+            onPlayNext = onPlayNext?.let { action -> { action(track) } },
+            onAddToQueue = onAdd?.let { action -> { action(track) } },
+            onDownload = onDownloadTrack?.let { action -> { action(track) } },
+            onRemoveDownload = onRemoveDownloadTrack?.let { action -> { action(track.id) } },
+            isDownloaded = downloadedTrackIds.contains(track.id),
+            isDownloading = downloadingTrackIds.contains(track.id),
+            onShare = onShare?.let { action -> { action(track) } },
+            onViewAlbum = onOpen?.takeIf { track.albumId.isNotBlank() }?.let { nav -> { nav(track.albumId) } },
+            onViewArtist = onOpen?.takeIf { track.artistId.isNotBlank() }?.let { nav -> { nav(track.artistId) } },
+        )
+    }
 }
 
 internal fun LazyListScope.downloadsList(
@@ -64,30 +182,26 @@ internal fun LazyListScope.downloadsList(
 
     if (active.isEmpty() && completed.isEmpty() && failed.isEmpty()) {
         emptyShelf(
-            Icons.Rounded.Download,
-            "No downloaded tracks",
-            "Tap the download icon on any track, album, or playlist to listen offline.",
-            null,
+            "downloads",
+            ShelfEmpty(Icons.Rounded.Download, "No downloaded tracks", "Tap the download icon on any track, album, or playlist to listen offline."),
         )
         return
     }
 
     if (active.isNotEmpty()) {
-        item { LibraryLabel("Downloading (${active.size})") }
-        itemsIndexed(active, key = { _, it -> "active_${it.track.id}" }) { index, item ->
-            DownloadingRow(
-                item = item,
-                onCancel = { onRemoveDownload(item.track.id) },
-                modifier = Modifier.animateItem().panelSegment(index == 0, index == active.lastIndex),
-            )
+        item(key = "downloads:active") { LibraryLabel("Downloading (${active.size})") }
+        items(active, key = { "active_${it.track.id}" }) { item ->
+            DownloadingRow(item = item, onCancel = { onRemoveDownload(item.track.id) }, modifier = Modifier.animateItem())
         }
     }
 
     if (completed.isNotEmpty()) {
-        item { LibraryLabel("Downloaded (${completed.size}) \u00b7 ${formatStorageSize(totalBytesUsed)} used") }
-        itemsIndexed(completed, key = { _, it -> "completed_${it.track.id}" }) { index, item ->
+        item(key = "downloads:completed") {
+            LibraryLabel("Downloaded (${completed.size}) · ${formatStorageSize(totalBytesUsed)} used")
+        }
+        items(completed, key = { "completed_${it.track.id}" }) { item ->
             DownloadedTrackRow(
-                modifier = Modifier.animateItem().panelSegment(index == 0, index == completed.lastIndex),
+                modifier = Modifier.animateItem(),
                 item = item,
                 onPlay = { onPlay(item.track) },
                 onDelete = { onRemoveDownload(item.track.id) },
@@ -96,98 +210,9 @@ internal fun LazyListScope.downloadsList(
     }
 
     if (failed.isNotEmpty()) {
-        item { LibraryLabel("Failed (${failed.size})", MaterialTheme.colorScheme.error) }
-        itemsIndexed(failed, key = { _, it -> "failed_${it.track.id}" }) { index, item ->
-            DownloadingRow(
-                item = item,
-                onCancel = { onRemoveDownload(item.track.id) },
-                modifier = Modifier.animateItem().panelSegment(index == 0, index == failed.lastIndex),
-            )
-        }
-    }
-}
-
-internal fun LazyListScope.tracks(
-    title: String,
-    values: List<Track>,
-    emptyIcon: ImageVector,
-    emptyTitle: String,
-    emptyMessage: String,
-    downloadedTrackIds: Set<String>,
-    downloadingTrackIds: Set<String> = emptySet(),
-    onPlay: (Track) -> Unit,
-    onPlayNext: ((Track) -> Unit)?,
-    onAdd: ((Track) -> Unit)?,
-    onDownloadTrack: ((Track) -> Unit)? = null,
-    onRemoveDownloadTrack: ((String) -> Unit)? = null,
-    onShare: ((Track) -> Unit)? = null,
-    onOpen: ((String) -> Unit)? = null,
-    onBrowse: (() -> Unit)? = null,
-) {
-    if (values.isEmpty()) {
-        emptyShelf(emptyIcon, emptyTitle, emptyMessage, onBrowse)
-        return
-    }
-    item { LibraryLabel(title) }
-    itemsIndexed(values, key = { index, track -> "${track.id}_$index" }) { index, track ->
-        TrackRow(
-            track = track,
-            onPlay = { onPlay(track) },
-            modifier = Modifier
-                .animateItem(fadeInSpec = null)
-                .riseIn(index, cascadeOnScroll = true)
-                .panelSegment(index == 0, index == values.lastIndex),
-            onPlayNext = onPlayNext?.let { action -> { action(track) } },
-            onAddToQueue = onAdd?.let { action -> { action(track) } },
-            onDownload = onDownloadTrack?.let { action -> { action(track) } },
-            onRemoveDownload = onRemoveDownloadTrack?.let { action -> { action(track.id) } },
-            isDownloaded = downloadedTrackIds.contains(track.id),
-            isDownloading = downloadingTrackIds.contains(track.id),
-            onShare = onShare?.let { action -> { action(track) } },
-            onViewAlbum = onOpen?.takeIf { track.albumId.isNotBlank() }?.let { nav -> { nav(track.albumId) } },
-            onViewArtist = onOpen?.takeIf { track.artistId.isNotBlank() }?.let { nav -> { nav(track.artistId) } },
-        )
-    }
-}
-
-internal fun LazyListScope.collections(
-    title: String,
-    values: List<CatalogItem>,
-    emptyIcon: ImageVector,
-    emptyTitle: String,
-    emptyMessage: String,
-    onOpen: (String) -> Unit,
-    onBrowse: (() -> Unit)? = null,
-) {
-    if (values.isEmpty()) {
-        emptyShelf(emptyIcon, emptyTitle, emptyMessage, onBrowse)
-        return
-    }
-
-    item { LibraryLabel(title) }
-
-    val rows = values.chunked(2)
-
-    itemsIndexed(
-        items = rows,
-        key = { _, row -> row.joinToString("|") { item -> item.stableId } },
-    ) { index, row ->
-        Row(
-            modifier = Modifier
-                .animateItem(fadeInSpec = null)
-                .panelSegment(index == 0, index == rows.lastIndex)
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            row.forEachIndexed { col, catalogItem ->
-                Box(Modifier.weight(1f).riseIn(col, fromScale = 0.9f, cascadeOnScroll = true)) {
-                    CatalogCard(catalogItem, { onOpen(catalogItem.stableId) }, modifier = Modifier.fillMaxWidth())
-                }
-            }
-            if (row.size < 2) {
-                Spacer(modifier = Modifier.weight(1f))
-            }
+        item(key = "downloads:failed") { LibraryLabel("Failed (${failed.size})", MaterialTheme.colorScheme.error) }
+        items(failed, key = { "failed_${it.track.id}" }) { item ->
+            DownloadingRow(item = item, onCancel = { onRemoveDownload(item.track.id) }, modifier = Modifier.animateItem())
         }
     }
 }

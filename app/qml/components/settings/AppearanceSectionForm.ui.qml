@@ -68,7 +68,7 @@ ColumnLayout {
             iconName: "panel-bottom"
             title: qsTr("Player layout")
             description: root.layoutStyle === "canopy"
-                ? qsTr("Canopy: a slim player bar at the top, next to search.")
+                ? qsTr("Canopy: a slim player bar at the top.")
                 : qsTr("Glade: a floating player bar at the bottom.")
 
             SettingsSegmented {

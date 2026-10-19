@@ -164,7 +164,7 @@ private class GlassPaneNode(
         val downscale = scene.downscale
         val chrome = tone == GlassTone.CHROME
         val source = if (chrome) scene.sceneSample else scene.washSample
-        if (if (chrome) !scene.sceneRecorded else !scene.washRecorded) return false
+        if (!scene.isRecorded(chrome)) return false
 
         val origin = if (chrome) scene.sceneOrigin else scene.washOrigin
         val here = requireLayoutCoordinates().positionInWindow()

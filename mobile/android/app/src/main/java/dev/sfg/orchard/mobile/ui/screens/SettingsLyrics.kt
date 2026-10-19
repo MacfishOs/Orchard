@@ -57,6 +57,7 @@ internal fun LyricTranslationSection(
     onSettings: (OrchardSettings) -> Unit,
     labelIndex: Int,
 ) {
+    val account by dev.sfg.orchard.mobile.auth.OrchardAccountService.get(LocalContext.current).state.collectAsStateWithLifecycle()
     val translator = OrchardGraph.from(LocalContext.current).lyricTranslation
     val installed by translator.installed.collectAsStateWithLifecycle()
     val apiKeys by translator.apiKeyState.collectAsStateWithLifecycle()
@@ -74,6 +75,8 @@ internal fun LyricTranslationSection(
             title = "Translate lyrics to English",
             subtitle = if (provider == LyricTranslationProvider.LOCAL)
                 "Runs on this phone. Each language downloads its model the first time you need it."
+            else if (provider == LyricTranslationProvider.ORCHARD)
+                "Gemma 4: 10 songs per account and IP each day. Resets at 00:00 UTC. Cached songs are free."
             else "Sends lyric lines to ${provider.label}; your provider may charge for requests.",
             icon = Icons.Rounded.Translate,
             checked = settings.translateLyrics,
@@ -84,9 +87,9 @@ internal fun LyricTranslationSection(
             title = "Translation source",
             subtitle = "Local models are private. API translation also works with other languages.",
         ) {
-            SettingsPill(provider.label, onClick = { sourceDialog = true })
+            SettingsPill(if (provider == LyricTranslationProvider.ORCHARD && !account.signedIn) "Choose source" else provider.label, onClick = { sourceDialog = true })
         }
-        if (provider != LyricTranslationProvider.LOCAL) {
+        if (provider != LyricTranslationProvider.LOCAL && provider != LyricTranslationProvider.ORCHARD) {
             PanelDivider()
             Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                 RowTitle("Model ID")
@@ -184,7 +187,7 @@ internal fun LyricTranslationSection(
         title = { Text("Translation source") },
         text = {
             Column {
-                LyricTranslationProvider.entries.forEach { choice ->
+                LyricTranslationProvider.entries.filter { it != LyricTranslationProvider.ORCHARD || account.signedIn }.forEach { choice ->
                     TextButton(onClick = {
                         onSettings(settings.copy(lyricTranslationProvider = choice))
                         sourceDialog = false

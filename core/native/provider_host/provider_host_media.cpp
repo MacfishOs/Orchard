@@ -51,6 +51,10 @@ Bundle qobuzBundle() {
   return {"qobuz-provider.qjc", "OrchardQobuzProvider", "Qobuz"};
 }
 
+Bundle appleMusicBundle() {
+  return {"apple-music-provider.qjc", "OrchardAppleMusicProvider", "Apple Music"};
+}
+
 void ProviderHost::defineMediaFunctions(JSValueConst global) {
   JS_SetPropertyStr(m_context, global, "__orchardHkdfSha256",
                     JS_NewCFunction(m_context, &ProviderHost::hkdfSha256, "__orchardHkdfSha256", 4));

@@ -25,6 +25,7 @@ import "../library"
 import "../offline"
 import "../playlist"
 import "../search"
+import "../../components/detail/heroTint.js" as HeroTint
 import Orchard
 import QtQuick
 import QtQuick.Window
@@ -42,6 +43,7 @@ Item {
     readonly property alias immersive: immersive
     readonly property alias home: home
     readonly property alias topBar: topBar
+    readonly property alias sidebar: sidebar
     readonly property alias offlineHomeLoader: offlineHomeLoader
     readonly property alias libraryLoader: libraryLoader
     readonly property alias searchLoader: searchLoader
@@ -49,9 +51,11 @@ Item {
     readonly property alias artistLoader: artistLoader
     readonly property alias playlistLoader: playlistLoader
     readonly property alias playerDock: playerDock
+    // Apple's hero tint holds the shell from the first frame, ahead of the song's artwork background.
+    readonly property bool artistTinted: scene.shell.currentPage === "artist" && !!HeroTint.pageRgb((OrchardArtist.detail || {}).heroTint)
     readonly property color collectionDeep: {
         if (scene.shell.currentPage === "artist")
-            return scene.paletteColor((OrchardArtist.palette || {}).deep, [15, 21, 18]);
+            return scene.paletteColor(HeroTint.pageRgb((OrchardArtist.detail || {}).heroTint) || (OrchardArtist.palette || {}).deep, [15, 21, 18]);
         if (scene.shell.currentPage === "playlist")
             return scene.paletteColor((OrchardPlaylist.palette || {}).deep, [15, 21, 18]);
         return scene.paletteColor((OrchardAlbum.palette || {}).deep, [15, 21, 18]);
@@ -102,6 +106,7 @@ Item {
         source: OrchardAppearance.immersiveBackground ? (OrchardPlayback.track.thumbnail || scene.detailThumbnail()) : ""
         visible: OrchardAppearance.immersiveBackground
         // The video ambient fully covers it on artist pages; no need to warp underneath.
+        throttled: OrchardWindowState.backgroundIdle
         running: scene.shell.visible && visible && !videoAmbient.covering && OrchardPlayback.playing && scene.Window.window !== null && scene.Window.window.visibility !== Window.Minimized && scene.Window.window.visibility !== Window.Hidden
         speed: OrchardAppearance.speed
         intensity: OrchardAppearance.intensity
@@ -113,7 +118,7 @@ Item {
     // the navigation and title/search area. Other pages keep the mesh.
     Rectangle {
         anchors.fill: parent
-        visible: (scene.shell.currentPage === "album" || scene.shell.currentPage === "artist" || scene.shell.currentPage === "playlist") && !scene.shell.immersiveReady
+        visible: ((scene.shell.currentPage === "album" || scene.shell.currentPage === "artist" || scene.shell.currentPage === "playlist") && !scene.shell.immersiveReady) || scene.artistTinted
 
         gradient: Gradient {
             GradientStop {
@@ -123,7 +128,7 @@ Item {
 
             GradientStop {
                 position: 1
-                color: scene.shell.currentPage === "artist" ? Qt.darker(scene.collectionDeep, 1.5) : scene.collectionInk
+                color: scene.shell.currentPage === "artist" ? scene.collectionDeep : scene.collectionInk
             }
 
         }
@@ -135,7 +140,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: scene.sidebarWidth
-        visible: (scene.shell.currentPage === "album" || scene.shell.currentPage === "artist" || scene.shell.currentPage === "playlist") && !scene.shell.immersiveReady
+        visible: ((scene.shell.currentPage === "album" || scene.shell.currentPage === "artist" || scene.shell.currentPage === "playlist") && !scene.shell.immersiveReady) || scene.artistTinted
 
         gradient: Gradient {
             orientation: Gradient.Horizontal
@@ -154,7 +159,7 @@ Item {
 
     }
 
-    // Colors of the artist page's backdrop video, in place of the artwork background.
+    // Video samples fill pages without an editorial background color.
     VideoAmbient {
         id: videoAmbient
 
@@ -162,18 +167,46 @@ Item {
 
         anchors.fill: parent
         colors: OrchardArtistVideo.ambient
-        opacity: scene.shell.currentPage === "artist" && OrchardAppearance.artistVideoBackdrop && ready ? 1 : 0
-        visible: opacity > 0
+        opacity: scene.shell.currentPage === "artist" && !scene.artistTinted && OrchardAppearance.artistVideoBackdrop && ready ? 1 : 0
+        visible: opacity > 0 && !scene.artistTinted
         Behavior on opacity { NumberAnimation { duration: 1200; easing.type: Easing.InOutQuad } }
     }
 
+    // Open pages and their history belong to the previous service; search reruns on its own.
+    Connections {
+        function onHomeSourceChanged() {
+            if (scene.shell.currentPage !== "search")
+                scene.shell.navigateTo("home");
+        }
+
+        target: OrchardHome
+    }
+
     NavigationSidebar {
+        id: sidebar
+
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: scene.sidebarWidth
         compact: scene.width < 1100
         currentPage: scene.shell.currentPage
+        onSpotlightRequested: scene.shell.openSpotlight(query)
+        onSearchChanged: function(query) {
+            scene.shell.searchQuery = query;
+            if (query.trim()) {
+                if (scene.shell.currentPage !== "search") {
+                    scene.shell.history = [];
+                    scene.shell.currentItem = ({});
+                    scene.shell.currentPage = "search";
+                }
+                OrchardSearch.clear();
+                scene.shell.searchDebounce.restart();
+            } else {
+                scene.shell.searchDebounce.stop();
+                OrchardSearch.clear();
+            }
+        }
         onPageRequested: function(page) {
             scene.shell.navigateTo(page);
         }
@@ -318,22 +351,8 @@ Item {
         anchors.top: parent.top
         anchors.topMargin: 32
         height: 62
-        onSearchChanged: function(query) {
-            scene.shell.searchQuery = query;
-            if (query.trim()) {
-                if (scene.shell.currentPage !== "search") {
-                    scene.shell.history = [];
-                    scene.shell.currentItem = ({
-                    });
-                    scene.shell.currentPage = "search";
-                }
-                OrchardSearch.clear();
-                scene.shell.searchDebounce.restart();
-            } else {
-                scene.shell.searchDebounce.stop();
-                OrchardSearch.clear();
-            }
-        }
+        // Floats over the artist page, which runs under it.
+        z: 1
         onSettingsRequested: scene.shell.openSettings()
         onDocsRequested: scene.shell.openDocs()
         onSupportRequested: scene.shell.openSupport("")
@@ -382,15 +401,18 @@ Item {
 
     Loader {
         id: artistLoader
-        anchors.left: home.left
-        anchors.right: home.right
-        anchors.top: topBar.bottom
+        anchors.left: parent.left
+        anchors.leftMargin: scene.sidebarWidth
+        anchors.right: parent.right
+        anchors.top: parent.top
         anchors.bottom: parent.bottom
         active: scene.shell.currentPage === "artist"
 
         sourceComponent: Component {
             ArtistView {
                 sharedBackground: true
+                topInset: topBar.y + topBar.height
+                edgeInset: 28
                 onBackRequested: scene.shell.goBack()
                 onAlbumRequested: function(album) {
                     scene.shell.openDetail("album", album);

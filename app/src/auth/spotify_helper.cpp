@@ -19,12 +19,11 @@
 
 #include "spotify_helper.h"
 #include "auth_session_channel.h"
+#include "spotify_page.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDebug>
-#include <QFile>
-#include <QJsonDocument>
 #include <QJsonObject>
 #include <QTimer>
 
@@ -41,79 +40,18 @@
 #include <QWebEngineScriptCollection>
 #endif
 
-namespace {
-
-// Spotify serves its web player to current desktop browsers only.
-constexpr auto kBrowserUserAgent =
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0";
-constexpr int kTokenTimeoutMs = 25000;
-
-void sendAndQuit(const QString &socketName, const QJsonObject &result) {
-  auto *client = new AuthSessionClient(qApp);
-  QObject::connect(client, &AuthSessionClient::finished, qApp,
-                   [](bool accepted) { QCoreApplication::exit(accepted ? 0 : 1); });
-  client->send(socketName, result);
-}
+using namespace spotify_page;
 
 #ifdef ORCHARD_WEBENGINE_COOKIE_ADAPTER
+namespace {
+
 bool isSpotifyCookie(const QNetworkCookie &cookie) {
   const QString domain = cookie.domain().toLower();
   return domain == QStringLiteral("spotify.com") || domain.endsWith(QStringLiteral(".spotify.com"));
 }
 
-// The web player trades its cookie for a signed token; read that answer as it
-// arrives instead of forging Spotify's request signature. Runs before page code.
-constexpr auto kTokenHook = R"JS(
-(() => {
-  const keep = (data) => {
-    window.__orchardSpotifyTokenSeen = data && data.isAnonymous === true ? 'anonymous' : 'signed-in';
-    if (data && data.accessToken && data.isAnonymous !== true)
-      window.__orchardSpotifyToken = {
-        accessToken: data.accessToken,
-        expiresAt: data.accessTokenExpirationTimestampMs || 0
-      };
-  };
-  const isToken = (url) => /\/api\/token(?:\?|$)/.test(String(url || ''));
-  // The player passes a URL object, which has no .url; String() gives its href.
-  const urlOf = (input) => typeof input === 'string' ? input : (input && input.url) || String(input);
-  const originalFetch = window.fetch;
-  if (originalFetch) {
-    window.fetch = function (input) {
-      const pending = originalFetch.apply(this, arguments);
-      try {
-        if (isToken(urlOf(input)))
-          pending.then((response) => response.clone().json()).then(keep, () => {});
-      } catch (_) {}
-      return pending;
-    };
-  }
-  const open = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function (method, url) {
-    if (isToken(url))
-      this.addEventListener('load', () => { try { keep(JSON.parse(this.responseText)); } catch (_) {} });
-    return open.apply(this, arguments);
-  };
-})();
-)JS";
-
-// Older players embedded the first token in the page instead of fetching it.
-constexpr auto kTokenRead = R"JS(
-JSON.stringify(window.__orchardSpotifyToken || (() => {
-  try {
-    const node = document.getElementById('session');
-    const data = node && JSON.parse(node.textContent);
-    return data && data.accessToken && data.isAnonymous !== true
-      ? { accessToken: data.accessToken, expiresAt: data.accessTokenExpirationTimestampMs || 0 }
-      : null;
-  } catch (_) {
-    return null;
-  }
-})())
-)JS";
-#endif
-
 } // namespace
+#endif
 
 int runSpotifyLogin(const QString &socketName) {
 #ifdef ORCHARD_WEBENGINE_COOKIE_ADAPTER
@@ -147,7 +85,7 @@ int runSpotifyLogin(const QString &socketName) {
     });
     store->deleteCookie(cookie);
     store->loadAllCookies();
-    sendAndQuit(socketName, {{QStringLiteral("spdc"), QString::fromLatin1(cookie.value())}});
+    sendSessionAndQuit(socketName, {{QStringLiteral("spdc"), QString::fromLatin1(cookie.value())}});
   });
   store->loadAllCookies();
   view.show();
@@ -159,11 +97,7 @@ int runSpotifyLogin(const QString &socketName) {
 }
 
 int runSpotifyToken(const QString &socketName) {
-  QFile input;
-  if (!input.open(stdin, QIODevice::ReadOnly))
-    return 1;
-  const QString spdc =
-      QJsonDocument::fromJson(input.readLine(16 * 1024)).object().value(QStringLiteral("spdc")).toString();
+  const QString spdc = spotify_page::readCookie();
   if (spdc.isEmpty())
     return 1;
 #ifdef ORCHARD_WEBENGINE_COOKIE_ADAPTER
@@ -210,7 +144,7 @@ int runSpotifyToken(const QString &socketName) {
         return;
       sent = true;
       poll.stop();
-      sendAndQuit(socketName, token);
+      sendSessionAndQuit(socketName, token);
     });
   });
   poll.start();

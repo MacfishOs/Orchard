@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -37,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.sfg.orchard.connect.BuildConfig
 import dev.sfg.orchard.mobile.discord.DiscordPresenceStatus
 import dev.sfg.orchard.mobile.lastfm.LastfmState
 import dev.sfg.orchard.mobile.listenbrainz.ListenBrainzState
@@ -51,6 +53,7 @@ internal enum class ConnectionService(val title: String, val blurb: String) {
     ListenBrainz("ListenBrainz", "Send listens with your user token"),
     Spotify("Spotify", "Canvas videos in the player"),
     Qobuz("Qobuz", "Lossless and Hi-Res audio"),
+    AppleMusic("Apple Music", "Connect your Apple Music subscription"),
     Orchard("Orchard Account", "Use your account across devices"),
 }
 
@@ -64,6 +67,7 @@ internal fun connectionStatuses(
     listenBrainzState: ListenBrainzState,
     qobuzStatus: QobuzStatus,
     orchardEmail: String,
+    appleMusicStatus: ConnectionStatus,
 ): Map<ConnectionService, ConnectionStatus> = mapOf(
     ConnectionService.Discord to when {
         !settings.discordPresenceEnabled -> ConnectionStatus(false, "Presence off")
@@ -100,6 +104,7 @@ internal fun connectionStatuses(
     } else {
         ConnectionStatus(false, ConnectionService.Orchard.blurb)
     },
+    ConnectionService.AppleMusic to appleMusicStatus,
 )
 
 /** Connected services first, the rest under Available with a Connect hint. */
@@ -138,6 +143,9 @@ private fun ConnectionRow(
     SettingsRow(
         title = service.title,
         subtitle = status.summary,
+        leading = if (service == ConnectionService.AppleMusic && BuildConfig.APPLE_MUSIC_LOGO) {
+            { AppleMusicLogo(Modifier.size(36.dp)) }
+        } else null,
         modifier = Modifier.clickable { onOpen(service) },
     ) {
         if (status.connected) {
@@ -201,6 +209,7 @@ internal fun ConnectionDetail(
     onDisconnectListenBrainz: () -> Unit,
     onConnectSpotify: () -> Unit,
     onConnectQobuz: () -> Unit,
+    onConnectAppleMusic: () -> Unit,
     onDisconnectQobuz: () -> Unit,
     onQobuzEnabledChange: (Boolean) -> Unit,
     onQobuzQualityChange: (QobuzQuality) -> Unit,
@@ -237,6 +246,7 @@ internal fun ConnectionDetail(
                     onQualityChange = onQobuzQualityChange,
                 )
                 ConnectionService.Orchard -> OrchardAccountSettingsCard()
+                ConnectionService.AppleMusic -> AppleMusicSettingsCard(onConnect = onConnectAppleMusic)
             }
         }
     }

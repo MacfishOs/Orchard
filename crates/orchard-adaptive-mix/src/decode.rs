@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 //! Bounded FFmpeg decoding through the host's authenticated loopback stream proxy.
 //! FFmpeg only decodes; `song` does every conversion, exactly as on Android.

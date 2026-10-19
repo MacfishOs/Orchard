@@ -105,23 +105,10 @@ if meson.is_cross_build() and host_machine.system() == 'windows'
       modules: ['Qt6::' + module])
   endforeach
   qt_dep = declare_dependency(dependencies: target_qt_deps)
-  qt_web_dep = declare_dependency(dependencies: [
-    dependency('Qt6WebView', method: 'cmake', modules: ['Qt6::WebView']),
-    dependency('Qt6WebViewQuick', method: 'cmake', modules: ['Qt6::WebViewQuick']),
-  ])
-  qt_webengine_dep = declare_dependency(dependencies: [
-    dependency('Qt6WebEngineCore', method: 'cmake', modules: ['Qt6::WebEngineCore']),
-    dependency('Qt6WebEngineQuick', method: 'cmake', modules: ['Qt6::WebEngineQuick']),
-  ])
   qt_entry_dep = dependency('Qt6Core', method: 'cmake',
     modules: ['Qt6::EntryPointPrivate'])
 else
   qt_dep = dependency('qt6', version: '>=6.8', modules: qt_modules, main: true)
-  qt_web_dep = dependency('qt6', version: '>=6.8', modules: ['WebView', 'WebViewQuick'])
-  if host_machine.system() == 'windows' or host_machine.system() == 'linux'
-    qt_webengine_dep = dependency('qt6', version: '>=6.8',
-      modules: ['WebEngineCore', 'WebEngineQuick'])
-  endif
   qt_entry_dep = []
 endif
 qt_gui_private = dependency('Qt6GuiPrivate', method: 'cmake', modules: ['Qt6::GuiPrivate'])
@@ -130,8 +117,13 @@ platform_deps = [thread_dep]
 # DBus (Linux) and IOKit (macOS) back the screen wake lock.
 if host_machine.system() == 'linux'
   platform_deps += [cpp.find_library('dl'), cpp.find_library('m'), dependency('qt6', modules: ['DBus'])]
+  # X11 visibility events detect a fully covered window.
+  xcb_dep = dependency('xcb', required: false)
+  if xcb_dep.found()
+    platform_deps += [xcb_dep]
+  endif
 elif host_machine.system() == 'windows'
-  platform_deps += [cpp.find_library('dbghelp'), cpp.find_library('shell32')]
+  platform_deps += [cpp.find_library('dbghelp'), cpp.find_library('shell32'), cpp.find_library('dwmapi')]
 elif host_machine.system() == 'darwin'
   platform_deps += [dependency('appleframeworks', modules: ['IOKit', 'CoreFoundation'])]
 endif
@@ -238,6 +230,13 @@ qobuz_bundle = custom_target('Qobuz provider bundle',
     '--', 'esbuild', source_root / 'providers/qobuz/src/runtime.js', '--bundle',
     '--platform=browser', '--format=iife', '--target=es2023',
     '--legal-comments=none', '--outfile=' + meson.current_build_dir() / 'qobuz-provider.js'])
+apple_music_bundle = custom_target('Apple Music provider bundle',
+  input: files(apple_music_sources + ['providers/youtube/package-lock.json']),
+  output: 'apple-music-provider.js',
+  command: [npm, '--prefix', source_root / 'providers/youtube', 'exec', '--offline',
+    '--', 'esbuild', source_root / 'providers/apple-music/src/runtime.js', '--bundle',
+    '--platform=browser', '--format=iife', '--target=es2023',
+    '--legal-comments=none', '--outfile=' + meson.current_build_dir() / 'apple-music-provider.js'])
 youtube_bytecode = custom_target('YouTube provider bytecode', input: youtube_bundle,
   output: 'youtube-provider.qjc',
   command: [qjsc, '-b', '-C', '-n', 'youtube-provider.js', '-o', '@OUTPUT@', '@INPUT@'])
@@ -247,9 +246,12 @@ po_bytecode = custom_target('YouTube PO minter bytecode', input: po_bundle[0],
 qobuz_bytecode = custom_target('Qobuz provider bytecode', input: qobuz_bundle,
   output: 'qobuz-provider.qjc',
   command: [qjsc, '-b', '-C', '-n', 'qobuz-provider.js', '-o', '@OUTPUT@', '@INPUT@'])
+apple_music_bytecode = custom_target('Apple Music provider bytecode', input: apple_music_bundle,
+  output: 'apple-music-provider.qjc',
+  command: [qjsc, '-b', '-C', '-n', 'apple-music-provider.js', '-o', '@OUTPUT@', '@INPUT@'])
 
 provider_resources = custom_target('provider resources',
-  input: [youtube_bytecode, po_bytecode, po_bundle[1], qobuz_bytecode],
+  input: [youtube_bytecode, po_bytecode, po_bundle[1], qobuz_bytecode, apple_music_bytecode],
   output: 'qrc_provider_resources.cpp',
   command: [python, files('scripts/meson-rcc.py'), '--rcc', rcc,
     '--name', 'provider_resources', '--prefix', '/providers',
@@ -280,7 +282,9 @@ docs_qrc = qt6.compile_resources(sources: files('meson/app_docs.qrc'), extra_arg
 release_notes_qrc = qt6.compile_resources(sources: files('meson/release_notes.qrc'), extra_args: rcc_args)
 assets_qrc = qt6.compile_resources(sources: files('meson/qml_assets.qrc'), extra_args: rcc_args)
 qml_files_qrc = qt6.compile_resources(sources: files('meson/qml_files.qrc'), extra_args: rcc_args)
-auth_qrc = qt6.compile_resources(sources: files('meson/auth_qml.qrc'), extra_args: rcc_args)
+# Windows sign-in hosts WebView2 directly; other platforms use QtWebView.
+auth_qrc = qt6.compile_resources(sources: files(host_machine.system() == 'windows'
+  ? 'meson/auth_qml_windows.qrc' : 'meson/auth_qml.qrc'), extra_args: rcc_args)
 
 app_inc = include_directories('app/src', 'app/src/auth',
   'app/src/appearance', 'core/native', 'vendor/litert/include')
@@ -289,6 +293,9 @@ app_dependencies = [qt_dep, qt_gui_private, connect_dep, rust_dep, discord_sdk_d
 app_args = ['-DORCHARD_VERSION="' + meson.project_version() + '"']
 if host_machine.system() == 'windows' or host_machine.system() == 'linux'
   app_args += ['-DORCHARD_NATIVE_COOKIE_AUTH']
+endif
+if host_machine.system() == 'linux' and xcb_dep.found()
+  app_args += ['-DORCHARD_HAVE_XCB']
 endif
 app_moc = qt6.compile_moc(headers: app_moc_headers,
   sources: ['app/src/providers/runtime/provider_runtime.cpp'],
@@ -380,17 +387,35 @@ orchard = executable('orchard', files(app_executable_sources) + exe_moc +
   link_depends: adaptive_stage,
   win_subsystem: 'windows', install: true)
 
-auth_dependencies = [qt_dep, qt_web_dep, rust_dep, qjs_dep, keychain_dep] + platform_deps
+auth_dependencies = [qt_dep, rust_dep, qjs_dep, keychain_dep] + platform_deps
 auth_args = []
-if host_machine.system() == 'windows' or host_machine.system() == 'linux'
-  auth_dependencies += [qt_webengine_dep]
-  auth_args += ['-DORCHARD_WEBENGINE_COOKIE_ADAPTER', '-DORCHARD_NATIVE_COOKIE_AUTH']
+auth_sources = helper_sources
+auth_moc_headers = helper_moc_headers
+if host_machine.system() == 'windows'
+  auth_sources += helper_webview2_sources
+  auth_moc_headers += helper_webview2_moc_headers
+  auth_dependencies += [declare_dependency(
+    include_directories: include_directories('vendor/webview2/include'),
+    dependencies: [cpp.find_library('ole32'), cpp.find_library('shlwapi'),
+      cpp.find_library('user32')])]
+  auth_args += ['-DORCHARD_WEBVIEW2_AUTH', '-DORCHARD_NATIVE_COOKIE_AUTH']
+  webview2_arch = host_machine.cpu_family() == 'aarch64' ? 'arm64' : 'x64'
+  configure_file(input: 'vendor/webview2/lib' / webview2_arch / 'WebView2Loader.dll',
+    output: 'WebView2Loader.dll', copy: true, install: true, install_dir: get_option('bindir'))
+else
+  auth_sources += helper_webengine_sources
+  auth_dependencies += [dependency('qt6', version: '>=6.8', modules: ['WebView', 'WebViewQuick'])]
+  if host_machine.system() == 'linux'
+    auth_dependencies += [dependency('qt6', version: '>=6.8',
+      modules: ['WebEngineCore', 'WebEngineQuick'])]
+    auth_args += ['-DORCHARD_WEBENGINE_COOKIE_ADAPTER', '-DORCHARD_NATIVE_COOKIE_AUTH']
+  endif
 endif
-helper_moc = qt6.compile_moc(headers: helper_moc_headers,
+helper_moc = qt6.compile_moc(headers: auth_moc_headers,
   sources: ['app/src/providers/runtime/provider_runtime.cpp'],
   include_directories: app_inc, dependencies: auth_dependencies,
   extra_args: auth_args)
-auth_helper = executable('orchard-auth-helper', files(helper_sources) + helper_moc +
+auth_helper = executable('orchard-auth-helper', files(auth_sources) + helper_moc +
   auth_qrc + [auth_provider_resources],
   include_directories: app_inc,
   dependencies: auth_dependencies + [qt_entry_dep], cpp_args: auth_args,
@@ -411,6 +436,24 @@ if get_option('tests')
   test('orchard_qml_startup', qml_startup_test, timeout: 60,
     env: ['QT_QPA_PLATFORM=offscreen'])
   qt_test_dep = dependency('qt6', modules: ['Test'])
+  page_memory_moc = qt6.compile_moc(sources: ['tests/page_memory_test.cpp'],
+    dependencies: [qt_test_dep, qt_dep])
+  page_memory_test = executable('orchard_page_memory_tests',
+    files('tests/page_memory_test.cpp') + page_memory_moc,
+    dependencies: [qt_test_dep, qt_dep],
+    cpp_args: ['-DORCHARD_SOURCE_DIR="' + source_root + '"'])
+  test('orchard_page_memory', page_memory_test, timeout: 15)
+  backdrop_test_moc = qt6.compile_moc(sources: ['tests/fullscreen_backdrop_test.cpp'],
+    headers: ['app/src/appearance/kawarp_background.h'],
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
+  backdrop_test = executable('orchard_fullscreen_backdrop_tests',
+    files('tests/fullscreen_backdrop_test.cpp') + backdrop_test_moc,
+    objects: [orchard.extract_objects(files('app/src/appearance/kawarp_background.cpp')),
+      app_lib.extract_objects(files('app/src/appearance/kawarp_artwork.cpp'))],
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep],
+    cpp_args: ['-DORCHARD_SOURCE_DIR="' + source_root + '"'])
+  test('orchard_fullscreen_backdrop', backdrop_test, timeout: 15,
+    env: ['QT_QPA_PLATFORM=offscreen'])
   instance_test_moc = qt6.compile_moc(sources: ['tests/instance_coordinator_test.cpp'],
     include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
   instance_test = executable('orchard_instance_tests',
@@ -427,6 +470,7 @@ if get_option('tests')
     ['playback_recovery', 'tests/playback_recovery_test.cpp'],
     ['songlink', 'tests/songlink_test.cpp'],
     ['animated_artwork', 'tests/animated_artwork_test.cpp'],
+    ['artwork_video_cache', 'tests/artwork_video_cache_test.cpp'],
     ['artwork_sampler', 'tests/artwork_sampler_test.cpp'],
     ['streaming_services', 'tests/streaming_services_test.cpp'],
     ['slop_detector', 'tests/slop_detector_test.cpp'],
@@ -439,7 +483,9 @@ if get_option('tests')
     ['music_video_match', 'tests/music_video_match_test.cpp'],
     ['letterbox', 'tests/letterbox_test.cpp'],
     ['video_ambient', 'tests/video_ambient_test.cpp'],
+    ['artist_artwork', 'tests/artist_artwork_test.cpp'],
     ['audiodb_artist', 'tests/audiodb_artist_test.cpp'],
+    ['artist_sections', 'tests/artist_sections_test.cpp'],
     ['lyrics_translation', 'tests/lyrics_translation_test.cpp'],
   ]
   foreach spec : app_test_specs

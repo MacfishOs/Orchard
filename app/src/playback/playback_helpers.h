@@ -25,6 +25,11 @@
 // Shared by the PlaybackController translation units.
 // Three helpers, one header, zero custody disputes.
 namespace {
+inline bool isAppleTrack(const QVariantMap &track) {
+  return track.value(QStringLiteral("source")).toString() == QStringLiteral("apple_music") ||
+         track.value(QStringLiteral("playbackSource")).toString() == QStringLiteral("apple_music") ||
+         track.value(QStringLiteral("id")).toString().startsWith(QStringLiteral("am."));
+}
 // Fisher–Yates: every remaining song gets a fair ticket to the dance floor.
 inline void shuffleTracks(QVariantList &tracks, int first = 0) {
   for (int i = tracks.size() - 1; i > first; --i)

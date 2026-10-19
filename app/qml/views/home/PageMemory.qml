@@ -20,7 +20,7 @@
 import Orchard
 import QtQuick
 
-// Saves the visited page and hands it back after sign-in. Stored with the queue, so it follows the same switch.
+// Saves the visited page and hands it back after session restoration. Stored with the queue, so it follows the same switch.
 QtObject {
     id: root
 
@@ -31,11 +31,14 @@ QtObject {
     property string filter: "all"
     // Saves stay off until the stored page is read, so the startup home page can't overwrite it.
     property bool restored: false
+    readonly property bool sessionsReady: OrchardAuth.isSignedIn
+                                          && (OrchardHome.homeSource !== "apple_music"
+                                              || OrchardAppleMusic.status !== "restoring")
 
     signal restoreRequested(var saved)
 
     function restore() {
-        if (restored)
+        if (restored || !sessionsReady)
             return ;
         restored = true;
         const saved = OrchardPlayback.restoredPage();
@@ -52,25 +55,9 @@ QtObject {
     onItemChanged: schedule()
     onQueryChanged: schedule()
     onFilterChanged: schedule()
-    Component.onCompleted: {
-        if (OrchardAuth.isSignedIn)
-            restore();
-    }
-
-    function restoreIfSignedIn() {
-        if (OrchardAuth.isSignedIn)
-            restore();
-    }
-
-    // Detail pages need a session, so the restore waits for sign-in. Patience, grasshopper.
     // Deferred because the controllers clear themselves on the sessionChanged that follows sign-in.
-    property Connections auth: Connections {
-        function onStatusChanged() {
-            Qt.callLater(root.restoreIfSignedIn);
-        }
-
-        target: OrchardAuth
-    }
+    onSessionsReadyChanged: Qt.callLater(root.restore)
+    Component.onCompleted: Qt.callLater(root.restore)
 
     // Coalesce typing and rapid navigation into one write.
     property Timer saveTimer: Timer {

@@ -25,6 +25,8 @@ import QtQuick.Layouts
 SettingsSection {
     id: root
 
+    property bool accountSignedIn: false
+    property var providerValues: accountSignedIn ? ["local", "openai", "claude", "gemini", "custom", "orchard"] : ["local", "openai", "claude", "gemini", "custom"]
     property bool translationEnabled: true
     property string quality: "standard"
     property string provider: "local"
@@ -53,6 +55,7 @@ SettingsSection {
         title: qsTr("Translate lyrics to English")
         description: root.provider === "local"
             ? qsTr("Orchard detects each song's language and translates it on this computer. Lyrics never leave your computer.")
+            : root.provider === "orchard" ? qsTr("Gemma 4 translates up to 10 songs per account and IP each day. Resets at 00:00 UTC. Cached songs are free.")
             : qsTr("Orchard sends lyric lines to your selected API for translation. Your provider may charge for requests.")
 
         SettingsSwitch {
@@ -70,14 +73,17 @@ SettingsSection {
         SettingsSelect {
             id: providerPicker
             Layout.preferredWidth: 185
-            model: [qsTr("Local"), qsTr("OpenAI"), qsTr("Claude"), qsTr("Gemini"), qsTr("Custom API")]
-            currentIndex: ["local", "openai", "claude", "gemini", "custom"].indexOf(root.provider)
+            model: root.accountSignedIn
+                ? [qsTr("Local"), qsTr("OpenAI"), qsTr("Claude"), qsTr("Gemini"), qsTr("Custom API"), qsTr("Orchard Account")]
+                : [qsTr("Local"), qsTr("OpenAI"), qsTr("Claude"), qsTr("Gemini"), qsTr("Custom API")]
+            currentIndex: root.providerValues.indexOf(root.provider)
+            displayText: currentIndex < 0 ? qsTr("Choose source") : currentText
             Accessible.name: qsTr("Translation source")
         }
     }
 
     SettingsRow {
-        visible: root.provider !== "local"
+        visible: root.provider !== "local" && root.provider !== "orchard"
         iconName: "sparkles"
         title: qsTr("Model")
         description: qsTr("Enter a model ID supported by your API provider.")
@@ -107,7 +113,7 @@ SettingsSection {
     }
 
     SettingsRow {
-        visible: root.provider !== "local"
+        visible: root.provider !== "local" && root.provider !== "orchard"
         iconName: "keyboard"
         title: qsTr("API key")
         description: root.hasApiKey ? qsTr("Saved in your operating system keychain.")

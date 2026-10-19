@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 internal class SlopScanner(context: Context, private val graph: OrchardGraph, scope: CoroutineScope) {
     private val window = MutableStateFlow<List<Track>>(emptyList())
@@ -49,18 +50,23 @@ internal class SlopScanner(context: Context, private val graph: OrchardGraph, sc
     private val model by lazy { context.assets.open("slop/fakeprint_lr.f32").use { it.readBytes() } }
     private val downloads = SlopDownload(graph.http.newBuilder().callTimeout(30, TimeUnit.SECONDS).build())
     private val failed = mutableSetOf<String>()
-    private data class Request(val tracks: List<Track>, val action: SlopAction, val online: Boolean, val signedIn: Boolean)
+    private val labelFailed = mutableSetOf<String>()
+    private data class Request(
+        val tracks: List<Track>, val action: SlopAction, val audioScan: Boolean, val online: Boolean, val signedIn: Boolean,
+    )
     private val job = scope.launch(Dispatchers.IO) {
         directory.deleteRecursively()
         graph.slopVerdicts.load()
-        combine(window, graph.settings.settings.map { it.slopAction }.distinctUntilChanged(),
-            graph.networkMonitor.isOnline, graph.auth.state) { tracks, action, online, auth ->
-            Request(tracks, action, online, auth is AuthState.SignedIn)
-        }.distinctUntilChanged().collectLatest { (tracks, action, online, signedIn) ->
-            if (action == SlopAction.OFF || !SlopNative.available) return@collectLatest
+        combine(window, graph.settings.settings.map { it.slopAction to it.slopAudioScan }.distinctUntilChanged(),
+            graph.networkMonitor.isOnline, graph.auth.state) { tracks, (action, audioScan), online, auth ->
+            Request(tracks, action, audioScan, online, auth is AuthState.SignedIn)
+        }.distinctUntilChanged().collectLatest { (tracks, action, audioScan, online, signedIn) ->
+            if (action == SlopAction.OFF) return@collectLatest
+            if (online) checkLabels(tracks)
+            if (!audioScan || !SlopNative.available) return@collectLatest
             for (track in tracks) {
                 currentCoroutineContext().ensureActive()
-                if (isLocalTrackId(track.id) || track.id.isBlank() ||
+                if (isLocalTrackId(track.id) || track.id.isBlank() || graph.slopVerdicts.labels.value[track.id] == true ||
                     graph.slopVerdicts.probabilities.value.containsKey(track.id) || track.id in failed) continue
                 val offline = graph.downloads.getDownloadedFile(track.id)?.takeIf { it.isFile }
                 if (offline == null && (!online || !signedIn)) continue
@@ -82,6 +88,23 @@ internal class SlopScanner(context: Context, private val graph: OrchardGraph, sc
     }
 
     fun update(tracks: List<Track>) { window.value = tracks }
+
+    private suspend fun checkLabels(tracks: List<Track>) {
+        for (track in tracks) {
+            currentCoroutineContext().ensureActive()
+            if (isLocalTrackId(track.id) || track.id.isBlank() ||
+                graph.slopVerdicts.labels.value.containsKey(track.id) || track.id in labelFailed) continue
+            try {
+                val reply = graph.youtube.invoke("catalog.aiLabel", JSONObject().put("videoId", track.id))
+                graph.slopVerdicts.recordLabel(track.id, reply.optBoolean("ai"))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                labelFailed += track.id
+                Log.d("OrchardSlop", "Label check failed for ${track.id}", error)
+            }
+        }
+    }
     fun close() { job.cancel() }
 
     private suspend fun analyze(id: String, file: File) {

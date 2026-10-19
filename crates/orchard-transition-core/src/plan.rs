@@ -1,68 +1,8 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
-//! What the caller asks for: either a region to plan inside, or an exact choice already made.
+//! The exact transition the shared planner chose, in the shape earmark renders.
 
-use earmark::{
-    RegionConstraint, SelectedTransition, TimeWindow, TransitionConstraints, TransitionStrategy,
-};
-
-/// Where a transition may begin and end on one track. Each window needs both of its bounds; a
-/// half-specified window is treated as absent.
-///
-/// Ends, not starts, are what pin a mix to a cue: "finish on the incoming track's drop" is a
-/// constraint on the end. A window **replaces** the configured search region rather than narrowing
-/// it, so a cue outside the default 45 s window is still honoured.
-#[derive(Clone, Debug, Default)]
-pub struct RegionWindow {
-    pub start_earliest: Option<f64>,
-    pub start_latest: Option<f64>,
-    pub end_earliest: Option<f64>,
-    pub end_latest: Option<f64>,
-}
-
-impl RegionWindow {
-    fn to_earmark(&self) -> RegionConstraint {
-        RegionConstraint {
-            start_within: self
-                .start_earliest
-                .zip(self.start_latest)
-                .map(|(a, b)| TimeWindow::new(a, b)),
-            end_within: self
-                .end_earliest
-                .zip(self.end_latest)
-                .map(|(a, b)| TimeWindow::new(a, b)),
-        }
-    }
-}
-
-/// A transition the engine still has to choose, inside the caller's bounds.
-#[derive(Clone, Debug, Default)]
-pub struct TransitionRequest {
-    pub outgoing: RegionWindow,
-    pub incoming: RegionWindow,
-    /// Restricts the transition length. Values the engine does not already allow are ignored,
-    /// so a list of only such values admits nothing and the engine refuses.
-    pub beat_lengths: Option<Vec<u32>>,
-    /// Per-instant depth for the outgoing filter ride, one value in `0..=1` per evenly spaced
-    /// control point spanning the **outgoing PCM supplied**, first sample to last. Absent leaves
-    /// the ride at full depth.
-    pub duck_curve: Option<Vec<f64>>,
-    /// Attach every scored candidate to the result's summary.
-    pub diagnostics: bool,
-}
-
-impl TransitionRequest {
-    pub(crate) fn constraints(&self) -> TransitionConstraints {
-        TransitionConstraints {
-            outgoing: self.outgoing.to_earmark(),
-            incoming: self.incoming.to_earmark(),
-            beat_lengths: self
-                .beat_lengths
-                .clone()
-                .filter(|lengths| !lengths.is_empty()),
-        }
-    }
-}
+use earmark::{SelectedTransition, TransitionStrategy};
 
 /// A transition the caller has already chosen in full.
 #[derive(Clone, Debug)]
@@ -85,6 +25,9 @@ pub struct SelectedPlan {
     pub bed_position: Option<f64>,
     pub bass_swap_fraction: Option<f64>,
     pub filter_sweep: Option<f64>,
+    /// Fractions of the overlap each side's fade moves over; `None` fades across all of it.
+    pub outgoing_fade_span: Option<(f64, f64)>,
+    pub incoming_fade_span: Option<(f64, f64)>,
 }
 
 impl SelectedPlan {
@@ -151,6 +94,8 @@ mod tests {
             bed_position: None,
             bass_swap_fraction: None,
             filter_sweep: None,
+            outgoing_fade_span: None,
+            incoming_fade_span: None,
         }
     }
 
@@ -194,28 +139,5 @@ mod tests {
             selected("surprise_drop").to_earmark().unwrap_err(),
             "unknown transition strategy 'surprise_drop'"
         );
-    }
-
-    /// A window needs both bounds to mean anything, and an all-absent region must constrain
-    /// nothing rather than collapsing to a zero-width window at the origin.
-    #[test]
-    fn a_half_specified_window_is_treated_as_absent() {
-        let region = RegionWindow {
-            start_earliest: Some(10.0),
-            ..RegionWindow::default()
-        }
-        .to_earmark();
-        assert!(region.start_within.is_none());
-        assert!(region.end_within.is_none());
-        assert!(RegionWindow::default().to_earmark().is_unconstrained());
-    }
-
-    #[test]
-    fn an_empty_beat_length_list_is_no_opinion_rather_than_no_transition() {
-        let request = TransitionRequest {
-            beat_lengths: Some(Vec::new()),
-            ..TransitionRequest::default()
-        };
-        assert!(request.constraints().beat_lengths.is_none());
     }
 }

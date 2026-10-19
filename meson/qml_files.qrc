@@ -17,6 +17,8 @@
     <file alias="app/qml/components/settings/AboutSection.qml">../app/qml/components/settings/AboutSection.qml</file>
     <file alias="app/qml/components/settings/Discord.qml">../app/qml/components/settings/Discord.qml</file>
     <file alias="app/qml/components/settings/LastFm.qml">../app/qml/components/settings/LastFm.qml</file>
+    <file alias="app/qml/components/settings/AppleMusic.qml">../app/qml/components/settings/AppleMusic.qml</file>
+    <file alias="app/qml/components/settings/AppleMusicForm.ui.qml">../app/qml/components/settings/AppleMusicForm.ui.qml</file>
     <file alias="app/qml/components/settings/Qobuz.qml">../app/qml/components/settings/Qobuz.qml</file>
     <file alias="app/qml/components/settings/Spotify.qml">../app/qml/components/settings/Spotify.qml</file>
     <file alias="app/qml/components/ExplicitBadge.qml">../app/qml/components/ExplicitBadge.qml</file>
@@ -60,6 +62,7 @@
     <file alias="app/qml/components/home/HoverArtwork.qml">../app/qml/components/home/HoverArtwork.qml</file>
     <file alias="app/qml/components/home/ImmersiveBackground.qml">../app/qml/components/home/ImmersiveBackground.qml</file>
     <file alias="app/qml/components/home/NavigationSidebar.qml">../app/qml/components/home/NavigationSidebar.qml</file>
+    <file alias="app/qml/components/home/SidebarSearch.qml">../app/qml/components/home/SidebarSearch.qml</file>
     <file alias="app/qml/components/home/MediaCard.qml">../app/qml/components/home/MediaCard.qml</file>
     <file alias="app/qml/components/home/ShelfView.qml">../app/qml/components/home/ShelfView.qml</file>
     <file alias="app/qml/components/home/FeatureCarousel.qml">../app/qml/components/home/FeatureCarousel.qml</file>
@@ -93,11 +96,11 @@
     <file alias="app/qml/components/detail/CollageArtwork.qml">../app/qml/components/detail/CollageArtwork.qml</file>
     <file alias="app/qml/components/detail/CollectionTrackHeader.qml">../app/qml/components/detail/CollectionTrackHeader.qml</file>
     <file alias="app/qml/components/detail/CollectionTrackRow.qml">../app/qml/components/detail/CollectionTrackRow.qml</file>
+    <file alias="app/qml/components/detail/ArtistSongCell.qml">../app/qml/components/detail/ArtistSongCell.qml</file>
     <file alias="app/qml/components/detail/CollectionStickyBar.qml">../app/qml/components/detail/CollectionStickyBar.qml</file>
     <file alias="app/qml/components/detail/PageLoadState.qml">../app/qml/components/detail/PageLoadState.qml</file>
     <file alias="app/qml/components/detail/ArtistBackdropVideo.qml">../app/qml/components/detail/ArtistBackdropVideo.qml</file>
     <file alias="app/qml/components/detail/ArtistHero.ui.qml">../app/qml/components/detail/ArtistHero.ui.qml</file>
-    <file alias="app/qml/components/detail/ArtistHeroCredits.ui.qml">../app/qml/components/detail/ArtistHeroCredits.ui.qml</file>
     <file alias="app/qml/components/detail/ArtistHeroGhostButton.ui.qml">../app/qml/components/detail/ArtistHeroGhostButton.ui.qml</file>
     <file alias="app/qml/views/artist/ArtistView.qml">../app/qml/views/artist/ArtistView.qml</file>
     <file alias="app/qml/views/artist/ArtistViewForm.ui.qml">../app/qml/views/artist/ArtistViewForm.ui.qml</file>
@@ -169,6 +172,8 @@
     <file alias="app/qml/components/player/FullscreenIconButton.ui.qml">../app/qml/components/player/FullscreenIconButton.ui.qml</file>
     <file alias="app/qml/components/player/FullscreenPlayerForm.ui.qml">../app/qml/components/player/FullscreenPlayerForm.ui.qml</file>
     <file alias="app/qml/components/player/FullscreenLayout.js">../app/qml/components/player/FullscreenLayout.js</file>
+    <file alias="app/qml/components/detail/heroTint.js">../app/qml/components/detail/heroTint.js</file>
+    <file alias="app/qml/components/detail/hlsVariant.js">../app/qml/components/detail/hlsVariant.js</file>
     <file alias="app/qml/components/player/FullscreenQueuePane.ui.qml">../app/qml/components/player/FullscreenQueuePane.ui.qml</file>
     <file alias="app/qml/components/player/FullscreenQueueRow.ui.qml">../app/qml/components/player/FullscreenQueueRow.ui.qml</file>
     <file alias="app/qml/components/player/FullscreenTrackInfo.ui.qml">../app/qml/components/player/FullscreenTrackInfo.ui.qml</file>

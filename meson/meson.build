@@ -6,6 +6,7 @@ app_sources = [
   'app/src/appearance/video_ambient.cpp',
   'app/src/appearance/video_ambient.h',
   'app/src/appearance/appearance_settings.h',
+  'app/src/appearance/animated_artwork_apple.cpp',
   'app/src/appearance/animated_artwork_service.cpp',
   'app/src/appearance/animated_artwork_hls.cpp',
   'app/src/appearance/animated_artwork_matching.cpp',
@@ -15,6 +16,8 @@ app_sources = [
   'app/src/appearance/animated_artwork_store.h',
   'app/src/appearance/animated_artwork_service.h',
   'app/src/appearance/artwork_sampler.cpp',
+  'app/src/appearance/artwork_video_cache.cpp',
+  'app/src/appearance/artwork_video_cache.h',
   'app/src/appearance/artwork_sampler.h',
   'app/src/appearance/kawarp_artwork.cpp',
   'app/src/appearance/kawarp_artwork.h',
@@ -41,6 +44,7 @@ app_sources = [
   'app/src/home/home_controller.cpp',
   'app/src/home/home_controller.h',
   'app/src/album/album_controller.cpp',
+  'app/src/album/album_sections.cpp',
   'app/src/album/audiodb_artist.cpp',
   'app/src/album/audiodb_artist.h',
   'app/src/playlist/playlist_artwork.cpp',
@@ -62,6 +66,11 @@ app_sources = [
   'app/src/integrations/integrations.h',
   'app/src/integrations/lastfm.cpp',
   'app/src/integrations/lastfm.h',
+  'app/src/integrations/apple_music.cpp',
+  'app/src/integrations/apple_music.h',
+  'app/src/integrations/apple_music_catalog.cpp',
+  'app/src/integrations/catalog_source.cpp',
+  'app/src/integrations/catalog_source.h',
   'app/src/integrations/spotify_canvas.cpp',
   'app/src/integrations/spotify_canvas.h',
   'app/src/integrations/spotify_canvas_api.cpp',
@@ -72,6 +81,8 @@ app_sources = [
   'core/native/translation/lyric_language.cpp',
   'core/native/translation/lyric_language.h',
   'app/src/lyrics/translation/lyrics_translator.cpp',
+  'app/src/lyrics/translation/lyrics_remote_translation.cpp',
+  'app/src/lyrics/translation/lyrics_account_translation.cpp',
   'app/src/lyrics/translation/lyrics_translator.h',
   'app/src/lyrics/translation/remote_translation.cpp',
   'app/src/lyrics/translation/remote_translation.h',
@@ -124,6 +135,8 @@ app_sources = [
   'app/src/playback/audio_pipeline.h',
   'app/src/playback/best_mix_controller.cpp',
   'app/src/playback/best_mix_controller.h',
+  'app/src/playback/ai_labels.cpp',
+  'app/src/playback/ai_labels.h',
   'app/src/playback/slop_detector.cpp',
   'app/src/playback/slop_detector.h',
   'core/native/slop/slop_fingerprint.cpp',
@@ -207,6 +220,10 @@ app_sources = [
   'app/src/system_tray.h',
   'app/src/update/bootstrapper_client.cpp',
   'app/src/update/bootstrapper_client.h',
+  'app/src/heap_trim.cpp',
+  'app/src/heap_trim.h',
+  'app/src/window_occlusion.cpp',
+  'app/src/window_occlusion.h',
   'app/src/window_state.cpp',
   'app/src/window_state.h',
 ]
@@ -233,8 +250,10 @@ helper_sources = [
   'app/src/auth/auth_session_channel.h',
   'app/src/auth/browser_cookie_adapter.cpp',
   'app/src/auth/browser_cookie_adapter.h',
-  'app/src/auth/spotify_helper.cpp',
   'app/src/auth/spotify_helper.h',
+  'app/src/auth/spotify_page.h',
+  'app/src/auth/apple_music_helper.h',
+  'app/src/auth/apple_music_page.h',
   'app/src/providers/runtime/provider_runtime.cpp',
   'app/src/providers/runtime/provider_runtime.h',
   'core/native/provider_host/provider_host.cpp',
@@ -243,6 +262,28 @@ helper_sources = [
   'app/src/providers/youtube/youtube_provider.cpp',
   'app/src/providers/youtube/youtube_provider.h',
   'app/src/orchard_core.h',
+]
+
+helper_webengine_sources = [
+  'app/src/auth/spotify_helper.cpp',
+  'app/src/auth/apple_music_helper.cpp',
+]
+
+helper_webview2_sources = [
+  'app/src/auth/spotify_helper_webview2.cpp',
+  'app/src/auth/apple_music_helper_webview2.cpp',
+  'app/src/auth/webview2_cookies.cpp',
+  'app/src/auth/webview2_environment.cpp',
+  'app/src/auth/webview2_item.cpp',
+  'app/src/auth/webview2_item.h',
+  'app/src/auth/webview2_native.h',
+  'app/src/auth/webview2_view.cpp',
+  'app/src/auth/webview2_view.h',
+]
+
+helper_webview2_moc_headers = [
+  'app/src/auth/webview2_item.h',
+  'app/src/auth/webview2_view.h',
 ]
 
 subdir('qml')
@@ -299,6 +340,7 @@ rust_sources = [
   'crates/earmark/src/analysis/beat/tempo.rs',
   'crates/earmark/src/analysis/beat/tests.rs',
   'crates/earmark/src/analysis/beat/viterbi.rs',
+  'crates/earmark/src/analysis/chroma.rs',
   'crates/earmark/src/analysis/energy.rs',
   'crates/earmark/src/analysis/fft.rs',
   'crates/earmark/src/analysis/loudness.rs',
@@ -342,6 +384,8 @@ rust_sources = [
   'crates/orchard-adaptive-mix/src/analysis.rs',
   'crates/orchard-adaptive-mix/src/beats.rs',
   'crates/orchard-adaptive-mix/src/best_mix.rs',
+  'crates/orchard-adaptive-mix/src/best_mix_cost.rs',
+  'crates/orchard-adaptive-mix/src/best_mix_order.rs',
   'crates/orchard-adaptive-mix/src/decode.rs',
   'crates/orchard-adaptive-mix/src/downmix.rs',
   'crates/orchard-adaptive-mix/src/evidence.rs',
@@ -365,10 +409,8 @@ rust_sources = [
   'crates/orchard-system-media/src/lib.rs',
   'crates/orchard-transition-core/Cargo.toml',
   'crates/orchard-transition-core/src/curve.rs',
-  'crates/orchard-transition-core/src/duck.rs',
   'crates/orchard-transition-core/src/lib.rs',
   'crates/orchard-transition-core/src/plan.rs',
-  'crates/orchard-transition-core/src/source.rs',
   'crates/orchard-transition-mobile/Cargo.toml',
   'crates/orchard-transition-mobile/src/lib.rs',
   'crates/orchard-transition-mobile/src/mix.rs',
@@ -387,6 +429,8 @@ rust_sources = [
   # The transition planner embeds these with include_str!, so editing one rebuilds the worker.
   'core/js/shared/trackAnalysis.js',
   'crates/orchard-transition-planner/js/index.js',
+  'core/js/src/audio/crossfade/beatlessBridge.js',
+  'core/js/src/audio/crossfade/localHarmony.js',
   'core/js/src/audio/crossfade/outgoingLoop.js',
   'core/js/src/audio/crossfade/pairTempoHarmony.js',
   'core/js/src/audio/crossfade/pairTransitionEvidence.js',
@@ -395,10 +439,11 @@ rust_sources = [
   'core/js/src/audio/crossfade/pairTransitionPlanner.js',
   'core/js/src/audio/crossfade/pairTransitionScoring.js',
   'core/js/src/audio/crossfade/sectionTempo.js',
-  'core/js/src/audio/crossfade/transitionChoreography.js',
+  'core/js/src/audio/crossfade/transitionArrangement.js',
+  'core/js/src/audio/crossfade/transitionExplain.js',
   'core/js/src/audio/crossfade/transitionFlow.js',
   'core/js/src/audio/crossfade/transitionPlanner.js',
-  'core/js/src/audio/crossfade/transitionPolicy.js',
+  'core/js/src/audio/crossfade/vocalCollision.js',
   'core/js/src/audio/crossfade/wsolaPlanner.js',
 ]
 
@@ -430,6 +475,7 @@ youtube_sources = [
   'providers/youtube/src/catalog/subscribedArtists.js',
   'providers/youtube/src/catalog/youtubeLikes.js',
   'providers/youtube/src/index.js',
+  'providers/youtube/src/integrations/aiLabel.js',
   'providers/youtube/src/integrations/sponsorblock.js',
   'providers/youtube/src/playback/authenticatedYouTubePlayback.js',
   'providers/youtube/src/playback/musicVideoFallback.js',
@@ -470,11 +516,24 @@ qobuz_sources = [
   'providers/qobuz/src/types.js',
 ]
 
+apple_music_sources = [
+  'providers/apple-music/src/artist.js',
+  'providers/apple-music/src/artwork.js',
+  'providers/apple-music/src/catalog.js',
+  'providers/apple-music/src/client.js',
+  'providers/apple-music/src/home.js',
+  'providers/apple-music/src/ids.js',
+  'providers/apple-music/src/index.js',
+  'providers/apple-music/src/normalize.js',
+  'providers/apple-music/src/runtime.js',
+]
+
 
 app_moc_headers = [
   'app/src/account/orchard_account.h',
   'app/src/appearance/appearance_settings.h',
   'app/src/appearance/animated_artwork_service.h',
+  'app/src/appearance/artwork_video_cache.h',
   'app/src/auth/browser_cookie_adapter.h',
   'app/src/auth/auth_manager.h',
   'app/src/auth/auth_session_channel.h',
@@ -489,6 +548,8 @@ app_moc_headers = [
   'app/src/integrations/discord.h',
   'app/src/integrations/integrations.h',
   'app/src/integrations/lastfm.h',
+  'app/src/integrations/apple_music.h',
+  'app/src/integrations/catalog_source.h',
   'app/src/integrations/spotify_canvas.h',
   'app/src/lyrics/lyrics_controller.h',
   'app/src/lyrics/translation/lyrics_translator.h',
@@ -505,6 +566,7 @@ app_moc_headers = [
   'app/src/playback/audio_pipeline.h',
   'app/src/playback/best_mix_controller.h',
   'app/src/playback/sleep_timer.h',
+  'app/src/playback/ai_labels.h',
   'app/src/playback/slop_detector.h',
   'app/src/playback/slop_scan_worker.h',
   'app/src/playback/stream_download.h',
@@ -527,10 +589,12 @@ app_moc_headers = [
   'app/src/system_media_bridge.h',
   'app/src/system_tray.h',
   'app/src/update/bootstrapper_client.h',
+  'app/src/window_occlusion.h',
   'app/src/window_state.h',
 ]
 
 helper_moc_headers = [
+  'app/src/auth/apple_music_helper.h',
   'app/src/auth/auth_manager.h',
   'app/src/auth/auth_session_channel.h',
   'app/src/auth/browser_cookie_adapter.h',

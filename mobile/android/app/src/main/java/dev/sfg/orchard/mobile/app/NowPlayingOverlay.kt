@@ -19,6 +19,8 @@
 
 package dev.sfg.orchard.mobile.app
 
+import dev.sfg.orchard.mobile.ui.glass.LocalGlassScene
+import dev.sfg.orchard.mobile.ui.glass.rememberGlassScene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -90,7 +92,12 @@ fun NowPlayingOverlay(
 
     val liked = remember(library.likedTracks, currentTrack.id) { library.likedTracks.any { it.id == currentTrack.id } }
 
-    CompositionLocalProvider(LocalStreamDetail provides activeStreamDetail.copy(hiRes = activeStreamDetail.hiRes || currentTrack.hires)) {
+    // The player's own backdrop, so glass inside it blurs the cover or video and not the page behind.
+    val glassScene = rememberGlassScene()
+    CompositionLocalProvider(
+        LocalStreamDetail provides activeStreamDetail.copy(hiRes = activeStreamDetail.hiRes || currentTrack.hires),
+        LocalGlassScene provides glassScene,
+    ) {
         NowPlayingScreen(
             modifier = modifier,
             collapseBounds = collapseBounds,

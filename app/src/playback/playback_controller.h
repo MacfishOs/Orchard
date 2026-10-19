@@ -440,6 +440,7 @@ private:
   QVariantList m_bestMixSortedQueue;
   bool m_bestMixSorted{false};
   QString m_error;
+  QTimer m_errorTimer;
   QString m_playlistId;
   QString m_queueContinuation;
   QString m_queueError;

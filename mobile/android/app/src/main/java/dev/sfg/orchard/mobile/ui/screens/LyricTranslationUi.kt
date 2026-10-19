@@ -59,11 +59,11 @@ import dev.sfg.orchard.mobile.model.LyricLine
 
 /** Registers [lines] as on screen, which is what lets the translator spend CPU on them. */
 @Composable
-internal fun rememberLyricTranslation(lines: List<LyricLine>): LyricTranslationState {
+internal fun rememberLyricTranslation(lines: List<LyricLine>, songId: String): LyricTranslationState {
     val translator = OrchardGraph.from(LocalContext.current).lyricTranslation
-    DisposableEffect(translator, lines) {
-        translator.show(lines)
-        onDispose { translator.hide(lines) }
+    DisposableEffect(translator, lines, songId) {
+        translator.show(lines, songId)
+        onDispose { translator.hide(lines, songId) }
     }
     val state by translator.state.collectAsStateWithLifecycle()
     return state

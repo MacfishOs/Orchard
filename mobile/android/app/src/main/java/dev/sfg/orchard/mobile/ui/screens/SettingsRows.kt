@@ -158,6 +158,7 @@ internal fun SettingsRow(
     enabled: Boolean = true,
     titleColor: Color = SettingsStyle.Title,
     iconTint: Color = SettingsStyle.TileIcon,
+    leading: (@Composable () -> Unit)? = null,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
@@ -168,7 +169,7 @@ internal fun SettingsRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        if (icon != null) RowIcon(icon, tint = iconTint)
+        if (leading != null) leading() else if (icon != null) RowIcon(icon, tint = iconTint)
         Column(Modifier.weight(1f)) {
             RowTitle(title, enabled, titleColor)
             if (subtitle.isNotEmpty()) RowSubtitle(subtitle)

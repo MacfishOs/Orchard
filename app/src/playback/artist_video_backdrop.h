@@ -44,8 +44,9 @@ class ArtistVideoBackdrop final : public QObject {
   Q_PROPERTY(QString status READ status NOTIFY changed)
   // Device pixels the picture covers vertically; picks the stream height. Only upgrades re-resolve.
   Q_PROPERTY(int targetHeight READ targetHeight WRITE setTargetHeight NOTIFY changed)
-  // Dark background tones sampled from the playing picture, 3x3 row-major; empty until a frame arrives.
+  // Background tones extended from the picture's lower edge, 3x3 row-major.
   Q_PROPERTY(QVariantList ambient READ ambient NOTIFY ambientChanged)
+  Q_PROPERTY(QRectF sampleRect READ sampleRect WRITE setSampleRect NOTIFY sampleRectChanged)
 public:
   ArtistVideoBackdrop(YouTubeProvider *provider, AuthManager *auth, QObject *parent = nullptr);
 
@@ -56,6 +57,8 @@ public:
   [[nodiscard]] int targetHeight() const { return m_targetHeight; }
   void setTargetHeight(int height);
   [[nodiscard]] QVariantList ambient() const { return m_ambient; }
+  [[nodiscard]] QRectF sampleRect() const { return m_sampleRect; }
+  void setSampleRect(const QRectF &rect);
 
   // Re-resolves after the signed URL expired or the picture failed to load.
   Q_INVOKABLE void retry();
@@ -65,6 +68,7 @@ public:
 signals:
   void changed();
   void ambientChanged();
+  void sampleRectChanged();
 
 private:
   void resolve();
@@ -90,5 +94,6 @@ private:
   QTimer m_frameTimer;
   // Picture area inside baked-in bars, so the bars do not tint the ambient.
   QRectF m_crop;
+  QRectF m_sampleRect{0, 0, 1, 1};
   QVariantList m_ambient;
 };

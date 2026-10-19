@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -118,6 +119,19 @@ class GlassScene internal constructor(
     internal var sceneOrigin = Offset.Zero
     internal var washRecorded = false
     internal var sceneRecorded = false
+
+    private val frameTicks = mutableIntStateOf(0)
+
+    /** Whether a source has recorded; reading it subscribes the calling draw to [refresh]. */
+    internal fun isRecorded(chrome: Boolean): Boolean {
+        frameTicks.intValue
+        return if (chrome) sceneRecorded else washRecorded
+    }
+
+    /** Repaints panes after a source changed in a way no draw state reports, such as a video frame. */
+    fun refresh() {
+        frameTicks.intValue++
+    }
 }
 
 val LocalGlassScene = staticCompositionLocalOf<GlassScene?> { null }

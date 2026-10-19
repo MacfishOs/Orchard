@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.sfg.orchard.mobile.model.PlaybackSnapshot
 import dev.sfg.orchard.mobile.model.PlaybackTargetState
@@ -97,6 +98,10 @@ fun PlayerControlStack(
     onQueue: () -> Unit,
     sleepTimerActive: Boolean = false,
     onSleepTimer: () -> Unit = {},
+    /** Draws each gap between rows; the phone stretches them across the art's reflection. */
+    gap: @Composable (Dp) -> Unit = { Spacer(Modifier.height(it)) },
+    /** Replaces the destinations row when set. */
+    bottomBar: (@Composable () -> Unit)? = null,
 ) {
     // Only takes space while a non-music span is under the playhead, so the stack doesn't jump
     // for the ordinary song. Centered above the scrubber where a thumb can reach it.
@@ -109,8 +114,9 @@ fun PlayerControlStack(
         showBitrate = showBitrate,
         bitrateKbps = bitrateKbps,
         isQobuz = isQobuz,
+        showSource = true,
     )
-    Spacer(Modifier.height(20.dp))
+    gap(20.dp)
     PlayerTransportControls(
         isPlaying = playback.isPlaying,
         status = playback.status,
@@ -122,8 +128,9 @@ fun PlayerControlStack(
         onNext = onNext,
         onShuffle = onShuffle,
         onRepeat = onRepeat,
+        showModes = false,
     )
-    Spacer(Modifier.height(24.dp))
+    gap(24.dp)
     // The phone has volume keys; a slider only earns its row when they cannot reach the speaker.
     if (!localControls) {
         DeviceVolumeSlider(
@@ -134,15 +141,19 @@ fun PlayerControlStack(
         )
         Spacer(Modifier.height(12.dp))
     }
-    PlayerBottomDestinations(
-        targets = targets,
-        upcomingCount = playback.upcoming.size,
-        onLyrics = onLyrics,
-        lyricsActive = lyricsActive,
-        onDevices = onDevices,
-        onQueue = onQueue,
-        queueActive = queueActive,
-    )
+    if (bottomBar != null) {
+        bottomBar()
+    } else {
+        PlayerBottomDestinations(
+            targets = targets,
+            upcomingCount = playback.upcoming.size,
+            onLyrics = onLyrics,
+            lyricsActive = lyricsActive,
+            onDevices = onDevices,
+            onQueue = onQueue,
+            queueActive = queueActive,
+        )
+    }
 }
 
 /** Centred status text and indicator for the states where lyrics are loading or unavailable. */

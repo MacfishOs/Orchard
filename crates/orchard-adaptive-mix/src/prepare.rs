@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 
 //! Prepare a finite stereo overlap and its native-rate incoming handoff.
 //! `mix` is the whole decision and render path on every platform; hosts only decode.
@@ -53,6 +53,8 @@ pub struct Prepared {
     pub incoming_cue: f64,
     pub duration: f64,
     pub strategy: String,
+    /// The shared planner's technique, e.g. `bass_swap`, `drop_in` or `beatless_bridge`.
+    pub technique: String,
     /// Shared overlap tempo; 0 when the tracks are not beatmatched.
     pub target_bpm: f64,
     pub vocal_mask: bool,
@@ -103,15 +105,16 @@ fn validate(request: &MixRequest) -> Result<(), String> {
     Ok(())
 }
 
-/// Whole-track planner evidence for one deck: V2's analysis, Beat This bar phase, bass weight.
-pub fn deck(models: &mut Models, song: &Song) -> Result<serde_json::Value, String> {
+/// Whole-track planner evidence for one deck: V2's analysis, Beat This bar phase, bass weight,
+/// and local chroma over `span`, the window a mix can use.
+pub fn deck(models: &mut Models, song: &Song, span: (f64, f64)) -> Result<serde_json::Value, String> {
     // ORCHARD_MIX_BEATS=earmark plans from Earmark's own beat grid, for A/B listening.
     let earmark_only = std::env::var("ORCHARD_MIX_BEATS").is_ok_and(|v| v == "earmark");
     let track = &song.track;
     let grids: Vec<_> = if earmark_only { Vec::new() } else {
         track.beat_windows.iter().map(|(audio, offset)| (models.beats(audio), *offset)).collect()
     };
-    let mut value = analysis::track(track, &grids)?;
+    let mut value = analysis::track(track, &grids, span)?;
     value["bassCurve"] = evidence::bass_curve(&track.mono, song::ANALYSIS_RATE);
     value["subBassRatio"] = evidence::sub_bass_ratio(&track.mono, song::ANALYSIS_RATE).into();
     Ok(value)
@@ -126,8 +129,8 @@ pub fn mix(models: &mut Models, request: &MixRequest, outgoing_song: &Song, inco
         return Err("Songs were decoded without render windows".into());
     }
     // Planning sees V2's whole-track evidence at 44.1 kHz.
-    let mut current = deck(models, outgoing_song)?;
-    let mut next = deck(models, incoming_song)?;
+    let mut current = deck(models, outgoing_song, (outgoing_song.tail_offset, f64::INFINITY))?;
+    let mut next = deck(models, incoming_song, (0.0, incoming_song.head.duration()))?;
     let decoded = incoming_song.track.duration;
     // The render windows share the analysis timeline and match playback sample for sample.
     let offset = outgoing_song.tail_offset;
@@ -157,11 +160,13 @@ pub fn mix(models: &mut Models, request: &MixRequest, outgoing_song: &Song, inco
         "outgoingWindowStart": offset, "incomingWindowEnd": incoming.duration(),
     });
     let mut engine = planner::engine()?;
-    let planner::Planned { mut plan, looped } = planner::plan(&mut engine, &outgoing, incoming, &input, offset)?;
+    let planner::Planned { mut plan, looped, technique } = planner::plan(&mut engine, &outgoing, incoming, &input, offset)?;
     let beat_loop = looped.as_ref().map(|(beat_loop, _)| *beat_loop);
     let outgoing = looped.map_or(outgoing, |(_, audio)| audio);
     // Line the kicks up on the audio itself; beat grids sit tens of milliseconds off them.
-    let kick_lock = lock::kick_lock(&outgoing, incoming, &plan).filter(|shift| {
+    // A bridge has no beat on either side to line up.
+    let kick_lock = plan.strategy.is_beatmatched().then(|| lock::kick_lock(&outgoing, incoming, &plan))
+        .flatten().filter(|shift| {
         let start = plan.incoming_start + shift;
         let end = start + plan.duration * plan.incoming_tempo_ratio as f64;
         start >= 0.0 && end - plan.duration >= 0.0 && end <= incoming.duration()
@@ -208,7 +213,8 @@ pub fn mix(models: &mut Models, request: &MixRequest, outgoing_song: &Song, inco
         incoming_cue: incoming_cue.max(0.0),
         duration,
         strategy: plan.strategy.describe().to_owned(),
-        target_bpm: if plan.beats > 0 { f64::from(plan.target_bpm) } else { 0.0 },
+        technique,
+        target_bpm: if plan.strategy.is_beatmatched() { f64::from(plan.target_bpm) } else { 0.0 },
         vocal_mask: masked,
         loop_beats: beat_loop.map_or(0, |beat_loop| beat_loop.beats),
         kick_lock: kick_lock.map_or(0.0, |shift| (shift * 1000.0).round()),

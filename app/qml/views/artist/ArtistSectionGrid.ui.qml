@@ -32,6 +32,9 @@ GridView {
     property int albumWidth: 184
     property real playerInset: 0
     property string artistTitle: ""
+    property bool loading: false
+    property string errorMessage: ""
+    signal retryRequested()
     property color accentSoftColor: "#96caa4"
     readonly property string presentation: kind === "videos" ? "video" : "album"
     readonly property int cardWidth: presentation === "video" ? 258 : albumWidth
@@ -53,7 +56,7 @@ GridView {
     header: Item {
         property alias backButton: gridBack
         width: grid.width
-        height: 110
+        height: grid.loading || grid.errorMessage ? 158 : 110
 
         Button {
             id: gridBack
@@ -110,6 +113,29 @@ GridView {
                 color: "#a4a9ad"
                 font.family: "Inter"
                 font.pixelSize: 14
+            }
+        }
+
+        Row {
+            y: 112
+            spacing: 12
+
+            BusyIndicator {
+                width: 28
+                height: 28
+                running: grid.loading
+                visible: running
+            }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: grid.loading ? qsTr("Loading…") : grid.errorMessage
+                color: grid.accentSoftColor
+                font.pixelSize: 12
+            }
+            Button {
+                visible: !!grid.errorMessage
+                text: qsTr("Try again")
+                onClicked: grid.retryRequested()
             }
         }
     }

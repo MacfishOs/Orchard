@@ -29,6 +29,7 @@ ColumnLayout {
     property alias persistSwitch: persistSwitch
     property alias windowSwitch: windowSwitch
     property alias traySwitch: traySwitch
+    property alias homeSourcePicker: homeSourcePicker
     property alias historySwitch: historySwitch
     property alias account: account
     property bool updatesAvailable: true
@@ -85,6 +86,28 @@ ColumnLayout {
                 id: traySwitch
                 objectName: "settingsCloseToTray"
                 Accessible.name: qsTr("Close to system tray")
+            }
+        }
+    }
+
+    SettingsSection {
+        Layout.fillWidth: true
+        title: qsTr("Music")
+        rowSpacing: 0
+        verticalPadding: 0
+
+        SettingsRow {
+            iconName: "music-2"
+            title: qsTr("Music source")
+            description: qsTr("Home, search, artists, albums and playlists all come from this service. Apple needs Apple Music connected.")
+
+            SettingsSegmented {
+                id: homeSourcePicker
+                objectName: "settingsHomeSource"
+                model: [
+                    { value: "youtube", label: qsTr("Normal") },
+                    { value: "apple_music", label: qsTr("Apple") }
+                ]
             }
         }
     }

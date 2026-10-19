@@ -59,6 +59,14 @@ private slots:
                                     QStringLiteral("gemini"), 2).isEmpty());
   }
 
+  void accountResponseKeepsSongLineAlignment() {
+    const QByteArray response = QByteArrayLiteral("{\"song_id\":\"one\",\"lines\":[\"Hello\",\"World\"],\"cached\":true}");
+    QCOMPARE(parseRemoteTranslation(response, QStringLiteral("orchard"), 2),
+             QStringList({QStringLiteral("Hello"), QStringLiteral("World")}));
+    QVERIFY(parseRemoteTranslation(response, QStringLiteral("orchard"), 3).isEmpty());
+    QVERIFY(parseRemoteTranslation(QByteArrayLiteral("{\"lines\":[\"Hello\",42]}"), QStringLiteral("orchard"), 2).isEmpty());
+  }
+
   void koreanSongKeepsEnglishLines() {
     const QStringList lines{
         QStringLiteral("서둘러서 정리해 걔는 Real bad"), QStringLiteral("받아주면 안돼"),

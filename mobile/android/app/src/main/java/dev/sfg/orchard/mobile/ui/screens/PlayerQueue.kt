@@ -42,6 +42,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AllInclusive
 import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -59,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.sfg.orchard.mobile.model.PlaybackSnapshot
+import dev.sfg.orchard.mobile.model.RepeatMode
 
 /**
  * The queue as a mode of the player rather than a destination: the transport below stays put and
@@ -86,6 +90,8 @@ fun PlayerQueuePanel(
     sleepTimerRemainingSeconds: Long = 0L,
     sleepTimerEndOfTrack: Boolean = false,
     onSleepTimer: () -> Unit = {},
+    /** Off where a separate control surface already carries shuffle, repeat, sleep and autoplay. */
+    showModes: Boolean = true,
 ) {
     val history = playback.history.takeLast(4)
     val historyStart = playback.currentIndex - history.size
@@ -95,15 +101,21 @@ fun PlayerQueuePanel(
     if (playback.queue.isEmpty()) {
         Box(modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
-                QueueTopControls(
-                    autoplayEnabled = autoplayEnabled,
-                    autoplayLoading = autoplayLoading,
-                    autoplayError = autoplayError,
-                    onAutoplayEnabled = onAutoplayEnabled,
-                    sleepTimerRemainingSeconds = sleepTimerRemainingSeconds,
-                    sleepTimerEndOfTrack = sleepTimerEndOfTrack,
-                    onSleepTimer = onSleepTimer,
-                )
+                if (showModes) {
+                    QueueTopControls(
+                        shuffle = playback.shuffle,
+                        repeatMode = playback.repeatMode,
+                        onShuffle = onShuffle?.takeIf { editable },
+                        onRepeat = onRepeat?.takeIf { editable },
+                        autoplayEnabled = autoplayEnabled,
+                        autoplayLoading = autoplayLoading,
+                        autoplayError = autoplayError,
+                        onAutoplayEnabled = onAutoplayEnabled,
+                        sleepTimerRemainingSeconds = sleepTimerRemainingSeconds,
+                        sleepTimerEndOfTrack = sleepTimerEndOfTrack,
+                        onSleepTimer = onSleepTimer,
+                    )
+                }
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     QueueNotice("Queue is empty", "Play an album, playlist, or song to get started.")
                 }
@@ -116,16 +128,22 @@ fun PlayerQueuePanel(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
     ) {
-        item {
-            QueueTopControls(
-                autoplayEnabled = autoplayEnabled,
-                autoplayLoading = autoplayLoading,
-                autoplayError = autoplayError,
-                onAutoplayEnabled = onAutoplayEnabled,
-                sleepTimerRemainingSeconds = sleepTimerRemainingSeconds,
-                sleepTimerEndOfTrack = sleepTimerEndOfTrack,
-                onSleepTimer = onSleepTimer,
-            )
+        if (showModes) {
+            item {
+                QueueTopControls(
+                    shuffle = playback.shuffle,
+                    repeatMode = playback.repeatMode,
+                    onShuffle = onShuffle?.takeIf { editable },
+                    onRepeat = onRepeat?.takeIf { editable },
+                    autoplayEnabled = autoplayEnabled,
+                    autoplayLoading = autoplayLoading,
+                    autoplayError = autoplayError,
+                    onAutoplayEnabled = onAutoplayEnabled,
+                    sleepTimerRemainingSeconds = sleepTimerRemainingSeconds,
+                    sleepTimerEndOfTrack = sleepTimerEndOfTrack,
+                    onSleepTimer = onSleepTimer,
+                )
+            }
         }
         if (history.isNotEmpty()) {
             item { QueueSectionHeader("Played") }
@@ -149,7 +167,7 @@ fun PlayerQueuePanel(
                                 QueueBestMixButton(onBestMixUpcoming)
                                 Spacer(Modifier.width(4.dp))
                             }
-                            if (playback.upcoming.size > 1 && onShuffleUpcoming != null) {
+                            if (playback.upcoming.size > 1 && onShuffleUpcoming != null && onShuffle == null) {
                                 QueueShuffleButton(onShuffleUpcoming)
                                 Spacer(Modifier.width(4.dp))
                             }
@@ -176,13 +194,13 @@ fun PlayerQueuePanel(
     }
 }
 
-/**
- * Top control card and quick pill row for the queue screen.
- * Displays Best Mix in the center when adaptive mix is on, alongside Autoplay and Sleep Timer pills.
- */
-/** Two big tiles for the queue's standing modes. Shuffle and repeat live on the transport row. */
+/** Tiles for the queue's standing modes: shuffle and repeat, then sleep timer and autoplay. */
 @Composable
 fun QueueTopControls(
+    shuffle: Boolean,
+    repeatMode: RepeatMode,
+    onShuffle: (() -> Unit)?,
+    onRepeat: (() -> Unit)?,
     autoplayEnabled: Boolean,
     autoplayLoading: Boolean,
     autoplayError: String,
@@ -193,40 +211,68 @@ fun QueueTopControls(
     modifier: Modifier = Modifier,
 ) {
     val sleepActive = sleepTimerRemainingSeconds > 0 || sleepTimerEndOfTrack
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        QueueModeTile(
-            icon = Icons.Rounded.Bedtime,
-            title = "Sleep timer",
-            status = when {
-                sleepTimerEndOfTrack -> "End of track"
-                sleepTimerRemainingSeconds > 0 -> "${(sleepTimerRemainingSeconds + 59) / 60} min left"
-                else -> "Off"
-            },
-            active = sleepActive,
-            tint = SleepTint,
-            onClick = onSleepTimer,
-            modifier = Modifier.weight(1f),
-        )
-        if (onAutoplayEnabled != null) {
+        if (onShuffle != null && onRepeat != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                QueueModeTile(
+                    icon = Icons.Rounded.Shuffle,
+                    title = "Shuffle",
+                    status = if (shuffle) "On" else "Off",
+                    active = shuffle,
+                    tint = ShuffleTint,
+                    onClick = onShuffle,
+                    modifier = Modifier.weight(1f),
+                )
+                QueueModeTile(
+                    icon = if (repeatMode == RepeatMode.ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                    title = "Repeat",
+                    status = when (repeatMode) {
+                        RepeatMode.OFF -> "Off"
+                        RepeatMode.ALL -> "All"
+                        RepeatMode.ONE -> "One"
+                    },
+                    active = repeatMode != RepeatMode.OFF,
+                    tint = RepeatTint,
+                    onClick = onRepeat,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             QueueModeTile(
-                icon = Icons.Rounded.AllInclusive,
-                title = "Autoplay",
+                icon = Icons.Rounded.Bedtime,
+                title = "Sleep timer",
                 status = when {
-                    !autoplayEnabled -> "Off"
-                    autoplayLoading -> "Finding songs…"
-                    autoplayError.isNotBlank() -> autoplayError
-                    else -> "On"
+                    sleepTimerEndOfTrack -> "End of track"
+                    sleepTimerRemainingSeconds > 0 -> "${(sleepTimerRemainingSeconds + 59) / 60} min left"
+                    else -> "Off"
                 },
-                active = autoplayEnabled,
-                tint = AutoplayTint,
-                onClick = { onAutoplayEnabled(!autoplayEnabled) },
+                active = sleepActive,
+                tint = SleepTint,
+                onClick = onSleepTimer,
                 modifier = Modifier.weight(1f),
             )
+            if (onAutoplayEnabled != null) {
+                QueueModeTile(
+                    icon = Icons.Rounded.AllInclusive,
+                    title = "Autoplay",
+                    status = when {
+                        !autoplayEnabled -> "Off"
+                        autoplayLoading -> "Finding songs…"
+                        autoplayError.isNotBlank() -> autoplayError
+                        else -> "On"
+                    },
+                    active = autoplayEnabled,
+                    tint = AutoplayTint,
+                    onClick = { onAutoplayEnabled(!autoplayEnabled) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
@@ -286,3 +332,5 @@ private fun QueueModeTile(
 
 private val SleepTint = Color(0xFFCE93D8)
 private val AutoplayTint = Color(0xFF80DEEA)
+private val ShuffleTint = Color(0xFFA5D6A7)
+private val RepeatTint = Color(0xFFFFCC80)

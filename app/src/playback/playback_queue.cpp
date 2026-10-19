@@ -29,6 +29,11 @@ void PlaybackController::playCollection(const QVariantList &tracks,
                                         int startIndex, bool shuffle,
                                         const QString &playlistId,
                                         const QString &continuation) {
+  if (!tracks.isEmpty() && isAppleTrack(tracks.at(qBound(0, startIndex, int(tracks.size()) - 1)).toMap())) {
+    m_error = tr("Apple Music playback is not available yet.");
+    emit stateChanged();
+    return;
+  }
   if (remoteActive()) {
     // The target owns the queue; it gets this page, without continuation loading.
     if (shuffle)

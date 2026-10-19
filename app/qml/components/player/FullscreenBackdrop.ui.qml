@@ -34,6 +34,7 @@ Item {
     // Drifts and warps only while playing on screen.
     property bool playing: false
     property bool warpRunning: false
+    property bool warpThrottled: false
     property real warpSpeed: 1
     property real warpIntensity: 1
     property real warpSaturation: 1
@@ -61,25 +62,31 @@ Item {
         visible: false
     }
 
-    MultiEffect {
-        id: blurredCover
-        anchors.fill: blurSource
-        source: blurSource
-        blurEnabled: true
-        blur: 1
-        blurMax: 64
-        saturation: 0.3
-        brightness: -0.12
-        opacity: blurSource.status === Image.Ready ? 0.9 : 0
-        Behavior on opacity { NumberAnimation { duration: 500 } }
+    property real fallbackOpacity: blurSource.status === Image.Ready ? 0.9 : 0
+    Behavior on fallbackOpacity { NumberAnimation { duration: 500 } }
+    property real fallbackRotation: 0
+    RotationAnimation on fallbackRotation {
+        running: backdrop.visible && backdrop.playing
+        from: 0
+        to: 360
+        duration: 180000
+        loops: Animation.Infinite
+    }
 
-        // Slow drift so the room never looks like a screenshot.
-        RotationAnimation on rotation {
-            running: backdrop.visible && backdrop.playing
-            from: 0
-            to: 360
-            duration: 180000
-            loops: Animation.Infinite
+    Loader {
+        anchors.fill: blurSource
+        // Keep the fallback through entry, exit, and the warp's opacity fade.
+        active: warp.opacity < 1 || backdrop.stage0 < 1
+        sourceComponent: MultiEffect {
+            anchors.fill: parent
+            source: blurSource
+            blurEnabled: true
+            blur: 1
+            blurMax: 64
+            saturation: 0.3
+            brightness: -0.12
+            opacity: backdrop.fallbackOpacity
+            rotation: backdrop.fallbackRotation
         }
     }
 
@@ -88,6 +95,7 @@ Item {
         anchors.fill: parent
         source: backdrop.visible ? backdrop.thumbnail : ""
         running: backdrop.warpRunning
+        throttled: backdrop.warpThrottled
         speed: backdrop.warpSpeed
         intensity: backdrop.warpIntensity
         saturation: backdrop.warpSaturation

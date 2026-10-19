@@ -60,6 +60,7 @@ import kotlin.math.abs
 @Composable
 internal fun LyricLines(
     lines: List<LyricLine>,
+    songId: String,
     playing: Boolean,
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -120,7 +121,7 @@ internal fun LyricLines(
         }
     }
 
-    val translation = rememberLyricTranslation(lines)
+    val translation = rememberLyricTranslation(lines, songId)
     val translations = remember(translation, lines) { translation.translationsFor(lines) }
 
     val displayItems = remember(lines, synced) {

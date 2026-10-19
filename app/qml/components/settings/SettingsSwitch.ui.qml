@@ -29,7 +29,6 @@ Switch {
         x: control.leftPadding
         y: control.topPadding + control.availableHeight / 2 - height / 2
         radius: 12
-        // Translucent when off so the glass shows through.
         color: control.checked ? "#5f9a76" : "#2cffffff"
         border.color: control.visualFocus ? "#c4e0cb" : "transparent"
         border.width: 2

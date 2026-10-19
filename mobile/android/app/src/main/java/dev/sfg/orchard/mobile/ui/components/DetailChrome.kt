@@ -82,6 +82,7 @@ fun DetailFloatingChrome(
     onBack: () -> Unit,
     scrimProgress: State<Float>,
     modifier: Modifier = Modifier,
+    transparent: Boolean = false,
     actions: (@Composable RowScope.() -> Unit)? = null,
 ) {
     Box(modifier.fillMaxWidth()) {
@@ -112,6 +113,7 @@ fun DetailFloatingChrome(
                 icon = Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Back",
                 size = 44.dp,
+                glass = !transparent,
             )
             Spacer(Modifier.weight(1f))
             if (actions != null) {
@@ -119,7 +121,7 @@ fun DetailFloatingChrome(
                     modifier = Modifier
                         .height(48.dp)
                         .clip(CircleShape)
-                        .glassPane(CircleShape, GlassTone.CONTROL)
+                        .then(if (transparent) Modifier else Modifier.glassPane(CircleShape, GlassTone.CONTROL))
                         .padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp),

@@ -66,5 +66,7 @@ QString AnimatedArtworkService::cacheKey(const QString &title,
   const QString t = normalizeText(title);
   const QString a = normalizeText(artist);
   const QString al = normalizeText(album);
-  return QStringLiteral("%1::%2::%3").arg(t, a, al);
+  // Apple and the unofficial mirrors can disagree, so their answers are cached apart.
+  const QString key = QStringLiteral("%1::%2::%3").arg(t, a, al);
+  return appleActive() ? key + QStringLiteral("::apple") : key;
 }

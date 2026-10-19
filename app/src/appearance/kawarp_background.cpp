@@ -159,6 +159,13 @@ void KawarpBackground::setRunning(bool value) {
     syncTimer();
     update();
 }
+void KawarpBackground::setThrottled(bool value) {
+    if (value == m_throttled) return;
+    m_throttled = value;
+    // One frame per second while throttled.
+    m_timer.setInterval(value ? 1000 : 16);
+    emit throttledChanged();
+}
 void KawarpBackground::setSpeed(double value) {
     if (!std::isfinite(value)) return;
     value = std::clamp(value, 0.0, 5.0);

@@ -249,7 +249,7 @@ internal fun GlassRecentlyPlayedCard(
     Column(
         modifier = Modifier
             .width(HomeCardWidth)
-            .bounceClickable(RoundedCornerShape(24.dp), pressedScale = 0.93f, onClick = onClick)
+            .bounceClickable(pressedScale = 0.93f, onClick = onClick)
     ) {
         Box(
             modifier = Modifier
@@ -289,7 +289,7 @@ internal fun CircularArtistCard(item: CatalogItem, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .width(88.dp)
-            .bounceClickable(RoundedCornerShape(16.dp), 0.9f, onClick = onClick),
+            .bounceClickable(pressedScale = 0.9f, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(

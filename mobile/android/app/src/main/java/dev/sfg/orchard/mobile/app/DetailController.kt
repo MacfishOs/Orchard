@@ -42,6 +42,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -61,6 +65,8 @@ internal class DetailController(
     val artistImages: StateFlow<ArtistImages?> = mutableArtistImages.asStateFlow()
     private var job: Job? = null
     private var loadGeneration = 0
+    private var requestedId = ""
+    private var requestedSeed: CatalogItem? = null
 
     private val active: BrowseDetail? get() = (mutableDetail.value as? LoadState.Content)?.value
     val activeId: String get() = active?.id.orEmpty()
@@ -79,6 +85,8 @@ internal class DetailController(
     }
 
     fun load(id: String, seed: CatalogItem?, preserveContent: Boolean) {
+        requestedId = id
+        requestedSeed = seed
         if (isLocalPlaylistId(id)) {
             loadLocal(id)
             return
@@ -109,7 +117,7 @@ internal class DetailController(
             // lands and grows underneath the listener instead of holding a spinner until an
             // endless mix exhausts its continuation budget.
             try {
-                graph.catalog.browsePages(id).collect { page ->
+                graph.catalogRouter.pages(id, seed).collect { page ->
                     val resolved = page.withSeed(seed)
                     mutableDetail.value = LoadState.Content(resolved)
                     graph.library.cacheDetail(resolved)
@@ -119,7 +127,7 @@ internal class DetailController(
             } catch (error: Throwable) {
                 // Continuation failures are absorbed by the repository, so reaching here means
                 // the first page never arrived and there is nothing on screen to keep.
-                mutableDetail.value = offlineDetail(id, seed)?.let { LoadState.Content(it) }
+                mutableDetail.value = offlineDetail(id, seed)?.takeIf { !graph.networkMonitor.isOnline.value }?.let { LoadState.Content(it) }
                     ?: LoadState.Error(error.message ?: "This collection could not be loaded.")
             } finally {
                 if (loadGeneration == generation) mutableRefreshing.value = false
@@ -136,6 +144,15 @@ internal class DetailController(
         )
 
     fun observeArtwork() {
+        scope.launch {
+            combine(
+                graph.settings.settings.map { it.homeSource }.distinctUntilChanged(),
+                graph.appleMusic.connection.map { it.connected }.distinctUntilChanged(),
+            ) { source, connected -> source to connected }.drop(1).collect {
+                if (requestedId.isNotBlank() && !isLocalPlaylistId(requestedId))
+                    load(requestedId, requestedSeed, preserveContent = false)
+            }
+        }
         scope.launch {
             detail.collectLatest { state ->
                 mutableArtwork.value = null
@@ -164,9 +181,10 @@ internal class DetailController(
                                 mutableArtistImages.value = graph.artistImages.images(performer)
                             }
                         }
-                        // Channel avatars are often a logo; TheAudioDB has a real photograph.
-                        CatalogKind.ARTIST ->
+                        // Channel avatars are often a logo; TheAudioDB has a real photograph. Apple's artwork already is one.
+                        CatalogKind.ARTIST -> if (detailVal.source != "apple_music") {
                             mutableArtistImages.value = graph.artistImages.images(detailVal.title)
+                        }
                         else -> Unit
                     }
                 }
@@ -196,6 +214,11 @@ internal class DetailController(
     }
 
     private fun setArtistSubscription(detail: BrowseDetail) {
+        if (detail.id.startsWith("am.")) {
+            val artist = Artist(detail.id, detail.title, detail.artworkUrl, detail.subtitle)
+            graph.library.setArtistSaved(artist, graph.library.library.value.savedArtists.none { it.id == artist.id })
+            return
+        }
         if (graph.auth.state.value !is AuthState.SignedIn) {
             showWarning("Sign in to YouTube Music to follow artists.")
             return

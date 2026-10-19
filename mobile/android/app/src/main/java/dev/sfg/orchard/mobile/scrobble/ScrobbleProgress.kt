@@ -119,8 +119,9 @@ private fun Track.toScrobbleTrack(durationFallbackMs: Long): ScrobbleTrack? {
 }
 
 internal fun String.cleanScrobbleText(maxLength: Int = 500): String =
-    trim().replace(Regex("\\s+"), " ").take(maxLength)
+    trim().replace(SCROBBLE_WHITESPACE, " ").take(maxLength)
 
+private val SCROBBLE_WHITESPACE = Regex("\\s+")
 private const val MINIMUM_TRACK_MS = 30_000L
 private const val MAXIMUM_WAIT_MS = 4 * 60_000L
 private const val SEEK_TOLERANCE_MS = 2_000L

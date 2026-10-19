@@ -31,6 +31,8 @@
 #include <memory>
 
 class AppearanceSettings;
+class AppleMusic;
+class CatalogSource;
 class QNetworkReply;
 class SpotifyCanvas;
 
@@ -58,6 +60,8 @@ public:
     Q_INVOKABLE void forgetUrl(const QString &url);
     // Canvas loops for tracks the other mirrors miss. Connecting it retries old misses.
     void setSpotifyCanvas(SpotifyCanvas *spotify);
+    // Signed in to Apple Music, Apple's catalog stands in for the unofficial mirrors.
+    void setAppleMusic(AppleMusic *appleMusic, CatalogSource *source);
     void forgetMisses();
 
 signals:
@@ -84,6 +88,10 @@ private:
     void queryNextMirror(std::shared_ptr<LookupState> state);
     void fetchM8tec(std::shared_ptr<LookupState> state);
     void fetchSpotify(std::shared_ptr<LookupState> state);
+    void fetchApple(std::shared_ptr<LookupState> state, bool album);
+    bool appleActive() const;
+    // Swaps m8tec and boidu for Apple at the first of their positions.
+    void applyAppleSource(QStringList &mirrors, bool album) const;
     // byAlbum searches with the album name; only an iTunes-verified album match is accepted then.
     void fetchBoidu(std::shared_ptr<LookupState> state, bool byAlbum);
     void verifyBoiduAlbum(const QString &albumId, std::shared_ptr<LookupState> state,
@@ -101,6 +109,8 @@ private:
 
     AppearanceSettings *m_settings{nullptr};
     SpotifyCanvas *m_spotify{nullptr};
+    AppleMusic *m_appleMusic{nullptr};
+    CatalogSource *m_source{nullptr};
     QNetworkAccessManager m_network;
     // Session cache: fetch once per song/album, reuse for the rest of eternity (or app restart).
     QHash<QString, QString> m_cache;

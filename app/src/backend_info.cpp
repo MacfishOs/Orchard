@@ -128,11 +128,11 @@ QString BackendInfo::licenseText(const QString &key) const
         return QStringLiteral("Could not load license text from resource: %1").arg(path);
     }
     QString text = QString::fromUtf8(file.readAll());
-    // The adaptive mix engine is under OOL-1.0; show it with the AGPL.
+    // The adaptive mix engine is under PolyForm Shield; show it with the AGPL.
     if (key == QLatin1String("orchard")) {
-        QFile ool(QStringLiteral(":/licenses/orchard-ool.txt"));
-        if (ool.open(QIODevice::ReadOnly | QIODevice::Text))
-            text += QStringLiteral("\n\n---\n\n") + QString::fromUtf8(ool.readAll());
+        QFile engine(QStringLiteral(":/licenses/orchard-engine.txt"));
+        if (engine.open(QIODevice::ReadOnly | QIODevice::Text))
+            text += QStringLiteral("\n\n---\n\n") + QString::fromUtf8(engine.readAll());
     }
     return text;
 }

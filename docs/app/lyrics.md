@@ -72,6 +72,14 @@ With an API selected, Orchard sends lyric lines to that service when translation
 
 On Android, find the same choices in Settings > Appearance > Lyrics. API keys are encrypted with Android Keystore. The model and custom URL are saved separately from the key.
 
+## Translate with Orchard Account
+
+Sign in to your [Orchard Account](accounts.md), then choose **Orchard Account** under **Translation source**. On desktop, open Settings > Downloads > Lyric translation. On Android, open Settings > Appearance > Lyrics. The choice appears while you are signed in and needs no API key or model ID.
+
+Orchard Account sends the song's lyrics to Cloudflare Workers AI and uses Gemma 4 26B A4B to translate them into English. You can start up to 10 new song translations each day per account and per IP address. Both limits reset at **00:00 UTC**. Devices on the same account share the account limit, and accounts on the same network share the IP limit.
+
+Cached songs do not use the daily allowance. Orchard keeps translations by song ID for 90 days, and checks the lyric version so lines stay aligned. A translation that starts and then fails still uses one slot. If the daily limit is reached, cached translations remain available; wait until 00:00 UTC to translate a new song.
+
 ## Languages that can be translated
 
 Local models translate Korean, Japanese, Chinese, Russian, Arabic, Greek, Turkish, French, German, Spanish, Italian, Dutch, and Catalan into English. For other languages, the lyrics view shows "[Language] lyrics can't be translated yet." An API model can handle other languages if that model supports them.

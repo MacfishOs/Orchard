@@ -298,6 +298,7 @@ internal fun PlayerBackdropLayer(
     hasRichArtwork: Boolean,
     palette: ArtworkPalette,
     incomingPalette: ArtworkPalette?,
+    incomingArtworkUrl: String?,
     animatedArtworkEnabled: Boolean,
     animatedBackgroundEnabled: Boolean,
     gesturesEnabled: Boolean,
@@ -309,6 +310,8 @@ internal fun PlayerBackdropLayer(
     onArtworkBounds: (Rect) -> Unit,
     /** Phone only: the body owns the gesture and the motion art follows it. */
     swipe: ArtworkSwipe? = null,
+    onArtworkSeam: (Float?) -> Unit = {},
+    artworkRoom: Float? = null,
 ) {
     // Full-bleed artwork background. Lyrics push it out of focus rather than
     // replacing it, so the song's colour still carries the screen.
@@ -357,10 +360,13 @@ internal fun PlayerBackdropLayer(
         palette = palette,
         onVideoFrame = onVideoFrame,
         incomingPalette = incomingPalette,
+        incomingArtworkUrl = incomingArtworkUrl,
         onArtworkBounds = onArtworkBounds,
         transitionProgress = transitionProgress,
         artworkAlpha = artworkAlpha,
         swipe = swipe,
+        onArtworkSeam = onArtworkSeam,
+        artworkRoom = artworkRoom,
         modifier = Modifier
             .blur(backdropBlur)
             .then(if (isSplitModeFoldable) Modifier.fillMaxWidth(0.512f) else Modifier.fillMaxWidth()),

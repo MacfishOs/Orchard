@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL.
+# Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD.
 """Reproduce the GTZAN-mini accuracy check for prepared beat_this models.
 
 Run from the repository root. Requires artifacts/beat-quant/upstream and the

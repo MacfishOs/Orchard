@@ -29,6 +29,7 @@ import dev.sfg.orchard.mobile.model.CatalogSection
 import dev.sfg.orchard.mobile.model.Playlist
 import dev.sfg.orchard.mobile.model.SearchResults
 import dev.sfg.orchard.mobile.model.Track
+import dev.sfg.orchard.mobile.model.YOUTUBE_SOURCE
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -70,6 +71,10 @@ private fun creditFrom(subtitle: String): String = subtitleParts(subtitle).first
     !part.matches(yearPattern) && part.lowercase() !in typeLabels && !part.first().isDigit()
 }.orEmpty()
 
+/** "1,035 tracks" or "35 songs" to its number; the provider requests English text. */
+internal fun itemCountOf(value: String): Int? =
+    value.substringBefore(' ').replace(",", "").toIntOrNull()
+
 private val typeLabels = setOf("album", "single", "ep", "playlist", "song", "video", "artist", "profile")
 
 private fun JSONObject.browseTarget(): Pair<String, String> {
@@ -102,6 +107,7 @@ fun JSONObject.providerTrack(): Track? {
         explicit = optBoolean("explicit"),
         musicVideoType = text("musicVideoType"),
         isUpload = optBoolean("isUpload"),
+        playbackSource = text("source").ifEmpty { YOUTUBE_SOURCE },
         artists = artists,
     )
 }
@@ -124,7 +130,7 @@ fun JSONObject.providerItem(): CatalogItem? {
                 yearPattern.find(text("year").ifEmpty { subtitle })?.value.orEmpty(), explicit = optBoolean("explicit")))
         type == "playlist" || browseId.startsWith("VL") || browseId.startsWith("RD") ->
             CatalogItem.Collection(Playlist(browseId, title, credit.ifEmpty { "YouTube Music" }, art,
-                explicit = optBoolean("explicit")))
+                explicit = optBoolean("explicit"), trackCount = itemCountOf(text("itemCount"))))
         else -> CatalogItem.Category(browseId, title, params = params)
     }
 }
@@ -184,6 +190,8 @@ fun JSONObject.providerDetail(id: String, kind: CatalogKind): BrowseDetail {
         year = text("year"),
         explicit = optBoolean("explicit"),
         editable = optBoolean("editable"),
+        source = text("source"),
+        logoUrl = text("logo"),
     )
 }
 

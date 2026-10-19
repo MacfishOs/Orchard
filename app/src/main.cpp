@@ -30,8 +30,12 @@
 #include "docs/docs_library.h"
 #include "appearance/appearance_settings.h"
 #include "appearance/animated_artwork_service.h"
+#include "appearance/artwork_video_cache.h"
+#include "heap_trim.h"
 #include "home/home_controller.h"
 #include "integrations/integrations.h"
+#include "integrations/apple_music.h"
+#include "integrations/catalog_source.h"
 #include "integrations/spotify_canvas.h"
 #include "instance_coordinator.h"
 #include "library/library_actions.h"
@@ -198,6 +202,7 @@ int main(int argc, char *argv[]) {
       QQuickWindow::setGraphicsApi(QSGRendererInterface::Vulkan);
   }
 #endif
+  startHeapTrim(&application);
   authDiagnostic(QStringLiteral("startup diagnostic-build=3 built=" __DATE__ " " __TIME__));
   QObject::connect(&application, &QCoreApplication::aboutToQuit, &application, [] {
     authDiagnostic(QStringLiteral("application-quitting"));
@@ -225,6 +230,7 @@ int main(int argc, char *argv[]) {
   SpotifyCanvas spotifyCanvas;
   AnimatedArtworkService animatedArtwork(&appearance);
   animatedArtwork.setSpotifyCanvas(&spotifyCanvas);
+  ArtworkVideoCache artworkVideos;
   BackendInfo backend;
   // The manual nobody reads, with a copy button for the robots that will.
   DocsLibrary docs;
@@ -235,6 +241,10 @@ int main(int argc, char *argv[]) {
   YouTubeProvider youtubeProvider;
   AuthManager authManager(&youtubeProvider);
   OrchardAccount orchardAccount;
+  AppleMusic appleMusic(&orchardAccount);
+  // Apple Music or YouTube Music feeds every catalog page; the user picks one.
+  CatalogSource catalogSource;
+  animatedArtwork.setAppleMusic(&appleMusic, &catalogSource);
   // Bug reports with receipts: GitHub tells us who answered, we tell you.
   SupportCenter support(&orchardAccount);
   YouTubeCatalog youtubeCatalog(&youtubeProvider);
@@ -242,6 +252,7 @@ int main(int argc, char *argv[]) {
   QobuzService qobuz;
   SearchController searchController(&youtubeCatalog, &authManager);
   auto homeController = std::make_unique<HomeController>(&youtubeCatalog, &authManager);
+  homeController->setAppleMusic(&appleMusic, &catalogSource);
   auto artistController = std::make_unique<AlbumController>(&youtubeCatalog, &authManager, nullptr, true);
   auto albumController = std::make_unique<AlbumController>(&youtubeCatalog, &authManager, nullptr, false, &animatedArtwork, &qobuz);
   // Songs and playlists that live on disk instead of YouTube Music: no buffering, no ads, no excuses.
@@ -257,6 +268,10 @@ int main(int argc, char *argv[]) {
                    [&connectivity] { connectivity.reportFailure(); });
   searchController.setOfflineLibrary(&offlineLibrary);
   auto playlistController = std::make_unique<PlaylistController>(&youtubeCatalog, &authManager, &localLibrary);
+  artistController->setAppleMusic(&appleMusic, &catalogSource);
+  albumController->setAppleMusic(&appleMusic, &catalogSource);
+  playlistController->setAppleMusic(&appleMusic, &catalogSource);
+  searchController.setAppleMusic(&appleMusic, &catalogSource);
   playlistController->setOfflineLibrary(&offlineLibrary);
   auto integrations = std::make_unique<Integrations>(&orchardAccount, &youtubeCatalog, &authManager);
   auto playback = std::make_unique<PlaybackController>(&youtubeProvider, &authManager, homeController.get(), &systemMedia, integrations.get(), &animatedArtwork, &qobuz);
@@ -278,6 +293,7 @@ int main(int argc, char *argv[]) {
   lyrics->setLocalLibrary(&localLibrary);
   // Lyrics in English, courtesy of a 20 MB model that has never heard a song in its life.
   LyricsTranslator lyricsTranslation(lyrics.get());
+  lyricsTranslation.setAccount(&orchardAccount);
   MusicVideoController musicVideo(&youtubeProvider, &authManager, playback.get());
   ArtistVideoBackdrop artistVideo(&youtubeProvider, &authManager);
   // Local imports announce themselves through the same pill as copied links.
@@ -304,6 +320,7 @@ int main(int argc, char *argv[]) {
                    });
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardAppearance"), &appearance);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardAnimatedArtwork"), &animatedArtwork);
+  engine.rootContext()->setContextProperty(QStringLiteral("OrchardArtworkVideos"), &artworkVideos);
   NoHttp2NetworkFactory networkFactory;
   engine.setNetworkAccessManagerFactory(&networkFactory);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardBackend"),
@@ -333,6 +350,7 @@ int main(int argc, char *argv[]) {
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardIntegrations"), integrations.get());
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardQobuz"), &qobuz);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardSpotify"), &spotifyCanvas);
+  engine.rootContext()->setContextProperty(QStringLiteral("OrchardAppleMusic"), &appleMusic);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardLyrics"), lyrics.get());
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardTranslation"), &lyricsTranslation);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardSleep"), &sleepTimer);

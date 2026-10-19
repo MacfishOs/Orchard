@@ -35,30 +35,16 @@ import dev.sfg.orchard.mobile.ui.scroll.OrchardLazyColumn as LazyColumn
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import dev.sfg.orchard.mobile.auth.AuthState
-import dev.sfg.orchard.mobile.download.DownloadItem
-import dev.sfg.orchard.mobile.download.DownloadStatus
-import dev.sfg.orchard.mobile.model.Artist
 import dev.sfg.orchard.mobile.model.BuiltInHomeSection
 import dev.sfg.orchard.mobile.model.CatalogItem
-import dev.sfg.orchard.mobile.model.CatalogSection
-import dev.sfg.orchard.mobile.model.LibraryFilter
-import dev.sfg.orchard.mobile.model.LibrarySnapshot
 import dev.sfg.orchard.mobile.model.LoadState
-import dev.sfg.orchard.mobile.model.OrchardSettings
-import dev.sfg.orchard.mobile.model.Playlist
 import dev.sfg.orchard.mobile.model.Track
-import dev.sfg.orchard.mobile.ui.components.CatalogSectionBottomSheet
 import dev.sfg.orchard.mobile.ui.components.HomeSectionShimmer
 import dev.sfg.orchard.mobile.ui.components.MessagePanel
 import dev.sfg.orchard.mobile.ui.components.OrchardChromeHeight
@@ -74,149 +60,38 @@ internal data class QuickGridItem(
     val onPlay: () -> Unit,
 )
 
-data class HomeSectionSheetState(
-    val title: String,
-    val initialItems: List<CatalogItem>,
-    val browseId: String = "",
-    val params: String = "",
-)
-
 @Composable
-fun HomeScreen(
-    settings: OrchardSettings,
-    state: LoadState<List<CatalogSection>>,
-    library: LibrarySnapshot,
-    auth: AuthState = AuthState.SignedOut,
-    downloads: List<DownloadItem> = emptyList(),
-    downloadedTrackIds: Set<String> = emptySet(),
-    isOffline: Boolean = false,
-    onRefresh: () -> Unit,
-    onSearch: () -> Unit,
-    onLibrary: (LibraryFilter) -> Unit,
-    onPlay: (Track) -> Unit,
-    onOpenDetail: (String) -> Unit,
-    onEditLayout: () -> Unit = {},
-    onToggleLike: (Track) -> Unit,
-    onPlayNext: ((Track) -> Unit)? = null,
-    onAddToQueue: ((Track) -> Unit)? = null,
-    onAddToPlaylist: ((Track) -> Unit)? = null,
-    onShare: ((Track) -> Unit)? = null,
-    onOpenProfile: () -> Unit = {},
-    onFetchSectionItems: (suspend (String, String) -> List<CatalogItem>)? = null,
-    onPlayItem: ((CatalogItem) -> Unit)? = null,
-    onPlayCollection: ((String, String) -> Unit)? = null,
-) {
+fun HomeScreen(data: HomeData) {
     if (dev.sfg.orchard.mobile.ui.foldable.isFoldableOrWideLayout()) {
-        dev.sfg.orchard.mobile.ui.foldable.FoldableHomeScreen(
-            settings = settings,
-            state = state,
-            library = library,
-            auth = auth,
-            downloads = downloads,
-            downloadedTrackIds = downloadedTrackIds,
-            isOffline = isOffline,
-            onRefresh = onRefresh,
-            onSearch = onSearch,
-            onLibrary = onLibrary,
-            onPlay = onPlay,
-            onOpenDetail = onOpenDetail,
-            onEditLayout = onEditLayout,
-            onToggleLike = onToggleLike,
-            onPlayNext = onPlayNext,
-            onAddToQueue = onAddToQueue,
-            onAddToPlaylist = onAddToPlaylist,
-            onShare = onShare,
-            onOpenProfile = onOpenProfile,
-            onFetchSectionItems = onFetchSectionItems,
-            onPlayItem = onPlayItem,
-            onPlayCollection = onPlayCollection,
-        )
+        dev.sfg.orchard.mobile.ui.foldable.FoldableHomeScreen(data)
         return
     }
+    HomeSectionSheet(data)
 
-    var activeSectionSheet by remember { mutableStateOf<HomeSectionSheetState?>(null) }
-
-    val playCatalogItem: (CatalogItem) -> Unit = { item ->
-        if (onPlayItem != null) {
-            onPlayItem(item)
-        } else if (onPlayCollection != null) {
-            when (item) {
-                is CatalogItem.Song -> onPlay(item.track)
-                is CatalogItem.Collection -> onPlayCollection(item.playlist.id, item.title)
-                is CatalogItem.Record -> onPlayCollection(item.album.id, item.title)
-                is CatalogItem.Performer -> onPlayCollection(item.artist.id, item.title)
-                is CatalogItem.Category -> onOpenDetail(item.stableId)
-            }
-        } else {
-            when (item) {
-                is CatalogItem.Song -> onPlay(item.track)
-                else -> onOpenDetail(item.stableId)
-            }
-        }
-    }
-
-    val openCatalogItem: (CatalogItem) -> Unit = { item ->
-        when (item) {
-            is CatalogItem.Song -> onPlay(item.track)
-            else -> onOpenDetail(item.stableId)
-        }
-    }
-
-    activeSectionSheet?.let { sheet ->
-        CatalogSectionBottomSheet(
-            title = sheet.title,
-            initialItems = sheet.initialItems,
-            browseId = sheet.browseId,
-            params = sheet.params,
-            onFetchFullItems = onFetchSectionItems,
-            onPlay = onPlay,
-            onPlayItem = playCatalogItem,
-            onOpen = onOpenDetail,
-            onDismiss = { activeSectionSheet = null },
-        )
-    }
-
-    val completedDownloads =
-        remember(downloads) {
-            downloads.filter { it.status == DownloadStatus.COMPLETED && it.filePath.isNotBlank() }
-        }
-    val downloadedTracks: List<Track> =
-        remember(completedDownloads) { completedDownloads.map { it.track } }
-    val effectiveOffline = isOffline || state is LoadState.Error
-
-    val offlinePlaylistItems = remember(downloadedTracks, downloadedTrackIds, library.savedPlaylists) {
-        offlinePlaylistItems(downloadedTracks, downloadedTrackIds, library.savedPlaylists)
-    }
-    val offlineArtistItems = remember(downloadedTracks, library.savedArtists) {
-        offlineArtistItems(downloadedTracks, library.savedArtists)
-    }
-    val offlineAlbumItems = remember(downloadedTracks) { offlineAlbumItems(downloadedTracks) }
-    val spotlight = remember(state, library) { discoverEntries(state, library) }
-    val quickGridItems = remember(library, state) {
-        quickGridItems(library, state, onOpenDetail, openCatalogItem, playCatalogItem)
-    }
-
-    fun seeAll(title: String, items: List<CatalogItem>, browseId: String = "", params: String = ""): () -> Unit =
-        { activeSectionSheet = HomeSectionSheetState(title, items, browseId, params) }
+    val actions = data.actions
+    val offline = data.offline
+    val quickGridItems = data.quickGrid
+    val spotlight = data.spotlight
+    val downloadedTracks = data.downloadedTracks
 
     // Card style shared by several rails.
     val collectionCard: @Composable (CatalogItem) -> Unit = { item ->
-        GlassRecentlyPlayedCard(item = item, onClick = { openCatalogItem(item) })
+        GlassRecentlyPlayedCard(item = item, onClick = { data.open(item) })
     }
     val artistCard: @Composable (CatalogItem) -> Unit = { item ->
-        CircularArtistCard(item = item, onClick = { openCatalogItem(item) })
+        CircularArtistCard(item = item, onClick = { data.open(item) })
     }
     val rankedRow: @Composable (Int, Track) -> Unit = { index, track ->
         RankedSongRow(
             rank = index + 1,
             track = track,
-            liked = library.likedTracks.any { it.id == track.id },
-            onPlay = { onPlay(track) },
-            onToggleLike = { onToggleLike(track) },
-            onPlayNext = onPlayNext,
-            onAddToQueue = onAddToQueue,
-            onAddToPlaylist = onAddToPlaylist,
-            onShare = onShare,
+            liked = data.isLiked(track),
+            onPlay = { actions.play(track) },
+            onToggleLike = { actions.toggleLike(track) },
+            onPlayNext = actions.playNext,
+            onAddToQueue = actions.addToQueue,
+            onAddToPlaylist = actions.addToPlaylist,
+            onShare = actions.share,
         )
     }
 
@@ -227,104 +102,86 @@ fun HomeScreen(
         ) {
             // Masthead. Greets you, judges your 3am listening silently.
             item {
-                GlassHomeHeader(auth = auth, onSearch = onSearch, onProfile = onOpenProfile)
+                GlassHomeHeader(auth = data.auth, onSearch = actions.search, onProfile = actions.openProfile)
             }
 
-            if (quickGridItems.isNotEmpty() && !effectiveOffline) {
+            if (quickGridItems.isNotEmpty() && !offline) {
                 item {
                     SpotifyQuickGrid(items = quickGridItems)
                     Spacer(Modifier.height(24.dp))
                 }
             }
 
-            if (!effectiveOffline && spotlight.isNotEmpty()) {
+            if (!offline && spotlight.isNotEmpty()) {
                 item {
                     DiscoverCarousel(
                         title = "Your daily discover",
                         entries = spotlight,
-                        onPlayAll = { playCatalogItem(spotlight.first().item) },
-                        onClick = openCatalogItem,
+                        onPlayAll = { data.play(spotlight.first().item) },
+                        onClick = data::open,
                     )
                 }
             }
 
-            if (effectiveOffline) {
+            if (offline) {
                 item {
                     OfflineModeBanner(downloadedTracks.size)
                     Spacer(Modifier.height(14.dp))
                 }
             }
 
-            val layoutConfig =
-                if (effectiveOffline) settings.homeLayoutOffline else settings.homeLayoutOnline
-
-            layoutConfig.forEach { config ->
+            data.layout.forEach { config ->
                 if (!config.enabled) return@forEach
 
                 when (config.section) {
                     BuiltInHomeSection.YOUR_PLAYLISTS -> {
-                        if (effectiveOffline) return@forEach
-                        val playlistItems =
-                            library.savedPlaylists
-                                .map { CatalogItem.Collection(it) }
-                                .ifEmpty { extractItemsOfKind<CatalogItem.Collection>(state) }
-                                .distinctBy { it.stableId }
+                        if (offline) return@forEach
+                        val playlistItems = data.playlists
                         if (playlistItems.isNotEmpty()) {
-                            val openAll = seeAll("Your Playlists", playlistItems)
+                            val openAll = data.seeAll("Your Playlists", playlistItems)
                             homeRail(
                                 "Your Playlists", playlistItems, "pl", openAll,
-                                header = { AccountSectionTitle("Your playlists", auth, openAll) },
+                                header = { AccountSectionTitle("Your playlists", data.auth, openAll) },
                                 card = collectionCard,
                             )
                         }
                     }
                     BuiltInHomeSection.SUBSCRIBED_ARTISTS -> {
-                        if (effectiveOffline) return@forEach
-                        val artistItems =
-                            library.savedArtists
-                                .map { CatalogItem.Performer(it) }
-                                .ifEmpty { extractItemsOfKind<CatalogItem.Performer>(state) }
-                                .distinctBy { it.stableId }
+                        if (offline) return@forEach
+                        val artistItems = data.artists
                         if (artistItems.isNotEmpty()) {
                             homeRail(
-                                "Keep listening", artistItems, "art", seeAll("Keep listening", artistItems),
+                                "Keep listening", artistItems, "art", data.seeAll("Keep listening", artistItems),
                                 subtitle = "Artists you follow and love", spacing = 16.dp, card = artistCard,
                             )
                         }
                     }
                     BuiltInHomeSection.TOP_SONGS -> {
-                        if (effectiveOffline) return@forEach
-                        val songTracks =
-                            library.mostPlayed
-                                .ifEmpty { library.likedTracks }
-                                .ifEmpty { library.recentlyPlayed }
-                                .ifEmpty {
-                                    extractItemsOfKind<CatalogItem.Song>(state).map { it.track }
-                                }
-                                .distinctBy { it.id }
+                        if (offline) return@forEach
+                        val songTracks = data.topSongs
                         if (songTracks.isNotEmpty()) {
                             homeTrackSection(
                                 "Latest Songs", songTracks.take(5), "top",
-                                seeAll("Latest Songs", songTracks.map { CatalogItem.Song(it) }),
+                                data.seeAll("Latest Songs", songTracks.map { CatalogItem.Song(it) }),
                                 subtitle = "Top picks and recent favorites", row = rankedRow,
                             )
                         }
                     }
                     BuiltInHomeSection.RECOMMENDATIONS -> {
-                        if (effectiveOffline) return@forEach
-                        when (state) {
+                        if (offline) return@forEach
+                        when (val state = data.state) {
                             is LoadState.Content -> {
                                 state.value.forEachIndexed { sectionIndex, section ->
                                     homeRail(
                                         section.title, section.items, section.id,
-                                        seeAll(section.title, section.items, section.browseId, section.params),
+                                        data.seeAll(section.title, section.items, section.browseId, section.params),
                                         sectionKey = section.id,
                                     ) { item ->
                                         // Alternate card styles so consecutive rails read differently.
                                         if (sectionIndex % 2 == 1) {
-                                            GlassSquircleCard(item = item, onClick = { openCatalogItem(item) }, onPlay = { playCatalogItem(item) })
+                                            GlassSquircleCard(item = item, onClick = { data.open(item) }, onPlay = { data.play(item) })
                                         } else {
-                                            GlassRecentlyPlayedCard(item = item, onClick = { openCatalogItem(item) })
+                                            GlassRecentlyPlayedCard(item = item, onClick = { data.open(item) })
                                         }
                                     }
                                 }
@@ -334,47 +191,47 @@ fun HomeScreen(
                             }
                             is LoadState.Empty -> {
                                 item {
-                                    MessagePanel("A quiet orchard", state.message, "Refresh", onRefresh)
+                                    MessagePanel("A quiet orchard", state.message, "Refresh", actions.refresh)
                                 }
                             }
                             else -> Unit
                         }
                     }
                     BuiltInHomeSection.DOWNLOADED_PLAYLISTS -> {
-                        if (!effectiveOffline) return@forEach
-                        if (offlinePlaylistItems.isNotEmpty()) {
+                        if (!offline) return@forEach
+                        if (data.offlinePlaylists.isNotEmpty()) {
                             homeRail(
-                                "Downloaded Playlists", offlinePlaylistItems, "off_pl",
-                                seeAll("Downloaded Playlists", offlinePlaylistItems), card = collectionCard,
+                                "Downloaded Playlists", data.offlinePlaylists, "off_pl",
+                                data.seeAll("Downloaded Playlists", data.offlinePlaylists), card = collectionCard,
                             )
                         }
                     }
                     BuiltInHomeSection.DOWNLOADED_ARTISTS -> {
-                        if (!effectiveOffline) return@forEach
-                        if (offlineArtistItems.isNotEmpty()) {
+                        if (!offline) return@forEach
+                        if (data.offlineArtists.isNotEmpty()) {
                             homeRail(
-                                "Downloaded Artists", offlineArtistItems, "off_art",
-                                seeAll("Downloaded Artists", offlineArtistItems), spacing = 16.dp, card = artistCard,
+                                "Downloaded Artists", data.offlineArtists, "off_art",
+                                data.seeAll("Downloaded Artists", data.offlineArtists), spacing = 16.dp, card = artistCard,
                             )
                         }
                     }
                     BuiltInHomeSection.DOWNLOADED_ALBUMS -> {
-                        if (!effectiveOffline) return@forEach
-                        if (offlineAlbumItems.isNotEmpty()) {
+                        if (!offline) return@forEach
+                        if (data.offlineAlbums.isNotEmpty()) {
                             homeRail(
-                                "Downloaded Albums", offlineAlbumItems, "off_alb",
-                                seeAll("Downloaded Albums", offlineAlbumItems),
+                                "Downloaded Albums", data.offlineAlbums, "off_alb",
+                                data.seeAll("Downloaded Albums", data.offlineAlbums),
                             ) { item ->
-                                GlassRecentlyPlayedCard(item = item, onClick = { openCatalogItem(item) })
+                                GlassRecentlyPlayedCard(item = item, onClick = { data.open(item) })
                             }
                         }
                     }
                     BuiltInHomeSection.DOWNLOADED_SONGS -> {
-                        if (!effectiveOffline) return@forEach
+                        if (!offline) return@forEach
                         if (downloadedTracks.isNotEmpty()) {
                             homeTrackSection(
                                 "Downloaded Songs", downloadedTracks, "off_trk",
-                                seeAll("Downloaded Songs", downloadedTracks.map { CatalogItem.Song(it) }),
+                                data.seeAll("Downloaded Songs", downloadedTracks.map { CatalogItem.Song(it) }),
                                 row = rankedRow,
                             )
                         } else {
@@ -384,7 +241,7 @@ fun HomeScreen(
                                     message =
                                         "You are currently offline. Connect to the internet to stream music, or download tracks to listen offline.",
                                     actionLabel = "Try reconnecting",
-                                    onAction = onRefresh,
+                                    onAction = actions.refresh,
                                 )
                             }
                         }
@@ -397,7 +254,7 @@ fun HomeScreen(
                     Modifier.fillMaxWidth().padding(vertical = 24.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    TextButton(onClick = onEditLayout) {
+                    TextButton(onClick = actions.editLayout) {
                         Text("Edit home layout", color = CanopyColors.Muted)
                     }
                 }
@@ -425,13 +282,6 @@ private fun StatusBarScrim() {
     )
 }
 
-private inline fun <reified T : CatalogItem> extractItemsOfKind(
-    state: LoadState<List<CatalogSection>>
-): List<T> {
-    if (state !is LoadState.Content) return emptyList()
-    return state.value.flatMap { it.items }.filterIsInstance<T>()
-}
-
 internal fun catalogItemBadge(item: CatalogItem): String =
     when (item) {
         is CatalogItem.Song -> "SONG"
@@ -457,10 +307,3 @@ internal fun catalogSubtitle(item: CatalogItem): String =
         is CatalogItem.Collection -> item.playlist.author.ifBlank { "Playlist" }
         is CatalogItem.Category -> ""
     }
-
-private fun openItem(item: CatalogItem, play: (Track) -> Unit, detail: (String) -> Unit) {
-    when (item) {
-        is CatalogItem.Song -> play(item.track)
-        else -> detail(item.stableId)
-    }
-}

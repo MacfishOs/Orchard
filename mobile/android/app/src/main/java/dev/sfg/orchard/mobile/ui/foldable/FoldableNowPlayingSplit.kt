@@ -326,6 +326,8 @@ internal fun FoldableNowPlayingSplit(
                             onMove = onMoveQueueItem,
                             onClearUpcoming = onClearUpcoming,
                             onShuffleUpcoming = onShuffle,
+                            onShuffle = onShuffle,
+                            onRepeat = onRepeat,
                             autoplayEnabled = autoplayEnabled,
                             autoplayLoading = autoplayLoading,
                             autoplayError = autoplayError,
@@ -340,6 +342,7 @@ internal fun FoldableNowPlayingSplit(
                         when (lyrics) {
                             is LoadState.Content -> LyricLines(
                                 lines = lyrics.value,
+                                songId = track.id,
                                 playing = playback.isPlaying,
                                 onSeek = onSeek,
                                 contentPadding = PaddingValues(vertical = 16.dp),

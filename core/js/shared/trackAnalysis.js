@@ -157,6 +157,23 @@ function audibleRange(raw, duration) {
   });
 }
 
+// Worker chroma: one pitch-class profile (sum 1) and tonal weight per step over the mix window.
+function normalizeChromaCurve(raw) {
+  const curve = raw?.chromaCurve;
+  const step = positive(curve?.step);
+  if (!step || !Array.isArray(curve.values) || !curve.values.length) return null;
+  const values = curve.values.map((frame) => (Array.isArray(frame) && frame.length === 12
+    ? Object.freeze(frame.map((value) => Math.max(0, finite(value) ?? 0)))
+    : null));
+  const weights = curve.values.map((_, index) => Math.max(0, finite(curve.weights?.[index]) ?? 1));
+  return Object.freeze({
+    start: finite(curve.start) ?? 0,
+    step,
+    values: Object.freeze(values),
+    weights: Object.freeze(weights)
+  });
+}
+
 function normalizeHarmonic(raw) {
   const chroma = Array.isArray(raw.chroma)
     ? raw.chroma.slice(0, 12).map(finite).map((value) => value ?? 0)
@@ -164,8 +181,34 @@ function normalizeHarmonic(raw) {
   return Object.freeze({
     key: String(raw.key || ''),
     keyConfidence: clamp(raw.keyConfidence, 0, 1),
-    chroma: Object.freeze(chroma)
+    chroma: Object.freeze(chroma),
+    curve: normalizeChromaCurve(raw)
   });
+}
+
+/**
+ * Weighted pitch-class profile over `from..to`, its total tonal weight per second, and how many
+ * frames it covers; null when no measured chroma reaches the span.
+ */
+export function chromaProfile(analysis = {}, from, to) {
+  const curve = analysis.harmonic?.curve;
+  const start = finite(from);
+  const end = finite(to);
+  if (!curve || start === null || end === null || end < start) return null;
+  const profile = new Array(12).fill(0);
+  let weight = 0;
+  let frames = 0;
+  for (let index = 0; index < curve.values.length; index += 1) {
+    const time = curve.start + index * curve.step;
+    const frame = curve.values[index];
+    if (time < start || time > end || !frame) continue;
+    const frameWeight = curve.weights[index];
+    for (let pitch = 0; pitch < 12; pitch += 1) profile[pitch] += frame[pitch] * frameWeight;
+    weight += frameWeight;
+    frames += 1;
+  }
+  if (!frames) return null;
+  return { profile, weight: rounded(weight / frames), frames };
 }
 
 function normalizeCurve(raw, map = (value) => value) {
@@ -339,6 +382,8 @@ export function curveValue(analysis = {}, name, time) {
   return rounded(left + (right - left) * (position - index));
 }
 
+// Sum, count and peak of a curve's known samples over `from..to`, without allocating: the
+// planner reads curves tens of thousands of times per pair.
 function curveSpan(analysis, name, from, to) {
   const curve = analysis.curves?.[name];
   const start = finite(from);
@@ -346,20 +391,29 @@ function curveSpan(analysis, name, from, to) {
   if (!curve || start === null || end === null) return null;
   const first = Math.max(0, Math.floor((start - curve.start) / curve.step));
   const last = Math.min(curve.values.length - 1, Math.ceil((end - curve.start) / curve.step) - 1);
-  const values = curve.values.slice(first, last + 1).filter((value) => value !== null);
-  return last < first || !values.length ? null : values;
+  let sum = 0;
+  let count = 0;
+  let peak = -Infinity;
+  for (let index = first; index <= last; index += 1) {
+    const value = curve.values[index];
+    if (value === null) continue;
+    sum += value;
+    count += 1;
+    if (value > peak) peak = value;
+  }
+  return count ? { sum, count, peak } : null;
 }
 
 /** Mean of a measured curve over `from..to`; null when the span is not covered. */
 export function curveMean(analysis = {}, name, from, to) {
-  const values = curveSpan(analysis, name, from, to);
-  return values ? rounded(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
+  const span = curveSpan(analysis, name, from, to);
+  return span ? rounded(span.sum / span.count) : null;
 }
 
 /** Largest value of a measured curve over `from..to`; null when the span is not covered. */
 export function curvePeak(analysis = {}, name, from, to) {
-  const values = curveSpan(analysis, name, from, to);
-  return values ? rounded(Math.max(...values)) : null;
+  const span = curveSpan(analysis, name, from, to);
+  return span ? rounded(span.peak) : null;
 }
 
 export function interpolateTrackFrame(analysis = {}, field, time) {

@@ -20,6 +20,7 @@
 package dev.sfg.orchard.mobile.artwork
 
 import android.util.Log
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -49,17 +50,31 @@ class ArtistImageRepository(http: OkHttpClient) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ArtistImages?>?): Boolean =
             size > 64
     }
+    // Guarded by cache; each parentless reply survives an individual caller's cancellation.
+    private val pending = HashMap<String, CompletableDeferred<ArtistImages?>>()
 
     suspend fun images(artistName: String): ArtistImages? = withContext(Dispatchers.IO) {
         val name = artistName.trim()
         if (name.isBlank()) return@withContext null
         val key = name.lowercase()
-        synchronized(cache) { if (cache.containsKey(key)) return@withContext cache[key] }
+        var owner = false
+        val reply = synchronized(cache) {
+            if (cache.containsKey(key)) return@withContext cache[key]
+            pending[key] ?: CompletableDeferred<ArtistImages?>().also {
+                pending[key] = it
+                owner = true
+            }
+        }
+        if (!owner) return@withContext reply.await()
 
         val resolved = runCatching { fetch(name) }
             .onFailure { Log.w(TAG, "Artist imagery lookup failed for $name", it) }
             .getOrNull()
-        synchronized(cache) { cache[key] = resolved }
+        synchronized(cache) {
+            cache[key] = resolved
+            pending.remove(key)
+        }
+        reply.complete(resolved)
         resolved
     }
 

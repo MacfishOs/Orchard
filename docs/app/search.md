@@ -1,6 +1,6 @@
 ---
 title: Search and Spotlight
-summary: Search YouTube Music from the top bar, jump anywhere with Spotlight, and find songs inside a playlist.
+summary: Search music from the sidebar, jump anywhere with Spotlight, and find songs inside a playlist.
 group: Basics
 icon: search
 keywords:
@@ -18,11 +18,11 @@ order: 50
 
 # Search and Spotlight
 
-Orchard has three ways to find things: the top bar search box, Spotlight search, and Quick Search inside a playlist.
+Orchard has three ways to find things: the sidebar search box, Spotlight search, and Quick Search inside a playlist.
 
 ## Search for a song, album, artist, or playlist
 
-1. Select the **Search YouTube Music…** box in the top bar.
+1. Select the **Search…** box at the top of the sidebar. In a narrow window, select the search icon to open Spotlight.
 2. Type what you want. Results appear as you type.
 3. Click a result. A song plays, and an album, artist, or playlist opens its page.
 

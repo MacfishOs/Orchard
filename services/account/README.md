@@ -37,7 +37,9 @@ expires. The account routes (`/me`, `/devices`) also check the device row.
 | `GET /auth/google/callback` | none |
 | `POST /auth/token` | `authorization_code` or `refresh_token` grant |
 | `POST /auth/logout` | refresh token in body |
+| `GET /apple/developer-token` | Bearer, live device; per-IP, per-account and daily limits |
 | `GET /me` | Bearer |
+| `POST /lyrics/translate` | Bearer, live device, Cloudflare IP |
 | `GET /devices` | Bearer |
 | `DELETE /devices/:id` | Bearer |
 | `GET /.well-known/jwks.json` | none |
@@ -54,6 +56,92 @@ expires. The account routes (`/me`, `/devices`) also check the device row.
 | `POST /support/reports/:id/read` | Bearer |
 | `GET /support/screenshots/<key>` | none |
 | `POST /github/webhook` | `X-Hub-Signature-256` |
+
+## Apple Music developer tokens
+
+`GET /apple/developer-token` returns `{developer_token, expires_at}` for
+MusicKit JS. `expires_at` is a Unix timestamp in seconds. Tokens last 60
+days, so clients cache one and fetch again near expiry. Responses use
+`Cache-Control: no-store`.
+
+The endpoint requires an Orchard session from a live device; missing or revoked
+sessions return 401. Requests pass three limits, each returning 429 with
+`Retry-After`:
+
+- `AUTH_LIMITER`: 30 per minute per Cloudflare IP in the `apple` bucket (`slow_down`).
+- `APPLE_LIMITER`: 5 per minute per account (`slow_down`).
+- 150 tokens per account per UTC day, counted in D1 (`apple_daily_limit`).
+
+Apply migration `0006_apple_music.sql` before deploying. The hourly cron purges
+usage rows older than yesterday.
+
+Each token carries an `origin` claim, so browsers only accept it from Orchard's
+pages. The default is `https://appassets.androidplatform.net`, the Android
+sign-in page. Set `APPLE_MUSIC_ORIGINS` to a comma-separated list to replace it.
+Clients outside a browser can forge `Origin`; the account requirement is the
+real control.
+
+Apple handles subscriber authorization in MusicKit JS and returns a separate
+Music User Token to the app. The Worker only signs developer tokens and does not
+receive Apple passwords or Music User Tokens.
+
+Create a MusicKit identifier and enabled private key in the Apple developer
+account, then configure these independently of Orchard's `SIGNING_KEY`:
+
+```sh
+npx wrangler secret put APPLE_MUSIC_TEAM_ID --config wrangler.production.jsonc
+npx wrangler secret put APPLE_MUSIC_KEY_ID --config wrangler.production.jsonc
+npx wrangler secret put APPLE_MUSIC_PRIVATE_KEY --config wrangler.production.jsonc < /path/to/AuthKey_KEYID.p8
+```
+
+The private key secret contains the full PKCS#8 PEM from the `.p8` file. For
+local development, put it in ignored `.dev.vars` as a quoted value with `\n`
+escapes. Never commit the private key or include it in an Android build. The
+Worker signs ES256 JWTs with Apple's Key ID in `kid` and Team ID in `iss`,
+following [Apple's developer token format](https://developer.apple.com/documentation/applemusicapi/generating-developer-tokens).
+
+Missing or invalid Apple credentials return 503 `apple_music_unavailable`.
+Other account routes work without these optional credentials. This endpoint
+does not implement Sign in with Apple or issue Orchard sessions.
+
+## Lyric translation
+
+`POST /lyrics/translate` accepts `{song_id, lines}` for a whole song and returns
+`{song_id, lines, cached}` with exactly one English output for each input line.
+The model is fixed server-side to `@cf/google/gemma-4-26b-a4b-it` using the `AI`
+binding. Client model, identity, IP, quota, and reset fields are ignored.
+
+D1 caches results for 90 days in `lyric_translations`, keyed by song ID, prompt/model
+revision, and a server-computed lyrics digest. The digest protects line alignment
+when lyric sources differ. Cache reads require the same session/device checks as
+misses, and cache hits are free across accounts.
+
+Each cache miss reserves one slot in both the authenticated account's quota and
+Cloudflare's `CF-Connecting-IP` quota. Each quota allows 10 starts per UTC day and
+resets at 00:00 UTC from the server clock, independently of cron. D1 triggers check
+both counters and charge admission atomically, including concurrent requests.
+Changing song IDs or lyric content requires another admission. Failed generation
+counts too; failed or partial output is never cached. Missing Cloudflare IP fails
+closed. IPs are hashed with the signing key before storage, and completed cache
+rows discard the account and IP association.
+
+The request body is limited to 48 KiB, 200 nonempty lines, 1024 UTF-8 bytes per
+line, and 24 KiB of lyric JSON. The Worker splits inference into 24-line batches
+with a 4096-token output cap. Inference has a 120-second deadline across all batches
+and rejects requests when model capacity is unavailable. A per-cache-entry lease prevents duplicate inference;
+it expires after 180 seconds. Errors: 429 `translation_daily_limit` with
+`Retry-After` until midnight, 409 `translation_pending` with `Retry-After: 5`,
+502 `translation_failed` or `translation_invalid_result`, 504 `translation_timeout`,
+503 `translation_busy`, and 503 `translation_unavailable` for a missing binding.
+Structured logs record start, completion, elapsed time, and stable failure codes;
+lyric text and credentials are excluded.
+The hourly purge removes expired entries and old daily counters.
+
+Apply migration `0005_translation.sql` and include `ai: {binding: "AI"}` in the
+production Wrangler config before deploying. The ignored production config on
+this checkout includes that binding; the tracked TOML includes its equivalent.
+The model's binding and completion format are documented in the
+[Cloudflare model reference](https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/).
 
 ## Artwork
 

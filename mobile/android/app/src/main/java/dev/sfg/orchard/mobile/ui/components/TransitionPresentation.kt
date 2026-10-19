@@ -65,8 +65,13 @@ fun transitionProgress(playback: PlaybackSnapshot, marker: TransitionMarker?): F
     if (playback.renderedMixPositionMs != null) {
         return raw.coerceIn(0.0, 1.0).toFloat()
     }
-    // A stale marker must not light up a later part of the outgoing track indefinitely.
-    if (raw < 0.0 || raw > 1.0) return 0f
+    if (raw < 0.0) return 0f
+    // A live splice drains past its end before the engine swaps decks; hold the endpoint so the
+    // outgoing song never reappears in that gap. A stale marker past the drain lights nothing.
+    if (raw > 1.0) {
+        val pastEndMs = playback.positionMs - marker.endMs
+        return if (marker.prepared && pastEndMs <= SPLICE_DRAIN_GRACE_MS) 1f else 0f
+    }
     return raw.toFloat()
 }
 
@@ -156,6 +161,9 @@ private class HandoffHold {
 }
 
 private const val RENDERED_DURATION_TOLERANCE_MS = 250L
+
+/** Covers the engine's drain and overdue windows before it hands off or aborts. */
+private const val SPLICE_DRAIN_GRACE_MS = 6_000L
 
 /** Far longer than a controller round trip; short enough that an aborted mix does not linger. */
 private const val HANDOFF_HOLD_MS = 2_000L

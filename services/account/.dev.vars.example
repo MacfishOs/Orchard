@@ -6,6 +6,10 @@ ARTWORK_PUBLIC_URL=http://127.0.0.1:8787
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 SIGNING_KEY=
+# Optional Apple Music signing credentials. Use a quoted PEM with \n escapes.
+APPLE_MUSIC_TEAM_ID=
+APPLE_MUSIC_KEY_ID=
+APPLE_MUSIC_PRIVATE_KEY=
 # Backblaze B2 bucket for Discord artwork (S3-compatible endpoint).
 B2_REGION=us-west-004
 B2_BUCKET=orchard-art

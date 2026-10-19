@@ -27,6 +27,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import dev.sfg.orchard.mobile.OrchardGraph
+import dev.sfg.orchard.mobile.artwork.highResolutionArtworkUrl
 import dev.sfg.orchard.mobile.model.PlaybackSnapshot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -153,7 +154,7 @@ internal class NowPlayingPublisher(
                     // A cover on this phone: other processes cannot open a file:// URI, so it travels as bytes.
                     java.io.File(android.net.Uri.parse(artworkUrl).path.orEmpty()).readBytes().takeIf { it.size <= 2 * 1024 * 1024 }
                 } else {
-                    graph.http.newCall(Request.Builder().url(artworkUrl).build()).execute().use { response ->
+                    graph.http.newCall(Request.Builder().url(highResolutionArtworkUrl(artworkUrl, 1024)).build()).execute().use { response ->
                         if (!response.isSuccessful) return@use null
                         response.body.bytes().takeIf { it.size <= 2 * 1024 * 1024 }
                     }

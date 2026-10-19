@@ -49,11 +49,16 @@ data class TrackArtwork(
  * Responses are accepted only when their title/artist/album identify the active
  * track. Provider errors are isolated so ordinary catalog artwork always wins
  * as a safe fallback. HLS URLs stay remote and are consumed by Media3 directly.
+ *
+ * While the listener is signed in to Apple Music, Apple's catalog takes the place of the
+ * unofficial providers (m8tec, boidu), at the first of their positions in the order.
  */
 class ArtworkRepository(
     http: OkHttpClient,
     private val spotifyCanvas: dev.sfg.orchard.mobile.spotify.SpotifyCanvasRepository? = null,
     private val sourceOrder: () -> List<ArtworkSource> = { ArtworkSource.entries },
+    private val appleSignedIn: () -> Boolean = { false },
+    private val appleArtwork: suspend (track: Track, album: Boolean) -> TrackArtwork? = { _, _ -> null },
 ) {
     private val client: OkHttpClient = http.newBuilder()
         // The lookup only upgrades artwork after the fact, so it can afford to wait
@@ -72,31 +77,42 @@ class ArtworkRepository(
 
     suspend fun artwork(track: Track): TrackArtwork? = withContext(Dispatchers.IO) {
         val order = sourceOrder().distinct().let { saved -> saved + ArtworkSource.entries.filterNot(saved::contains) }
-        val key = "${normalize(track.title)}::${normalize(track.artist)}::${normalize(track.album)}::${order.joinToString()}"
+        val apple = appleSignedIn()
+        val key = "${normalize(track.title)}::${normalize(track.artist)}::${normalize(track.album)}::${order.joinToString()}::$apple"
         if (key.startsWith("::") || track.title.isBlank() || track.artist.isBlank()) return@withContext null
-        synchronized(cache) { if (cache.containsKey(key)) return@withContext cache[key] }
-        val resolved = orderedArtwork(track, order)
-        synchronized(cache) { cache[key] = resolved }
-        resolved
+        cached(key) { orderedArtwork(track, order, apple) }
     }
 
-    private suspend fun orderedArtwork(track: Track, order: List<ArtworkSource>): TrackArtwork? = coroutineScope {
-        val attempts = order.associateWith { source ->
-            async {
-                if (source == ArtworkSource.SPOTIFY) {
+    private suspend fun cached(key: String, resolve: suspend () -> TrackArtwork?): TrackArtwork? {
+        synchronized(cache) { if (cache.containsKey(key)) return cache[key] }
+        val resolved = resolve()
+        synchronized(cache) { cache[key] = resolved }
+        return resolved
+    }
+
+    private suspend fun orderedArtwork(track: Track, order: List<ArtworkSource>, apple: Boolean): TrackArtwork? = coroutineScope {
+        val lookups = mutableListOf<suspend () -> TrackArtwork?>()
+        var appleQueued = false
+        for (source in order) {
+            when {
+                source == ArtworkSource.SPOTIFY -> lookups += {
                     // Canvas carries Spotify's id; consumers match the playing YouTube id.
                     runCatching { spotifyCanvas?.getCanvas(track.title, track.artist) }.getOrNull()
                         ?.copy(trackId = track.id)
-                } else {
-                    providers.getValue(source).let { fetch(it, track) }
+                }
+                !apple -> lookups += { providers.getValue(source).let { fetch(it, track) } }
+                !appleQueued -> {
+                    appleQueued = true
+                    lookups += { fromApple(track, album = false) }
                 }
             }
         }
+        val attempts = lookups.map { lookup -> async { lookup() } }
         var still: TrackArtwork? = null
-        for (source in order) {
-            val candidate = attempts.getValue(source).await()
+        for (attempt in attempts) {
+            val candidate = attempt.await()
             if (candidate.hasMotion()) {
-                attempts.values.forEach { it.cancel() }
+                attempts.forEach { it.cancel() }
                 return@coroutineScope candidate
             }
             if (still == null) still = candidate
@@ -123,8 +139,13 @@ class ArtworkRepository(
         // Both lookups start together, but the album answer is taken as soon as it has motion;
         // waiting on the fallback as well meant a hung second request cost the whole read timeout
         // even when the album query had already succeeded.
+        val apple = appleSignedIn()
         coroutineScope {
-            val albumArt = async { artwork(albumQuery) }
+            val albumArt = async {
+                if (apple) cached("album::${detail.id}::${normalize(detail.title)}::${normalize(artist)}") {
+                    fromApple(albumQuery, album = true)
+                } else artwork(albumQuery)
+            }
             val fallback = async {
                 titleTrack?.let { artwork(it.copy(album = it.album.ifBlank { detail.title })) }
             }
@@ -139,6 +160,11 @@ class ArtworkRepository(
             }
         }
     }
+
+    private suspend fun fromApple(track: Track, album: Boolean): TrackArtwork? =
+        runCatching { appleArtwork(track, album) }
+            .onFailure { if (it is kotlinx.coroutines.CancellationException) throw it; Log.w(TAG, "Apple Music artwork failed", it) }
+            .getOrNull()
 
     private fun TrackArtwork?.hasMotion(): Boolean =
         this != null && (videoUrl.isNotBlank() || videoUrlVertical.isNotBlank())

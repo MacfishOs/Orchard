@@ -66,6 +66,7 @@ Orchard listens to the audio rather than trusting a catalog. Smart Crossfade and
 * **Chromecast** - move the active queue to Cast speakers and displays, then bring it back without losing position
 * **Last.fm and ListenBrainz** - encrypted account credentials, now-playing updates, and seek-resistant scrobbling
 * **Orchard account** - Google sign-in, an encrypted device session, and device management in Settings
+* **Apple Music** - sign in with MusicKit JS in a WebView; the session cookies persist and the WebView closes after sign-in
 * Discord Rich Presence, with animated artwork where available and an artist portrait over the cover
 * Shareable song.link and album.link URLs, matching desktop
 
@@ -89,6 +90,64 @@ Release builds are signed from `ANDROID_KEYSTORE_FILE`, `ANDROID_KEYSTORE_PASSWO
 ```bash
 ./gradlew assembleRelease
 ```
+
+### Fast Canary testing
+
+For local testing with debugger overhead disabled and shorter incremental
+builds, use the ARM64 `canaryFast` build:
+
+```sh
+./gradlew assembleCanaryFast
+adb install -r app/build/outputs/apk/canaryFast/app-canaryFast.apk
+```
+
+It is non-debuggable, uses release dependencies and optimized native libraries,
+and skips R8 minification and resource shrinking. It does not include the
+debug-only Compose tooling or automatic release lint checks. Full Canary and
+release builds also apply R8's code optimizations; use those for final
+performance and compatibility checks.
+
+For the x86_64 emulator, use `canaryFastX86`. It has the same optimizations and
+packages only x86_64 libraries:
+
+```sh
+./gradlew assembleCanaryFastX86
+adb install -r app/build/outputs/apk/canaryFastX86/app-canaryFastX86.apk
+```
+
+It installs as **Orchard Canary Fast x86_64** and shares the Canary x86_64
+application ID.
+
+The launcher label is **Orchard Canary Fast**, with Canary's yellow icon.
+It shares Canary's application ID and signing configuration, so installing it
+replaces Canary and retains its sign-ins and settings. It uses the local debug
+signing key when release signing credentials are absent. Automatic updates are
+disabled.
+
+## Apple Music sign-in
+
+Open **Settings → Connections → Apple Music** and select **Sign in to Apple
+Music**. The app fetches a developer JWT from the account worker's
+`GET /apple/developer-token` endpoint and runs MusicKit JS in a WebView, so
+no Apple SDK is bundled. Configure and deploy the
+[account worker](../services/account/README.md#apple-music-developer-tokens)
+first. Sign in to your Orchard account before connecting Apple Music; the
+worker only issues developer tokens to Orchard sessions.
+
+The WebViews exist only while the sign-in screen is open. Apple's cookies stay
+in the app's WebView cookie jar, so signing in again reuses the session. The
+Music User Token is encrypted with Android Keystore. **Disconnect** removes the
+token, Apple's cookies and the MusicKit page storage; other services keep their
+sign-ins. Choose **Apple Music** under **Music source** in **Settings →
+Appearance → Home screen layout → Online** to use its catalog for Home, search,
+artists, albums and playlists. Choose **YouTube Music** to browse YouTube Music.
+Apple Music connection and loading errors stay visible without switching catalogs.
+Your library remains on YouTube Music. Apple Music playback is not available yet;
+Apple Music tracks keep their provider identity and are not matched to YouTube Music.
+
+The Apple Music logo is optional and not tracked in Git. Place a square PNG at
+`mobile/android/local/apple-music/res/drawable-nodpi/apple_music_logo.png` to
+show it in Settings and on the now playing source mark.
 
 ## Orchard Connect
 
@@ -154,4 +213,4 @@ Smart Crossfade ships trained models. Both were chosen because their **weights**
 * **[libdatachannel](https://github.com/paullouisageneau/libdatachannel)** (Paul-Louis Ageneau): Orchard Connect's WebSocket and WebRTC data channel transports, from `third_party/libdatachannel` with its bundled libjuice, usrsctp and plog. MPL-2.0, with libjuice under MPL-2.0, usrsctp under BSD-3-Clause and plog under MIT.
 * **[Mbed TLS](https://github.com/Mbed-TLS/mbedtls)**: DTLS for the data channel, and the HKDF, HMAC and ChaCha20-Poly1305 behind Connect's session encryption, from `third_party/mbedtls`. Apache-2.0 OR GPL-2.0-or-later; Orchard uses it under Apache-2.0.
 * **[nlohmann/json](https://github.com/nlohmann/json)**: JSON in the Connect core, from `third_party/json`. MIT.
-* **earmark** — the beat-aware crossfade engine that plans and renders every transition, shared with Orchard desktop and vendored at `crates/earmark`. Orchard-Only License (OOL-1.0), see `crates/earmark/LICENSE`. It reaches Kotlin through JNI and time-stretches with [Signalsmith Stretch](https://github.com/Signalsmith-Audio/signalsmith-stretch) (MIT).
+* **earmark** — the beat-aware crossfade engine that plans and renders every transition, shared with Orchard desktop and vendored at `crates/earmark`. PolyForm Shield License 1.0.0, see `crates/earmark/LICENSE`. It reaches Kotlin through JNI and time-stretches with [Signalsmith Stretch](https://github.com/Signalsmith-Audio/signalsmith-stretch) (MIT).

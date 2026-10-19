@@ -26,6 +26,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import dev.sfg.orchard.mobile.OrchardGraph
 import dev.sfg.orchard.mobile.model.Playlist
+import dev.sfg.orchard.mobile.model.subtitle
 import dev.sfg.orchard.mobile.model.Track
 
 /**
@@ -51,7 +52,7 @@ class OrchardMediaLibrary(private val graph: OrchardGraph) {
             browsable(RECENT, "Recently played"),
         )
         PLAYLISTS -> playlists().map { playlist ->
-            browsable(playlistId(playlist.id), playlist.title, playlist.author, playlist.artworkUrl)
+            browsable(playlistId(playlist.id), playlist.title, playlist.subtitle, playlist.artworkUrl)
         }
         LIKED -> tracks(LIKED) {
             graph.library.library.value.likedTracks.ifEmpty {
@@ -74,7 +75,7 @@ class OrchardMediaLibrary(private val graph: OrchardGraph) {
         if (query.isBlank()) {
             graph.library.library.value.likedTracks
         } else {
-            runCatching { graph.catalog.search(query).tracks }.getOrDefault(emptyList())
+            runCatching { graph.catalogRouter.search(query).tracks }.getOrDefault(emptyList())
         }
     }
 
@@ -89,7 +90,7 @@ class OrchardMediaLibrary(private val graph: OrchardGraph) {
             mediaId.startsWith(PLAYLIST_PREFIX) -> {
                 val id = mediaId.removePrefix(PLAYLIST_PREFIX)
                 graph.library.library.value.savedPlaylists.firstOrNull { it.id == id }
-                    ?.let { browsable(mediaId, it.title, it.author, it.artworkUrl) }
+                    ?.let { browsable(mediaId, it.title, it.subtitle, it.artworkUrl) }
             }
             else -> null
         }

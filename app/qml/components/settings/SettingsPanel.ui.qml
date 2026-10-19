@@ -79,7 +79,6 @@ RowLayout {
                 width: parent.width
                 height: 40
                 radius: 10
-                // Translucent so the glass shows through the selection.
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: "#338cc4a0" }
                     GradientStop { position: 1.0; color: "#1a8cc4a0" }

@@ -29,6 +29,8 @@ import dev.sfg.orchard.mobile.auth.SecureYouTubeSessionStore
 import dev.sfg.orchard.mobile.catalog.CatalogRepository
 import dev.sfg.orchard.mobile.catalog.VideoVersionResolver
 import dev.sfg.orchard.mobile.catalog.PlaylistActions
+import dev.sfg.orchard.mobile.home.HomeFeeds
+import dev.sfg.orchard.mobile.home.YouTubeHomeSource
 import dev.sfg.orchard.mobile.connect.ConnectRepository
 import dev.sfg.orchard.mobile.library.LibraryCache
 import dev.sfg.orchard.mobile.library.LibraryRepository
@@ -82,7 +84,13 @@ class OrchardGraph(context: Context) {
     val slopVerdicts by lazy { dev.sfg.orchard.mobile.playback.slop.SlopVerdicts(context) }
     val networkMonitor = dev.sfg.orchard.mobile.network.NetworkMonitor(context)
     val spotifyCanvas = dev.sfg.orchard.mobile.spotify.SpotifyCanvasRepository(context, http, settings)
-    val artwork = ArtworkRepository(http, spotifyCanvas) { settings.settings.value.artworkSourceOrder }
+    val artwork = ArtworkRepository(
+        http,
+        spotifyCanvas,
+        sourceOrder = { settings.settings.value.artworkSourceOrder },
+        appleSignedIn = { appleMusic.signedIn() },
+        appleArtwork = { track, album -> appleMusic.artwork(track, album) },
+    )
     val downloads = DownloadManager(
         context = context,
         http = http,
@@ -98,6 +106,12 @@ class OrchardGraph(context: Context) {
         YouTubeStreamResolver(youtube, auth, ::audioQuality, { downloads })
     }
     val catalog = CatalogRepository(youtube, auth)
+    internal val appleMusic = dev.sfg.orchard.mobile.applemusic.AppleMusicCatalog(context, http, providerAsset)
+    internal val catalogRouter = dev.sfg.orchard.mobile.catalog.CatalogRouter(catalog, appleMusic) {
+        settings.settings.value.homeSource
+    }
+    val homeFeeds = HomeFeeds(listOf(YouTubeHomeSource(catalog),
+        dev.sfg.orchard.mobile.home.AppleMusicHomeSource(appleMusic))) { settings.settings.value.homeSource }
     val playlistActions = PlaylistActions(youtube, auth)
     val videoVersions = VideoVersionResolver(catalog)
     val library = LibraryRepository(LibraryCache(context), catalog, applicationScope)

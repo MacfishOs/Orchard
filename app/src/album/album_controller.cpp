@@ -18,6 +18,8 @@
  */
 
 #include "album_controller.h"
+#include "integrations/apple_music.h"
+#include "integrations/catalog_source.h"
 
 #include "appearance/animated_artwork_service.h"
 #include "appearance/artwork_sampler.h"
@@ -75,6 +77,10 @@ AlbumController::AlbumController(YouTubeCatalog *catalog, AuthManager *auth,
           this, &AlbumController::receiveAlbum);
   connect(m_catalog, &YouTubeCatalog::requestFailed, this,
           &AlbumController::receiveFailure);
+  connect(m_catalog, &YouTubeCatalog::browseReady, this,
+          [this](quint64 id, const QJsonObject &page) { receiveSection(id, page); });
+  connect(m_catalog, &YouTubeCatalog::requestFailed, this,
+          [this](quint64 id, const QString &error) { receiveSection(id, {}, error); });
   connect(m_auth, &AuthManager::sessionChanged, this, &AlbumController::clear);
   if (m_qobuz && !m_artistMode)
     connect(m_qobuz, &QobuzService::changed, this, &AlbumController::updateStreamQuality);
@@ -94,6 +100,7 @@ QVariantMap AlbumController::defaultPalette() {
 }
 
 void AlbumController::openAlbum(const QVariantMap &item) {
+  closeSection();
   m_requestId = 0;
   m_animatedArtworkRequestId++;
   m_animatedArtworkUrl.clear();
@@ -108,7 +115,9 @@ void AlbumController::openAlbum(const QVariantMap &item) {
     emit stateChanged();
     return;
   }
-  if (!m_auth->isSignedIn()) {
+  const bool appleId = AppleMusic::isAppleMusicId(browseId);
+  const bool appleSource = m_source && m_source->apple();
+  if (!appleSource && !m_auth->isSignedIn()) {
     m_pendingItem = item;
     m_loading = false;
     m_errorMessage = tr("Sign in to open music details.");
@@ -121,11 +130,52 @@ void AlbumController::openAlbum(const QVariantMap &item) {
   m_palette = defaultPalette();
   m_errorMessage.clear();
   m_loading = true;
-  m_auth->refreshSession();
-  m_requestId = m_artistMode
-                    ? m_catalog->fetchArtist(browseId, m_auth->sessionObject())
-                    : m_catalog->fetchAlbum(browseId, m_auth->sessionObject());
+  const QString name = item.value(QStringLiteral("title")).toString().trimmed();
+  if (appleSource && !m_appleMusic->connected())
+    fail(tr("Connect Apple Music in Settings to open this."));
+  else if (appleSource && appleId)
+    openFromAppleMusic(browseId, {});
+  // An artist named on a YouTube track still has an Apple Music page.
+  else if (appleSource && m_artistMode && !name.isEmpty())
+    openFromAppleMusic({}, name);
+  else if (appleSource)
+    fail(tr("This is from YouTube Music. Switch to YouTube Music in Settings to open it."));
+  else if (appleId)
+    fail(tr("This is from Apple Music. Switch to Apple Music in Settings to open it."));
+  else {
+    m_auth->refreshSession();
+    m_requestId = m_artistMode
+                      ? m_catalog->fetchArtist(browseId, m_auth->sessionObject())
+                      : m_catalog->fetchAlbum(browseId, m_auth->sessionObject());
+  }
   emit stateChanged();
+}
+
+void AlbumController::fail(const QString &message) {
+  m_requestId = 0;
+  m_loading = false;
+  m_errorMessage = message;
+}
+
+void AlbumController::openFromAppleMusic(const QString &appleId, const QString &name) {
+  // The high bit keeps these ids apart from YouTubeCatalog's request counter.
+  const quint64 requestId = (quint64{1} << 63) | ++m_appleRequests;
+  m_requestId = requestId;
+  const auto deliver = [this, requestId, name](const QJsonObject &page, const QString &error) {
+    if (requestId != m_requestId)
+      return;
+    if (!page.isEmpty()) {
+      receiveAlbum(requestId, page);
+      return;
+    }
+    const QString missing = name.isEmpty() ? tr("Apple Music could not load this.")
+                                           : tr("Apple Music has no artist named %1.").arg(name);
+    receiveFailure(requestId, error.isEmpty() ? missing : error);
+  };
+  if (appleId.isEmpty())
+    m_appleMusic->artistPage(name, deliver);
+  else
+    m_appleMusic->detail(appleId, deliver);
 }
 
 void AlbumController::retry() {
@@ -134,6 +184,7 @@ void AlbumController::retry() {
 }
 
 void AlbumController::clear() {
+  closeSection();
   m_requestId = 0;
   m_animatedArtworkRequestId++;
   m_animatedArtworkUrl.clear();

@@ -33,7 +33,6 @@ import dev.sfg.orchard.mobile.auth.AuthState
 import dev.sfg.orchard.mobile.connect.ConnectState
 import dev.sfg.orchard.mobile.discord.DiscordPresenceStatus
 import dev.sfg.orchard.mobile.download.DownloadItem
-import dev.sfg.orchard.mobile.download.DownloadStatus
 import dev.sfg.orchard.mobile.lastfm.LastfmState
 import dev.sfg.orchard.mobile.listenbrainz.ListenBrainzState
 import dev.sfg.orchard.mobile.local.toPlaylist
@@ -98,22 +97,19 @@ class OrchardViewModel(application: Application) : AndroidViewModel(application)
     val playback: StateFlow<PlaybackSnapshot> = combine(
         targetPlayback,
         nowPlaying.artwork,
+        nowPlaying.upcomingArtwork,
         nowPlaying.artistCredits,
-    ) { snapshot, artwork, artistCredits ->
+    ) { snapshot, artwork, upcoming, artistCredits ->
         val track = snapshot.currentTrack
         if (track == null) return@combine snapshot
-        val matchingArtwork = artwork?.takeIf { it.trackId == track.id }
+        // At a handoff the prefetched art already matches while the current lookup restarts.
+        val matchingArtwork = listOfNotNull(artwork, upcoming).filter { it.trackId == track.id }
+            .maxByOrNull { if (it.preferredVideoUrl.isNotBlank()) 1 else 0 }
         val matchingArtists = artistCredits?.takeIf { it.first == track.id }?.second.orEmpty()
         snapshot.copy(
-            currentTrack = track.copy(
-                artworkUrl = matchingArtwork?.staticUrl?.ifBlank { track.artworkUrl } ?: track.artworkUrl,
-                animatedArtworkUrl = matchingArtwork?.videoUrl?.ifBlank { track.animatedArtworkUrl }
-                    ?: track.animatedArtworkUrl,
-                animatedArtworkVerticalUrl = matchingArtwork?.videoUrlVertical
-                    ?.ifBlank { track.animatedArtworkVerticalUrl }
-                    ?: track.animatedArtworkVerticalUrl,
-                artists = matchingArtists.ifEmpty { track.artists },
-            ),
+            currentTrack = track.withArtwork(matchingArtwork).copy(artists = matchingArtists.ifEmpty { track.artists }),
+            // A mix presents the next song from the queue before it is current.
+            queue = snapshot.queue.withArtwork(upcoming?.takeIf { it.trackId != track.id }),
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PlaybackSnapshot())
     /** [playback] minus its clock: emits on track, queue or transport changes, never on a tick. */
@@ -124,8 +120,8 @@ class OrchardViewModel(application: Application) : AndroidViewModel(application)
         .map { it.copy(sampledAtMs = android.os.SystemClock.elapsedRealtime()) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, PlaybackClock())
 
-    private val mutableHome = MutableStateFlow<LoadState<List<CatalogSection>>>(LoadState.Loading)
-    val home: StateFlow<LoadState<List<CatalogSection>>> = mutableHome.asStateFlow()
+    private val homeFeed = HomeController(graph, viewModelScope) { showWarning(it) }
+    val home: StateFlow<LoadState<List<CatalogSection>>> = homeFeed.home
     private val details = DetailController(graph, viewModelScope) { showWarning(it) }
     private val searcher = SearchController(graph, viewModelScope, songLinksCoordinator, ::openDetail)
     val query: StateFlow<String> = searcher.query
@@ -247,7 +243,7 @@ class OrchardViewModel(application: Application) : AndroidViewModel(application)
     init {
         refreshHome()
         refreshCacheSize()
-        observeNetworkState()
+        homeFeed.observe()
         searcher.observe()
         playbackTargets.observe()
         nowPlaying.observeArtwork(targetPlayback)
@@ -262,30 +258,7 @@ class OrchardViewModel(application: Application) : AndroidViewModel(application)
         nonMusicSkipper.observe()
     }
 
-    private fun observeNetworkState() {
-        viewModelScope.launch {
-            graph.networkMonitor.isOnline.collect { online ->
-                if (online && mutableHome.value is LoadState.Error) {
-                    refreshHome()
-                }
-            }
-        }
-    }
-
-    fun refreshHome() {
-        viewModelScope.launch {
-            mutableHome.value = LoadState.Loading
-            mutableHome.value = runCatching { graph.catalog.home().sections }
-                .fold(
-                    onSuccess = { if (it.isEmpty()) LoadState.Empty("No recommendations are available yet.") else LoadState.Content(it) },
-                    onFailure = {
-                        if (downloads.value.values.any { d -> d.status == DownloadStatus.COMPLETED } || library.value.recentlyPlayed.isNotEmpty()) {
-                            LoadState.Error("Orchard is offline. Your downloaded music is available.", true)
-                        } else LoadState.Error(it.message ?: "Home could not be loaded.")
-                    },
-                )
-        }
-    }
+    fun refreshHome() = homeFeed.refresh()
 
     fun updateQuery(value: String) = searcher.update(value)
     fun runSearch(value: String = query.value) = searcher.run(value)
@@ -301,10 +274,19 @@ class OrchardViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun detailSeed(id: String) = findCatalogItem(id, home.value, search.value, library.value, detail.value)
+        ?: artistFromTracks(id, sequence {
+            playback.value.currentTrack?.let { yield(it) }
+            yieldAll(playback.value.queue)
+            (detail.value as? LoadState.Content)?.value?.tracks?.let { yieldAll(it) }
+            (search.value as? LoadState.Content)?.value?.tracks?.let { yieldAll(it) }
+            yieldAll(library.value.recentlyPlayed)
+        })
+
+    suspend fun fetchHomeSectionItems(browseId: String, params: String = "") = homeFeed.sectionItems(browseId, params)
 
     suspend fun fetchSectionItems(browseId: String, params: String = ""): List<CatalogItem> {
         if (browseId.isBlank()) return emptyList()
-        return runCatching { graph.catalog.sectionItems(browseId, params) }.getOrDefault(emptyList())
+        return runCatching { graph.catalogRouter.sectionItems(browseId, params) }.getOrDefault(emptyList())
     }
 
     /** The transition Adaptive mix has planned out of the current track, for the scrubber. */

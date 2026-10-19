@@ -21,12 +21,14 @@ package dev.sfg.orchard.mobile.app
 
 import dev.sfg.orchard.mobile.OrchardGraph
 import dev.sfg.orchard.mobile.artwork.TrackArtwork
+import dev.sfg.orchard.mobile.download.DownloadItem
 import dev.sfg.orchard.mobile.model.Artist
 import dev.sfg.orchard.mobile.model.LoadState
 import dev.sfg.orchard.mobile.model.LyricLine
 import dev.sfg.orchard.mobile.model.PlaybackSnapshot
 import dev.sfg.orchard.mobile.model.PlaybackTarget
 import dev.sfg.orchard.mobile.model.PlaybackTargetState
+import dev.sfg.orchard.mobile.model.Track
 import dev.sfg.orchard.mobile.playback.LocalPlaybackController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -63,6 +65,9 @@ internal class NowPlayingMetadata(
 ) {
     private val mutableArtwork = MutableStateFlow<TrackArtwork?>(null)
     val artwork: StateFlow<TrackArtwork?> = mutableArtwork.asStateFlow()
+    private val mutableUpcomingArtwork = MutableStateFlow<TrackArtwork?>(null)
+    /** Artwork for the song after the current one. */
+    val upcomingArtwork: StateFlow<TrackArtwork?> = mutableUpcomingArtwork.asStateFlow()
     private val mutableArtistCredits = MutableStateFlow<Pair<String, List<Artist>>?>(null)
     val artistCredits: StateFlow<Pair<String, List<Artist>>?> = mutableArtistCredits.asStateFlow()
     private val mutableLyrics = MutableStateFlow<LoadState<List<LyricLine>>>(LoadState.Idle)
@@ -71,44 +76,62 @@ internal class NowPlayingMetadata(
     val musicVideo: StateFlow<MusicVideoState> = mutableMusicVideo.asStateFlow()
 
     fun observeArtwork(targetPlayback: Flow<PlaybackSnapshot>) {
+        observeArtworkOf(targetPlayback.map { it.currentTrack }, mutableArtwork, publishStill = true)
+        // Resolved ahead so the handoff never drops to the bare thumbnail while the current lookup restarts.
+        observeArtworkOf(
+            targetPlayback.map { it.queue.getOrNull(it.currentIndex + 1) },
+            mutableUpcomingArtwork,
+            publishStill = false,
+        )
+    }
+
+    private fun observeArtworkOf(
+        tracks: Flow<Track?>,
+        target: MutableStateFlow<TrackArtwork?>,
+        publishStill: Boolean,
+    ) {
         scope.launch {
-            combine(
-                targetPlayback.map { it.currentTrack },
-                graph.downloads.downloads,
-            ) { track, downloaded -> track to track?.id?.let(downloaded::get) }
+            combine(tracks, graph.downloads.downloads) { track, downloaded -> track to track?.id?.let(downloaded::get) }
                 .distinctUntilChanged { old, new ->
                     old.first?.id == new.first?.id &&
                         old.second?.cachedAnimatedArtworkUrl == new.second?.cachedAnimatedArtworkUrl &&
                         old.second?.cachedAnimatedArtworkVerticalUrl == new.second?.cachedAnimatedArtworkVerticalUrl
                 }
                 .collectLatest { (track, downloaded) ->
-                    mutableArtwork.value = when {
-                        track == null -> null
-                        // The user's own cover and loop, never an online lookup.
-                        track.isLocal -> TrackArtwork(track.id, track.artworkUrl, track.animatedArtworkUrl)
-                        downloaded != null && (
-                            downloaded.cachedAnimatedArtworkUrl.isNotBlank() ||
-                                downloaded.cachedAnimatedArtworkVerticalUrl.isNotBlank()
-                        ) -> TrackArtwork(
-                            track.id,
-                            track.artworkUrl,
-                            downloaded.cachedAnimatedArtworkUrl,
-                            downloaded.cachedAnimatedArtworkVerticalUrl,
-                        )
-                        track.animatedArtworkVerticalUrl.isNotBlank() || track.animatedArtworkUrl.isNotBlank() ->
-                            TrackArtwork(track.id, track.artworkUrl, track.animatedArtworkUrl, track.animatedArtworkVerticalUrl)
-                        graph.connect.roleHost("artwork") != null -> {
-                            // The cover the track already carries shows at once; a connected
-                            // desktop resolves the rest, and local lookup covers a silent one.
-                            mutableArtwork.value = TrackArtwork(track.id, track.artworkUrl)
-                            graph.connect.providers.artwork(track)?.let { desktop ->
-                                TrackArtwork(track.id, desktop.staticUrl.ifBlank { track.artworkUrl }, desktop.animatedUrl)
-                            } ?: graph.artwork.artwork(track)
-                        }
-                        else -> graph.artwork.artwork(track)
+                    target.value = track?.let {
+                        resolveArtwork(it, downloaded) { still -> if (publishStill) target.value = still }
                     }
                 }
         }
+    }
+
+    private suspend fun resolveArtwork(
+        track: Track,
+        downloaded: DownloadItem?,
+        onStill: (TrackArtwork) -> Unit,
+    ): TrackArtwork? = when {
+        // The user's own cover and loop, never an online lookup.
+        track.isLocal -> TrackArtwork(track.id, track.artworkUrl, track.animatedArtworkUrl)
+        downloaded != null && (
+            downloaded.cachedAnimatedArtworkUrl.isNotBlank() ||
+                downloaded.cachedAnimatedArtworkVerticalUrl.isNotBlank()
+        ) -> TrackArtwork(
+            track.id,
+            track.artworkUrl,
+            downloaded.cachedAnimatedArtworkUrl,
+            downloaded.cachedAnimatedArtworkVerticalUrl,
+        )
+        track.animatedArtworkVerticalUrl.isNotBlank() || track.animatedArtworkUrl.isNotBlank() ->
+            TrackArtwork(track.id, track.artworkUrl, track.animatedArtworkUrl, track.animatedArtworkVerticalUrl)
+        graph.connect.roleHost("artwork") != null -> {
+            // The cover the track already carries shows at once; a connected
+            // desktop resolves the rest, and local lookup covers a silent one.
+            onStill(TrackArtwork(track.id, track.artworkUrl))
+            graph.connect.providers.artwork(track)?.let { desktop ->
+                TrackArtwork(track.id, desktop.staticUrl.ifBlank { track.artworkUrl }, desktop.animatedUrl)
+            } ?: graph.artwork.artwork(track)
+        }
+        else -> graph.artwork.artwork(track)
     }
 
     fun observeArtistCredits(targetPlayback: Flow<PlaybackSnapshot>) {
@@ -190,4 +213,21 @@ internal class NowPlayingMetadata(
             }
         }
     }
+}
+
+internal fun Track.withArtwork(artwork: TrackArtwork?): Track {
+    if (artwork == null || artwork.trackId != id) return this
+    return copy(
+        artworkUrl = artwork.staticUrl.ifBlank { artworkUrl },
+        animatedArtworkUrl = artwork.videoUrl.ifBlank { animatedArtworkUrl },
+        animatedArtworkVerticalUrl = artwork.videoUrlVertical.ifBlank { animatedArtworkVerticalUrl },
+    )
+}
+
+internal fun List<Track>.withArtwork(artwork: TrackArtwork?): List<Track> {
+    val index = artwork?.let { art -> indexOfFirst { it.id == art.trackId } } ?: -1
+    if (index < 0) return this
+    val patched = this[index].withArtwork(artwork)
+    if (patched == this[index]) return this
+    return toMutableList().also { it[index] = patched }
 }

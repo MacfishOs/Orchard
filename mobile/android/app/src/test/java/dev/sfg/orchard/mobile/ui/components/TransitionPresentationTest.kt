@@ -35,6 +35,7 @@ class TransitionPresentationTest {
         handoff: Float = 0.7f,
         renderedDurationMs: Long = 0,
         rate: Double = 1.0,
+        prepared: Boolean = false,
     ) =
         TransitionMarker(
             trackId = outgoing.id,
@@ -46,6 +47,7 @@ class TransitionPresentationTest {
             incomingPlaybackRate = rate,
             audibleHandoffProgress = handoff,
             renderedDurationMs = renderedDurationMs,
+            prepared = prepared,
         )
 
     @Test
@@ -188,5 +190,24 @@ class TransitionPresentationTest {
         assertEquals(1f, result.progress, 0f)
         assertTrue(result.incomingDominant)
         assertEquals(20_000L, result.playback.positionMs)
+    }
+
+    @Test fun `live splice drain keeps the incoming song until the decks swap`() {
+        val playback = PlaybackSnapshot(
+            currentTrack = outgoing, queue = listOf(outgoing, incoming), currentIndex = 0,
+            positionMs = 210_400, durationMs = outgoing.durationMs,
+        )
+        val result = transitionPresentation(playback, marker(renderedDurationMs = 10_000, prepared = true))
+        assertEquals(1f, result.progress, 0f)
+        assertTrue(result.incomingDominant)
+        assertEquals(22_000L, result.playback.positionMs)
+    }
+
+    @Test fun `unprepared marker past its end lights nothing`() {
+        val playback = PlaybackSnapshot(
+            currentTrack = outgoing, queue = listOf(outgoing, incoming), currentIndex = 0,
+            positionMs = 210_400, durationMs = outgoing.durationMs,
+        )
+        assertEquals(0f, transitionProgress(playback, marker(renderedDurationMs = 10_000)), 0f)
     }
 }

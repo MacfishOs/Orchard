@@ -1,7 +1,8 @@
-/* Copyright (C) 2026 SFG545. Licensed under the Orchard-Only License (OOL-1.0), see LICENSE-OOL. */
+/* Copyright (C) 2026 SFG545. Licensed under the PolyForm Shield License 1.0.0, see LICENSE-POLYFORM-SHIELD. */
 //! Feature extraction. Nothing here decides anything — it only measures.
 
 pub mod beat;
+pub mod chroma;
 pub mod energy;
 mod fft;
 pub mod loudness;
@@ -11,6 +12,7 @@ pub mod spectrum;
 mod track;
 
 pub use beat::{BeatTrack, BeatTracker, BeatTrackerConfig};
+pub use chroma::{ChromaFrames, chroma_frames, estimate_key};
 pub use model_frontends::{
     BEAT_SPECTROGRAM_FFT, BEAT_SPECTROGRAM_HOP, BEAT_SPECTROGRAM_MELS,
     BEAT_SPECTROGRAM_SAMPLE_RATE, BeatSpectrogram, VOCAL_SPECTROGRAM_BINS,

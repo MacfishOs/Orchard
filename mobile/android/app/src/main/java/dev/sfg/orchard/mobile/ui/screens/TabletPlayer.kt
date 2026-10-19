@@ -226,6 +226,8 @@ fun TabletPlayerBody(
                                 onMove = onMoveQueueItem,
                                 onClearUpcoming = onClearUpcoming,
                                 onShuffleUpcoming = onShuffle,
+                                onShuffle = onShuffle,
+                                onRepeat = onRepeat,
                                 autoplayEnabled = autoplayEnabled,
                                 autoplayLoading = autoplayLoading,
                                 autoplayError = autoplayError,
@@ -240,6 +242,7 @@ fun TabletPlayerBody(
                             when (lyrics) {
                                 is LoadState.Content -> LyricLines(
                                     lines = lyrics.value,
+                                    songId = track.id,
                                     playing = playback.isPlaying,
                                     onSeek = onSeek,
                                     contentPadding = PaddingValues(vertical = 24.dp),

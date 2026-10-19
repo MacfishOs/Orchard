@@ -232,3 +232,33 @@ test('artist release shelves carry year and kind, and latest release prefers the
   assert.equal(catalog.latestArtistRelease([{ ...albums, items: albums.items.slice(1) }, singles]).title, 'Folded (Remix)');
   assert.equal(catalog.latestArtistRelease([{ title: 'Videos', items: [{ id: 'v' }] }]), null);
 });
+
+
+test('artist pages retain every provider shelf without merging album categories', async () => {
+  const sections = ['Albums', 'Live Albums', 'Singles & EPs', 'Compilations', 'Featured on', 'Videos', 'Related artists']
+    .map((title, index) => ({
+      title, items: [{ type: 'album', browseId: `release-${index}`, title: `Release ${index}`, subtitle: 'Album • 2025' }]
+    }));
+  const collection = { data: { header: { title: 'Example' }, sections }, browseId: 'artist-1' };
+  const catalog = artistCatalog();
+  for (const detail of [catalog.initialArtistResult(collection), await catalog.normalizeArtist(collection)]) {
+    assert.deepEqual(detail.sections.map(({ title }) => title), sections.map(({ title }) => title));
+    assert.deepEqual(detail.sections.map(({ items }) => items.map(({ browseId }) => browseId)),
+      sections.map(({ items }) => items.map(({ browseId }) => browseId)));
+  }
+});
+
+
+test('related artists, playlists and guest appearances retain provider items', async () => {
+  const sections = [
+    { title: 'Fans also like', items: [{ type: 'artist', browseId: 'other-artist', title: 'Other Artist' }] },
+    { title: 'Featured playlists', items: [{ type: 'playlist', browseId: 'playlist', title: 'Mix' }] },
+    { title: 'Appears on albums', items: [{ type: 'album', browseId: 'guest-album', title: 'Guest Album' }] },
+  ];
+  const collection = { data: { header: { title: 'Example' }, sections }, browseId: 'artist-1' };
+  const catalog = artistCatalog(async () => null, () => false);
+  const detail = await catalog.normalizeArtist(collection);
+  assert.deepEqual(detail.sections.map(({ title, items }) => [title, items.map(({ browseId }) => browseId)]),
+    sections.map(({ title, items }) => [title, items.map(({ browseId }) => browseId)]));
+  assert.deepEqual(await catalog.normalizeArtistSection(collection, sections[0]), sections[0]);
+});
