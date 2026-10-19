@@ -184,17 +184,19 @@ private:
         m_reply.clear();
     }
     void retryChunk() {
+        const qint64 nextOffset = m_headersValidated ? m_chunkEnd + 1 - m_chunkRemaining : m_offset;
+        const bool progressed = nextOffset > m_offset;
+        m_offset = nextOffset;
         if (m_suspended) {
-            if (m_headersValidated) m_offset = m_chunkEnd + 1 - m_chunkRemaining;
             releaseReply();
             return;
         }
-        if (++m_retries > 3) {
+        if (progressed) m_retries = 0;
+        else if (++m_retries > 3) {
             fail(0, AudioStreamProxy::tr("The audio download was interrupted repeatedly. Please try again."));
             return;
         }
         // Resume after bytes already handed to the player, without duplicates.
-        if (m_headersValidated) m_offset = m_chunkEnd + 1 - m_chunkRemaining;
         releaseReply();
         QTimer::singleShot(100 * m_retries, this, [this] {
             if (!m_suspended) fetchChunk();

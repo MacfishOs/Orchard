@@ -1,5 +1,18 @@
 [
   {
+    "version": "1.0.0-canary.10",
+    "date": "2026-10-17",
+    "title": "More reliable playback",
+    "sections": [
+      {
+        "title": "Fixes",
+        "items": [
+          "Fixed audio stopping after repeated download interruptions. Playback recovers without restarting the song and preserves its paused state."
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.0.0-canary.9",
     "date": "2026-10-12",
     "title": "Fullscreen, artist pages, and smarter mixes",
