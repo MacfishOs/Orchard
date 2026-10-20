@@ -144,7 +144,7 @@ class DiscordPresenceCoordinator(
         val end = if (isPlaying && durationMs > positionMs) start + durationMs else 0L
 
         val buttons = buildList {
-            songLinks.trackUrl(track)?.takeIf(String::isNotBlank)?.let { add("Listen on Your Platform" to it) }
+            songLinks.trackUrl(track)?.takeIf(String::isNotBlank)?.let { add("Listen on YouTube Music" to it) }
             add("View the Orchard Project" to DISCORD_ORCHARD_PROJECT_URL)
         }
 

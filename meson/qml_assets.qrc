@@ -10,6 +10,7 @@
     <file alias="app/qml/assets/lucide/mic-vocal.svg">../app/qml/assets/lucide/mic-vocal.svg</file>
     <file alias="app/qml/assets/lucide/languages.svg">../app/qml/assets/lucide/languages.svg</file>
     <file alias="app/qml/assets/lucide/moon.svg">../app/qml/assets/lucide/moon.svg</file>
+    <file alias="app/qml/assets/lucide/power.svg">../app/qml/assets/lucide/power.svg</file>
     <file alias="app/qml/assets/lucide/pause.svg">../app/qml/assets/lucide/pause.svg</file>
     <file alias="app/qml/assets/lucide/play.svg">../app/qml/assets/lucide/play.svg</file>
     <file alias="app/qml/assets/lucide/skip-back.svg">../app/qml/assets/lucide/skip-back.svg</file>

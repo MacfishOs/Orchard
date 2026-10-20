@@ -22,6 +22,7 @@
 #include "translation_store.h"
 
 #include <QHash>
+#include <QJsonObject>
 #include <QObject>
 #include <QStringList>
 #include <QThread>
@@ -48,6 +49,7 @@ class LyricsTranslator final : public QObject {
   Q_PROPERTY(QString endpoint READ endpoint WRITE setEndpoint NOTIFY providerChanged)
   Q_PROPERTY(bool hasApiKey READ hasApiKey NOTIFY providerChanged)
   Q_PROPERTY(QString credentialMessage READ credentialMessage NOTIFY providerChanged)
+  Q_PROPERTY(QString accountQuotaMessage READ accountQuotaMessage NOTIFY accountQuotaChanged)
   // off, idle (nothing to translate), unsupported, downloading, translating, ready, failed
   Q_PROPERTY(QString status READ status NOTIFY stateChanged)
   Q_PROPERTY(QString message READ message NOTIFY stateChanged)
@@ -75,6 +77,8 @@ public:
   void setEndpoint(const QString &endpoint);
   [[nodiscard]] bool hasApiKey() const { return !m_apiKey.isEmpty(); }
   [[nodiscard]] QString credentialMessage() const { return m_credentialMessage; }
+  [[nodiscard]] QString accountQuotaMessage() const;
+  Q_INVOKABLE void refreshAccountQuota();
   Q_INVOKABLE void saveApiKey(const QString &key);
   Q_INVOKABLE void removeApiKey();
   [[nodiscard]] QString status() const { return m_status; }
@@ -93,6 +97,7 @@ signals:
   void providerChanged();
   void stateChanged();
   void packsChanged();
+  void accountQuotaChanged();
 
 private:
   void sync();
@@ -100,6 +105,7 @@ private:
   void runModel();
   void runRemote();
   void runAccountRemote();
+  void acceptAccountQuota(const QJsonObject &body);
   void loadApiKey();
   void cancelRemote();
   [[nodiscard]] QString cacheRevision() const;
@@ -112,6 +118,8 @@ private:
   void flush();
 
   OrchardAccount *m_account{nullptr};
+  QJsonObject m_accountQuota;
+  int m_quotaGeneration{0};
   LyricsController *m_lyrics;
   QNetworkAccessManager *m_network;
   TranslationPacks *m_packs;

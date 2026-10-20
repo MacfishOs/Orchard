@@ -18,6 +18,7 @@
  */
 
 import ".."
+import Orchard
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -27,7 +28,7 @@ ComboBox {
     id: select
 
     Layout.fillWidth: true
-    implicitHeight: 40
+    implicitHeight: 32
     font.family: "Inter"
     font.pixelSize: 13
     hoverEnabled: true
@@ -50,12 +51,14 @@ ComboBox {
         name: "chevron-right"
         color: "#a4aaa1"
         rotation: select.popup.visible ? -90 : 90
+        Behavior on rotation { NumberAnimation { duration: Motion.slow; easing.type: Easing.OutBack } }
     }
 
     background: Rectangle {
-        radius: 10
-        color: select.hovered ? "#222823" : "#1b201c"
-        border.color: select.visualFocus || select.popup.visible ? "#8cc5a5" : "#3a413b"
+        radius: 5
+        color: select.popup.visible ? "#0affffff" : select.hovered ? "#18ffffff" : "#10ffffff"
+        border.color: select.visualFocus ? OrchardAppearance.accentStrong : "#14ffffff"
+        Behavior on color { ColorAnimation { duration: Motion.fast } }
     }
 
     delegate: ItemDelegate {
@@ -68,13 +71,14 @@ ComboBox {
 
         contentItem: Text {
             text: option.modelData
-            color: select.currentIndex === option.index ? "#c4e0cb" : "#f0eee7"
+            leftPadding: 6
+            color: select.currentIndex === option.index ? OrchardAppearance.accentStrong : "#f0eee7"
             font: select.font
             verticalAlignment: Text.AlignVCenter
         }
         background: Rectangle {
-            radius: 7
-            color: option.highlighted ? "#2e4034" : "transparent"
+            radius: 5
+            color: option.highlighted ? "#14ffffff" : "transparent"
         }
     }
 
@@ -91,9 +95,9 @@ ComboBox {
             currentIndex: select.highlightedIndex
         }
         background: Rectangle {
-            radius: 12
-            color: "#1f2520"
-            border.color: "#3a413b"
+            radius: 8
+            color: OrchardAppearance.popupColor
+            border.color: "#1fffffff"
         }
     }
 }

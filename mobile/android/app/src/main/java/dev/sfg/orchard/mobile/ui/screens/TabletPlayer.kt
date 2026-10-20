@@ -239,21 +239,10 @@ fun TabletPlayerBody(
                                 onSleepTimer = onSleepTimer,
                             )
                         } else {
-                            when (lyrics) {
-                                is LoadState.Content -> LyricLines(
-                                    lines = lyrics.value,
-                                    songId = track.id,
-                                    playing = playback.isPlaying,
-                                    onSeek = onSeek,
-                                    contentPadding = PaddingValues(vertical = 24.dp),
-                                    accent = lyricAccent,
-                                )
-
-                                LoadState.Loading -> LyricsNotice("Finding lyrics…", isLoading = true)
-                                is LoadState.Empty -> LyricsNotice(lyrics.message, icon = Icons.Rounded.MusicNote)
-                                is LoadState.Error -> LyricsNotice(lyrics.message, icon = Icons.Rounded.Info)
-                                LoadState.Idle -> LyricsNotice("Start a song to see its lyrics.", icon = Icons.Rounded.MusicNote)
-                            }
+                            PlayerLyrics(
+                                track = track, lyrics = lyrics, playing = playback.isPlaying,
+                                onSeek = onSeek, contentPadding = PaddingValues(vertical = 24.dp), accent = lyricAccent,
+                            )
                         }
                     }
                     Spacer(Modifier.height(16.dp))

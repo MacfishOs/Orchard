@@ -22,7 +22,10 @@ import QtQuick
 // Appearance settings. Layout lives in AppearanceSectionForm.ui.qml.
 AppearanceSectionForm {
     layoutStyle: OrchardAppearance.layoutStyle
+    uiScale: OrchardAppearance.uiScale
+    uiScaleRestartRequired: OrchardAppearance.uiScaleRestartRequired
     showBitrate: OrchardAppearance.showBitrate
+    fullscreenWindowed: OrchardAppearance.fullscreenWindowed
     fullscreenAutoHide: OrchardAppearance.fullscreenAutoHide
     fullscreenPulse: OrchardAppearance.fullscreenPulse
     artistVideoBackdrop: OrchardAppearance.artistVideoBackdrop
@@ -37,7 +40,10 @@ AppearanceSectionForm {
     speedText: OrchardAppearance.speed.toFixed(2) + "×"
 
     layoutPicker.onPicked: value => OrchardAppearance.layoutStyle = value
+    uiScaleSlider.onMoved: value => OrchardAppearance.uiScale = value
+    resetUiScaleButton.onClicked: OrchardAppearance.uiScale = 1.0
     bitrateSwitch.onToggled: OrchardAppearance.showBitrate = bitrateSwitch.checked
+    windowedSwitch.onToggled: OrchardAppearance.fullscreenWindowed = windowedSwitch.checked
     autoHideSwitch.onToggled: OrchardAppearance.fullscreenAutoHide = autoHideSwitch.checked
     pulseSwitch.onToggled: OrchardAppearance.fullscreenPulse = pulseSwitch.checked
     artistVideoSwitch.onToggled: OrchardAppearance.artistVideoBackdrop = artistVideoSwitch.checked

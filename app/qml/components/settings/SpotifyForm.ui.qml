@@ -126,7 +126,7 @@ ColumnLayout {
             background: Rectangle {
                 radius: 10
                 color: "#1b201c"
-                border.color: cookieField.activeFocus ? "#8cc5a5" : "#3a413b"
+                border.color: cookieField.activeFocus ? OrchardAppearance.accent : "#3a413b"
             }
         }
 

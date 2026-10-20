@@ -44,7 +44,7 @@ The left sidebar lists the main pages of Orchard:
 - **Your library**: your subscribed artists, albums, songs, and playlists. See [Library and playlists](library-and-playlists.md).
 - **PLAYLISTS**: your saved playlists, listed under the pages.
 
-The **Search…** box sits at the top of the sidebar. The top bar has the **Docs** button (a book icon) and the **Account and settings** button. The player bar floats at the bottom in Glade and docks at the top in Canopy. See [Play music](playback.md).
+The **Search…** box sits at the top of the sidebar. The top bar has the **Account and settings** button. The player bar floats at the bottom in Glade and docks at the top in Canopy. See [Play music](playback.md).
 
 ## Open Settings
 
@@ -61,7 +61,7 @@ Close Settings with the **X** button in the corner, by pressing Esc, or by click
 
 ## Open the docs
 
-Select the **Docs** button (the book icon) in the top bar. The docs open in their own window. Type a question such as "how do I open the queue" in the search box to find the part of the docs that answers it. See [Use the docs](using-the-docs.md).
+Open **Settings** and select **Docs** at the bottom of the sidebar. The docs open in their own window. Type a question such as "how do I open the queue" in the search box to find the part of the docs that answers it. See [Use the docs](using-the-docs.md).
 
 ## Open Settings with Spotlight
 

@@ -40,15 +40,11 @@ public:
   // Returns bundled license text so lawyers don't show up at our door.
   Q_INVOKABLE QString licenseText(const QString &key) const;
 
-  // Generates a song.link URL from a YouTube video ID, or album.link URL for
-  // album/playlist IDs. Why write our own link aggregator when song.link
-  // already solved world peace for streaming services?
+  // Generates a direct YouTube Music URL for a song, album, or playlist.
   Q_INVOKABLE QString songLink(const QString &idOrUrl,
                                const QString &kind = QString()) const;
 
-  // Generates an album.link URL specifically for an album or playlist ID.
-  // Because MPREb_ is YouTube's internal browse pass and album.link expects the
-  // OLAK playlist ID.
+  // Generates a direct collection URL from an audio playlist or album browse ID.
   Q_INVOKABLE QString songlinkAlbumUrl(const QString &audioPlaylistId) const;
   Q_INVOKABLE QString songLinkAlbumUrl(const QString &audioPlaylistId) const;
 
@@ -57,12 +53,12 @@ public:
   Q_INVOKABLE void copyToClipboard(const QString &text,
                                    const QString &notice = QString());
 
-  // Generates the song.link or album.link and copies it straight to the
+  // Generates the YouTube Music link and copies it straight to the
   // clipboard with a user-facing toast notice.
   Q_INVOKABLE void copySongLink(const QString &idOrUrl,
                                 const QString &label = QString());
 
-  // Launches the song.link or album.link directly in the user's default
+  // Launches the YouTube Music link directly in the user's default
   // browser.
   Q_INVOKABLE void openSongLink(const QString &idOrUrl,
                                 const QString &kind = QString()) const;

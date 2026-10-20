@@ -26,6 +26,7 @@
 #include "providers/youtube/youtube_provider.h"
 
 #include <QJsonObject>
+#include <QJsonArray>
 #include <utility>
 
 namespace {
@@ -48,6 +49,46 @@ LyricsController::LyricsController(YouTubeProvider *provider, AuthManager *auth,
   // stateChanged fires on every position tick; syncTrack bails early unless the id moved.
   connect(m_playback, &PlaybackController::stateChanged, this,
           &LyricsController::syncTrack);
+  connect(&m_providerSettings, &LyricsProviderSettings::changed,
+          this, &LyricsController::invalidateProviders);
+}
+
+QStringList LyricsController::providersForTrack(const QString &trackId) const {
+  const QStringList enabled = m_providerSettings.enabledProviders();
+  const QString selected = m_providerOverrides.value(trackId);
+  return enabled.contains(selected) ? QStringList{selected} : enabled;
+}
+
+QString LyricsController::selectedProvider() const {
+  const QString selected = m_providerOverrides.value(viewTrack().value(QStringLiteral("id")).toString());
+  return m_providerSettings.enabledProviders().contains(selected) ? selected : QString();
+}
+
+void LyricsController::selectProvider(const QString &provider) {
+  const QString id = viewTrack().value(QStringLiteral("id")).toString();
+  if (id.isEmpty() || local::isLocalTrackId(id) ||
+      (!provider.isEmpty() && !m_providerSettings.enabledProviders().contains(provider))) return;
+  if (selectedProvider() == provider) return;
+  m_overrideOrder.removeAll(id);
+  if (provider.isEmpty()) {
+    m_providerOverrides.remove(id);
+  } else {
+    m_providerOverrides.insert(id, provider);
+    m_overrideOrder.append(id);
+    while (m_overrideOrder.size() > 32) m_providerOverrides.remove(m_overrideOrder.takeFirst());
+  }
+  invalidateProviders();
+}
+
+void LyricsController::invalidateProviders() {
+  m_requestId = 0;
+  m_requestTrackId.clear();
+  m_prefetchId = 0;
+  m_prefetchTrackId.clear();
+  m_cache.clear();
+  m_cacheOrder.clear();
+  reset(viewTrack().value(QStringLiteral("id")).toString(), QStringLiteral("idle"));
+  syncTrack();
 }
 
 void LyricsController::setLocalLibrary(LocalLibrary *library) {
@@ -224,6 +265,7 @@ QJsonObject LyricsController::payload(const QVariantMap &track) const {
   if (durationSeconds > 0)
     payload.insert(QStringLiteral("durationSeconds"), durationSeconds);
   return QJsonObject{{QStringLiteral("track"), payload},
+                     {QStringLiteral("providers"), QJsonArray::fromStringList(providersForTrack(id))},
                      {QStringLiteral("session"), m_auth->sessionObject()}};
 }
 

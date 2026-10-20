@@ -141,6 +141,17 @@ void unregisterInstallation(const std::vector<std::string> &created) {
 }
 
 void removeInstallRoot(const fs::path &root) {
+  HKEY runKey = nullptr;
+  if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0,
+                    KEY_QUERY_VALUE | KEY_SET_VALUE, &runKey) == ERROR_SUCCESS) {
+    std::wstring command(32768, L'\0');
+    DWORD bytes = static_cast<DWORD>(command.size() * sizeof(wchar_t));
+    const std::wstring expected = L"\"" + (root / L"Orchard.exe").wstring() + L"\"";
+    if (RegGetValueW(runKey, nullptr, L"Orchard", RRF_RT_REG_SZ, nullptr, command.data(), &bytes) ==
+            ERROR_SUCCESS && expected == command.c_str())
+      RegDeleteValueW(runKey, L"Orchard");
+    RegCloseKey(runKey);
+  }
   // Everything but the running Orchard.exe (and the open log) goes now.
   std::error_code error;
   for (const auto &entry : fs::directory_iterator(root, error)) {

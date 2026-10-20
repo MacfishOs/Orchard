@@ -38,7 +38,7 @@ Button {
     background: Rectangle {
         radius: height / 2
         color: root.checked ? "#f1f0ec" : root.hovered ? "#20ffffff" : "#08ffffff"
-        border.color: root.activeFocus ? "#b8d4bd" : "#18ffffff"
+        border.color: root.activeFocus ? OrchardAppearance.accentStrong : "#18ffffff"
         opacity: root.enabled ? 1 : 0.5
         Behavior on color { ColorAnimation { duration: Motion.normal } }
     }

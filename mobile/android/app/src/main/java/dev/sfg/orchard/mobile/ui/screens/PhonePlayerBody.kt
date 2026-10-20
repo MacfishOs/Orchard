@@ -258,21 +258,10 @@ internal fun PhonePlayerBody(
                         showModes = false,
                     )
 
-                    panel == PlayerPanel.LYRICS -> when (lyrics) {
-                        is LoadState.Content -> LyricLines(
-                            lines = lyrics.value,
-                            songId = track.id,
-                            playing = playback.isPlaying,
-                            onSeek = onSeek,
-                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 24.dp),
-                            accent = lyricAccent,
-                        )
-
-                        LoadState.Loading -> LyricsNotice("Finding lyrics…", isLoading = true)
-                        is LoadState.Empty -> LyricsNotice(lyrics.message, icon = Icons.Rounded.MusicNote)
-                        is LoadState.Error -> LyricsNotice(lyrics.message, icon = Icons.Rounded.Info)
-                        LoadState.Idle -> LyricsNotice("Start a song to see its lyrics.", icon = Icons.Rounded.MusicNote)
-                    }
+                    panel == PlayerPanel.LYRICS -> PlayerLyrics(
+                        track = track, lyrics = lyrics, playing = playback.isPlaying,
+                        onSeek = onSeek, accent = lyricAccent,
+                    )
 
                     // Motion art fills the backdrop, which follows the same swipe on its own.
                     hasRichArtwork -> Unit

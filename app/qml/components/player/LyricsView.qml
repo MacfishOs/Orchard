@@ -88,15 +88,6 @@ Item {
         return list && list.length === lines.length ? String(list[index] || "") : "";
     }
 
-    function sourceLabel(source) {
-        switch (source) {
-        case "amlyrics": return "am-lyrics";
-        case "lrclib": return "LRCLIB";
-        case "youtube": return "YouTube Music";
-        default: return source;
-        }
-    }
-
     function scrollToCurrent(animated) {
         if (!following || !synced)
             return;
@@ -232,6 +223,7 @@ Item {
     Flickable {
         id: flick
         anchors.fill: parent
+        anchors.topMargin: sourceBar.visible ? sourceBar.height + 8 : 0
         visible: OrchardLyrics.status === "ready"
         opacity: root.built ? 1 : 0
         Behavior on opacity { enabled: root.built; NumberAnimation { duration: 220 } }
@@ -468,7 +460,7 @@ Item {
                 width: column.width
                 topPadding: 18
                 visible: Boolean(OrchardLyrics.source)
-                text: qsTr("Lyrics from %1").arg(root.sourceLabel(OrchardLyrics.source))
+                text: qsTr("Lyrics from %1").arg(sourceBar.sourceLabel(OrchardLyrics.source))
                 color: root.mutedText
                 font.family: "Inter"
                 font.pixelSize: 10
@@ -476,13 +468,14 @@ Item {
         }
     }
 
-    LyricsTranslateBar {
+    LyricsSourceBar {
+        id: sourceBar
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.topMargin: 4
         anchors.rightMargin: 4
         width: parent.width - 8
-        visible: OrchardLyrics.status === "ready"
+        visible: Boolean(OrchardLyrics.trackId)
         accentColor: root.accentColor
         primaryText: root.primaryText
     }

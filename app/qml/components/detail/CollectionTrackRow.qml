@@ -39,8 +39,8 @@ ItemDelegate {
     property var menuMedia: track
     property string removablePlaylistId: ""
     property string removablePlaylistTitle: ""
-    property color accentColor: "#7fbe90"
-    property color accentSoftColor: "#96caa4"
+    property color accentColor: OrchardAppearance.accent
+    property color accentSoftColor: OrchardAppearance.accent
 
     readonly property bool current: Boolean(OrchardPlayback.track.id) && OrchardPlayback.track.id === track.id
     // The revision read makes the icon follow downloads finishing or being removed.

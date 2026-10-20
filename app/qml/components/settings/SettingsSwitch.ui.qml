@@ -17,34 +17,72 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import Orchard
 import QtQuick
 import QtQuick.Controls
 
+// Toggle with its state spelled out beside it, Windows style.
 Switch {
     id: control
 
+    readonly property color accent: OrchardAppearance.accent
+
+    hoverEnabled: true
+    text: checked ? qsTr("On") : qsTr("Off")
+    spacing: 12
+    padding: 0
+    implicitWidth: stateLabel.implicitWidth + spacing + 40
+    implicitHeight: 32
+
+    contentItem: Text {
+        id: stateLabel
+        text: control.text
+        rightPadding: 40 + control.spacing
+        color: control.enabled ? "#f0eee7" : "#7c857f"
+        font.family: "Inter"
+        font.pixelSize: 14
+        horizontalAlignment: Text.AlignRight
+        verticalAlignment: Text.AlignVCenter
+    }
+
     indicator: Rectangle {
         implicitWidth: 40
-        implicitHeight: 24
-        x: control.leftPadding
-        y: control.topPadding + control.availableHeight / 2 - height / 2
-        radius: 12
-        color: control.checked ? "#5f9a76" : "#2cffffff"
-        border.color: control.visualFocus ? "#c4e0cb" : "transparent"
-        border.width: 2
-        Behavior on color { ColorAnimation { duration: 180 } }
+        implicitHeight: 20
+        x: control.width - width
+        y: (control.height - height) / 2
+        radius: 10
+        opacity: control.enabled ? 1 : 0.45
+        color: control.checked
+               ? (control.down ? Qt.darker(control.accent, 1.12) : control.hovered ? Qt.lighter(control.accent, 1.08) : control.accent)
+               : control.hovered ? "#14ffffff" : "transparent"
+        border.width: control.checked ? 0 : 1
+        border.color: "#c3c8c4"
+        Behavior on color { ColorAnimation { duration: Motion.normal } }
 
         Rectangle {
-            x: control.checked ? parent.width - width - 3 : 3
-            y: 3
-            // Knob stretches while held, like it's bracing for the jump.
-            width: control.down ? 22 : 18
-            height: 18
-            radius: 9
-            color: control.checked ? "#ffffff" : "#e4e9e6"
-            Behavior on x { NumberAnimation { duration: 220; easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
-            Behavior on width { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-            Behavior on color { ColorAnimation { duration: 180 } }
+            anchors.centerIn: parent
+            width: parent.width + 6
+            height: parent.height + 6
+            radius: height / 2
+            visible: control.visualFocus
+            color: "transparent"
+            border.color: OrchardAppearance.accentStrong
+            border.width: 2
+        }
+
+        Rectangle {
+            readonly property real size: control.hovered || control.down ? 14 : 12
+            // Stretches while held, then springs to the far side.
+            width: control.down ? size + 4 : size
+            height: size
+            radius: size / 2
+            x: control.checked ? parent.width - width - 4 : 4
+            y: (parent.height - height) / 2
+            color: control.checked ? OrchardAppearance.onAccent : "#d0d4d1"
+            Behavior on x { NumberAnimation { duration: Motion.slow; easing.type: Easing.OutBack; easing.overshoot: 1.3 } }
+            Behavior on width { NumberAnimation { duration: Motion.fast; easing.type: Motion.enter } }
+            Behavior on height { NumberAnimation { duration: Motion.fast; easing.type: Motion.enter } }
+            Behavior on color { ColorAnimation { duration: Motion.normal } }
         }
     }
 }

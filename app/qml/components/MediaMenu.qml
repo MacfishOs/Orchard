@@ -26,7 +26,7 @@ Menu {
     Component.onCompleted: configurePopup(root)
     width: 210
     padding: 5
-    background: Rectangle { color: "#242c27"; radius: 10; border.color: "#455348" }
+    background: Rectangle { color: Qt.lighter(OrchardAppearance.popupColor, 1.25); radius: 8; border.color: "#24ffffff" }
     // Grow from the click point so the menu reads as coming from the cursor.
     transformOrigin: Popup.TopLeft
     enter: Transition {
@@ -41,7 +41,7 @@ Menu {
         implicitHeight: 36
         background: Rectangle {
             radius: 6
-            color: entry.highlighted ? "#435247" : "#00435247"
+            color: entry.highlighted ? "#1fffffff" : "#00ffffff"
             Behavior on color { ColorAnimation { duration: Motion.fast } }
         }
         contentItem: Text {
@@ -219,7 +219,6 @@ Menu {
         enabled: root.artistIds.length > 0 && !OrchardNetwork.offline
         onTriggered: root.viewArtist()
     }
-    // song.link has no artist pages, so artists get their channel. No knockoff merch here.
     Entry {
         text: qsTr("Copy artist link")
         visible: root.isArtist
@@ -227,13 +226,12 @@ Menu {
         enabled: root.artistIds.length > 0
         onTriggered: OrchardBackend.copyToClipboard("https://music.youtube.com/channel/" + root.artistIds[0], qsTr("Copied artist link to clipboard"))
     }
-    // Sharing is caring, and song.link bridges the eternal Apple vs Spotify holy war.
     Entry {
         visible: !root.isArtist && !root.isLocalSong && !root.isLocalPlaylist
         height: visible ? implicitHeight : 0
         text: root.songLinkKind === qsTr("album")
-            ? qsTr("Copy album.link")
-            : (root.songLinkKind === qsTr("playlist") ? qsTr("Copy playlist link") : qsTr("Copy song.link"))
+            ? qsTr("Copy album link")
+            : (root.songLinkKind === qsTr("playlist") ? qsTr("Copy playlist link") : qsTr("Copy song link"))
         enabled: Boolean(root.songLinkId)
         onTriggered: OrchardBackend.copySongLink(root.songLinkId, root.songLinkKind)
     }
@@ -244,7 +242,7 @@ Menu {
         Component.onCompleted: root.configurePopup(root.artistChoices)
         width: 230
         padding: 5
-        background: Rectangle { color: "#242c27"; radius: 10; border.color: "#455348" }
+        background: Rectangle { color: Qt.lighter(OrchardAppearance.popupColor, 1.25); radius: 8; border.color: "#24ffffff" }
         transformOrigin: Popup.TopLeft
         enter: Transition {
             NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Motion.fast; easing.type: Motion.enter }

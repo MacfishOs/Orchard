@@ -31,7 +31,16 @@ LyricTranslationSettingsForm {
     endpoint: OrchardTranslation.endpoint
     hasApiKey: OrchardTranslation.hasApiKey
     credentialMessage: OrchardTranslation.credentialMessage
+    accountQuotaMessage: OrchardTranslation.accountQuotaMessage
     installed: installedPacks()
+
+    Timer {
+        interval: 60000
+        running: root.visible && root.provider === "orchard" && root.accountSignedIn
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: OrchardTranslation.refreshAccountQuota()
+    }
 
     // Untyped so qmlcachegen leaves the QVariantList alone.
     function installedPacks() {

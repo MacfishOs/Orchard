@@ -35,6 +35,24 @@ class RemoteLyricTranslationTest {
         assertNull(parseAccountLines("""{"lines":[""]}""", 1))
     }
 
+    @Test fun accountQuotaUsesWorkerValuesAndRejectsMissingOrExpiredAllowance() {
+        val body = JSONObject("""{"quota":{"daily_limit":50,"remaining":37,"resets_at":2000}}""")
+        val quota = requireNotNull(parseAccountQuota(body, now = 1000))
+        assertEquals(50L, quota.dailyLimit)
+        assertEquals(37L, quota.remaining)
+        assertTrue(quota.description(now = 1000).contains("37 translations left"))
+        assertTrue(quota.description(now = 2000).contains("unavailable"))
+        assertNull(parseAccountQuota(body, now = 2000))
+        assertNull(parseAccountQuota(JSONObject(), now = 1000))
+        assertNull(parseAccountQuota(JSONObject("""{"quota":{"daily_limit":50,"resets_at":2000}}"""), now = 1000))
+        for (remaining in listOf(-1, 51, 0.5, "37")) {
+            body.getJSONObject("quota").put("remaining", remaining)
+            assertNull(parseAccountQuota(body, now = 1000))
+        }
+        body.getJSONObject("quota").put("remaining", 0)
+        assertEquals(0L, requireNotNull(parseAccountQuota(body, now = 1000)).remaining)
+    }
+
     @Test fun endpointsAndCacheAreScoped() {
         assertEquals("https://api.anthropic.com/v1/messages",
             RemoteLyricTranslation.endpoint(LyricTranslationProvider.CLAUDE, "", "key").toString())

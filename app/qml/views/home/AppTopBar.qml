@@ -27,88 +27,16 @@ Item {
     id: root
 
     signal settingsRequested
-    signal docsRequested
-    signal supportRequested
 
-    readonly property real buttonsLeft: offlineStatus.visible ? offlineStatus.x : supportButton.x
+    readonly property real buttonsLeft: offlineStatus.visible ? offlineStatus.x : account.x
     readonly property real canopyPlayerWidth: Math.max(0, buttonsLeft - 12)
 
     OfflineStatusButton {
         id: offlineStatus
 
-        anchors.right: supportButton.left
+        anchors.right: account.left
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
-    }
-
-    Button {
-        id: supportButton
-
-        anchors.right: docsButton.left
-        anchors.rightMargin: 4
-        anchors.verticalCenter: parent.verticalCenter
-        width: 38
-        height: 38
-        onClicked: root.supportRequested()
-        Accessible.name: OrchardSupport.unread > 0 ? qsTr("Report a bug, %1 updates").arg(OrchardSupport.unread) : qsTr("Report a bug")
-        ToolTip.visible: hovered
-        ToolTip.text: OrchardSupport.unread > 0 ? qsTr("Bug reports have updates") : qsTr("Report a bug")
-
-        background: Rectangle {
-            radius: 19
-            color: supportButton.hovered ? "#12ffffff" : "#00ffffff"
-
-            Behavior on color {
-                ColorAnimation { duration: Motion.fast }
-            }
-        }
-
-        contentItem: LucideIcon {
-            name: "bug"
-            color: supportButton.hovered ? "#f1eee7" : "#bec4c7"
-            Behavior on color { ColorAnimation { duration: Motion.fast } }
-        }
-
-        // News on a report. The bug button finally has something to say.
-        Rectangle {
-            x: parent.width - width - 7
-            y: 7
-            width: 8
-            height: 8
-            radius: 4
-            color: "#8cc5a5"
-            border.color: "#0d0f12"
-            visible: OrchardSupport.unread > 0
-        }
-    }
-
-    Button {
-        id: docsButton
-
-        anchors.right: account.left
-        anchors.rightMargin: 4
-        anchors.verticalCenter: parent.verticalCenter
-        width: 38
-        height: 38
-        onClicked: root.docsRequested()
-        Accessible.name: qsTr("Docs")
-        ToolTip.visible: hovered
-        ToolTip.text: qsTr("Docs")
-
-        background: Rectangle {
-            radius: 19
-            color: docsButton.hovered ? "#12ffffff" : "#00ffffff"
-
-            Behavior on color {
-                ColorAnimation { duration: Motion.fast }
-            }
-        }
-
-        contentItem: LucideIcon {
-            name: "book-open"
-            color: docsButton.hovered ? "#f1eee7" : "#bec4c7"
-            Behavior on color { ColorAnimation { duration: Motion.fast } }
-        }
     }
 
     Button {
@@ -119,7 +47,7 @@ Item {
         width: 42
         height: 42
         onClicked: root.settingsRequested()
-        Accessible.name: qsTr("Account and settings")
+        Accessible.name: OrchardSupport.unread > 0 ? qsTr("Account and settings, bug reports have updates") : qsTr("Account and settings")
         ToolTip.visible: hovered
         ToolTip.text: OrchardAuth.userName || qsTr("Account and settings")
 
@@ -142,6 +70,19 @@ Item {
                 radius: 18
                 source: OrchardAuth.userAvatar || ""
             }
+        }
+
+        // News on a bug report; the reports themselves live in Settings.
+        Rectangle {
+            x: parent.width - width - 3
+            y: 3
+            width: 10
+            height: 10
+            radius: 5
+            color: OrchardAppearance.accent
+            border.color: "#0d0f12"
+            border.width: 2
+            visible: OrchardSupport.unread > 0
         }
     }
 }

@@ -33,7 +33,7 @@ Item {
     property real artworkRadius: 7
     property bool playing: false
     property bool actionsEnabled: true
-    property color accentColor: "#7fbe90"
+    property color accentColor: OrchardAppearance.accent
     property color accentInkColor: "#09100b"
     property color inkColor: "#080c0a"
 

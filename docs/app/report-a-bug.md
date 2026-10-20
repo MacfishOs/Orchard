@@ -30,7 +30,6 @@ Reports go to the Orchard GitHub repository as public issues. Orchard watches ea
 
 Use any of these:
 
-- Select the bug button in the top bar, left of the Docs button.
 - Open **Settings** and select **Report a bug** under **Docs** in the sidebar.
 - Press **/** or **Ctrl+K** and pick **Report a bug** in Spotlight.
 
@@ -87,7 +86,7 @@ Select a report in the list to see its activity, newest at the bottom:
 - Closing, with the reason, such as "Fixed by commit abc1234" or "Closed as not planned".
 - Reopening and assignment.
 
-A green dot on the bug button in the top bar and next to a report means something new happened. Orchard checks every 5 minutes and when you come back to the window, and shows a notice like "“Crash on start”: Fixed by commit abc1234". Opening the report clears the dot.
+A dot on **Account and settings** in the top bar, next to **Report a bug** in Settings, and next to a report means something new happened. Orchard checks every 5 minutes and when you come back to the window, and shows a notice like "“Crash on start”: Fixed by commit abc1234". Opening the report clears the dot.
 
 To reply, select **Open on GitHub** and comment on the issue there.
 

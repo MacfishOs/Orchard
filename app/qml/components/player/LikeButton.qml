@@ -27,7 +27,7 @@ Button {
     id: root
 
     property color iconColor: "#d8dcd6"
-    property color likedColor: "#8cc5a5"
+    property color likedColor: OrchardAppearance.accent
     property int iconSize: 17
     readonly property bool liked: OrchardLibrary.currentLiked
 

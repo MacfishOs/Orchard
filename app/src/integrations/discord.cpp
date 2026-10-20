@@ -19,6 +19,7 @@
 
 #include "discord.h"
 #include "auth/auth_manager.h"
+#include "youtube_links.h"
 
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -50,16 +51,14 @@ QString artworkUrl(const QVariantMap &track)
 
 QString listenUrl(const QVariantMap &track)
 {
-    // Why trap friends in a YouTube Music walled garden when song.link gives them
-    // Spotify, Apple Music, and whatever obscure player they use on Linux?
     const QString id = track.value(QStringLiteral("id")).toString().trimmed();
     if (!id.isEmpty()) {
-        return QStringLiteral("https://song.link/y/") + id;
+        return youtubeShareUrl(id);
     }
 
     const QString direct = track.value(QStringLiteral("url")).toString().trimmed();
     if (!direct.isEmpty()) {
-        return QStringLiteral("https://song.link/y/") + direct;
+        return youtubeShareUrl(direct);
     }
 
     return {};
@@ -387,7 +386,7 @@ void Discord::refresh(bool force)
         {QStringLiteral("artworkText"), QStringLiteral("{album}")},
         {QStringLiteral("artistImageUrl"), m_artistImage},
         {QStringLiteral("listenUrl"), listenUrl(m_track)},
-        {QStringLiteral("listenButtonText"), QStringLiteral("Listen on Your Platform")},
+        {QStringLiteral("listenButtonText"), QStringLiteral("Listen on YouTube Music")},
         {QStringLiteral("projectButton"), m_projectButtonEnabled},
         {QStringLiteral("currentTime"), m_position},
         {QStringLiteral("duration"), m_duration},

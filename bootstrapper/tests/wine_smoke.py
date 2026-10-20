@@ -102,10 +102,15 @@ wine(boot, "--update", *common)
 e.check((e.ROOT / "Orchard.exe").read_bytes() == fake.read_bytes(), "running Orchard.exe replaced via rename")
 e.check((e.ROOT / "Orchard.old.exe").exists(), "old bootstrapper kept as Orchard.old.exe")
 
+run_key = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run"
+wine("reg", "add", run_key, "/v", "Orchard", "/t", "REG_SZ", "/d",
+     '"' + win(e.ROOT / "Orchard.exe") + '"', "/f")
 wine(boot, "--uninstall", "--yes", *common)
 time.sleep(5)
 r = wine("reg", "query", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\Orchard", expect=1)
 e.check(True, "uninstall registry key removed")
+wine("reg", "query", run_key, "/v", "Orchard", expect=1)
+e.check(True, "startup registration removed")
 e.check(not e.ROOT.exists(), "install root removed after exit")
 shutil.rmtree(e.WORK, ignore_errors=True)
 print("wine smoke test passed")

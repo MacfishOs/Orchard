@@ -17,7 +17,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ---
 
 The following icons used by Orchard are derived from Feather: chevron-left,
-chevron-right, compass, music-2, search, and volume-2.
+chevron-right, compass, music-2, power, search, and volume-2.
 
 The MIT License (MIT) (for the icons listed above)
 

@@ -15,6 +15,9 @@ keywords:
   - devices
   - github
   - startup
+  - start with windows
+  - auto start
+  - login
   - restore queue
   - restore page
   - last page
@@ -73,6 +76,12 @@ Select **Sign out** in the **Orchard Account** card, under Settings, General.
 ## See and remove devices on your Orchard account
 
 The **Orchard Account** card lists a **Devices** section while you are signed in to an Orchard account. Each row shows the device name and its platform (Linux, Windows, macOS, Android, iOS). The current computer is labeled "This device". Other devices show "Last seen" with a date and a **Remove** button. Select **Remove** to take a device off the account.
+
+## Start Orchard when you sign in to Windows
+
+Open **Settings**, **General**, then turn on **Start with Windows** in the **Launch** group. This option is off by default and appears only on Windows. Orchard opens when you sign in to your Windows account, with music paused. Press Play when you want to listen.
+
+Turn **Start with Windows** off to stop opening Orchard automatically. Keep a portable copy in the same folder while this option is enabled.
 
 ## Restore the queue, song, and page when Orchard starts
 

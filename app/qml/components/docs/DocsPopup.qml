@@ -23,6 +23,8 @@ import ".."
 // The manual, in its own window, because a handbook deserves more than a settings tab.
 GlassPopup {
     id: root
+    // Long reading and writing; a solid surface keeps the text steady.
+    frosted: false
 
     // Page id to open on; empty shows the first page.
     property string page: ""

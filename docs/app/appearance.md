@@ -1,10 +1,19 @@
 ---
 title: Appearance
-summary: Show the bitrate, set how the fullscreen player behaves, play music videos behind artist pages, turn animated artwork on or off, set the artwork source order, and tune the immersive background.
+summary: Pick an accent color and popup background, adjust interface scaling, show the bitrate, set how the fullscreen player behaves, play music videos behind artist pages, turn animated artwork on or off, set the artwork source order, and tune the immersive background.
 group: Customize
 icon: palette
 keywords:
   - appearance
+  - accent color
+  - theme
+  - custom colors
+  - popup background
+  - menu color
+  - interface scale
+  - display scaling
+  - high DPI
+  - 4K
   - animated artwork
   - motion artwork
   - immersive background
@@ -29,7 +38,25 @@ order: 110
 
 # Appearance
 
-Appearance settings control the player layout, the player bar bitrate indicator, the fullscreen player, animated artwork, and the immersive background. They are in Settings, Appearance.
+Appearance settings control Orchard's colors, the player layout, the player bar bitrate indicator, the fullscreen player, animated artwork, and the immersive background. They are in Settings, Appearance.
+
+## Pick an accent color
+
+Open **Settings**, then **Appearance**. In **Colors**, the accent color is used for switches, sliders, the selected page, and highlights across Orchard. Choose **Pick a color** and click a swatch, or click **Custom color** to choose any color. Choose **Match album art** to have the accent follow the cover of the song that is playing. When nothing is playing, Orchard uses the color you picked.
+
+## Change the menu and popup background
+
+In **Colors**, **Menu and popup background** sets the color behind menus, dialogs, and the Settings window. Click a swatch or **Custom color**. **See-through frosted popups** controls how much of the music shows through frosted popups such as release notes and Connect. Menus, Docs, and bug reports stay solid so they are easy to read.
+
+Click **Reset colors** to return to the default accent and popup background.
+
+## Make the interface larger or smaller
+
+Open **Settings**, then **Appearance**. In **Display scaling**, adjust **Interface scale** from 75% to 250% in 5% steps. The slider resizes text, buttons, artwork, and menus together. Quit and reopen Orchard to apply the selected scale. If closing the window keeps Orchard in the system tray, use the tray's exit command to quit fully.
+
+The default, 100%, follows your system display scaling. Orchard multiplies the selected scale by each monitor's system scale, including when you move the window between monitors. For example, 125% in Orchard with 200% system scaling gives 250% overall scaling. On a 4K display where controls look too small, try 125% or 150%.
+
+Select **Reset scale** to return to 100%, then restart Orchard. **Reset controls** in the immersive background section does not change interface scaling.
 
 ## Choose a layout
 
@@ -45,6 +72,12 @@ Glade is the default.
 ## Show the audio bitrate
 
 Turn on **Show audio bitrate** in the **Player bar** group. Orchard then shows the streaming bitrate in kbps in the player bar. The setting is off by default. See [Streaming quality](streaming-quality.md).
+
+## Keep the fullscreen player in the app window
+
+Turn on **Keep player windowed** in the **Fullscreen player** group. Clicking the player bar artwork or pressing F opens the same player layout inside the app window, keeping its size and position. You can move and resize the window while using the player. Press Esc, press F, or select the player's close button to return to the main view.
+
+The setting is off by default and applies when you open the player. It is saved between launches.
 
 ## Stop the fullscreen controls from hiding
 

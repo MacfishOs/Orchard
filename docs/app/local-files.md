@@ -26,7 +26,7 @@ order: 62
 
 Orchard can play music files stored on your computer. They live next to your YouTube Music library, never inside it. Orchard only remembers where each file is, plus the tags, covers, and lyrics it found or that you chose. Your files are not copied, moved, or uploaded.
 
-Local songs play without a network connection. Orchard never looks up lyrics or animated artwork for them online, and likes, song.link, and downloads do not apply to them.
+Local songs play without a network connection. Orchard never looks up lyrics or animated artwork for them online, and likes, YouTube share links, and downloads do not apply to them.
 
 ## Add songs
 

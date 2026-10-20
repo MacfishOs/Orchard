@@ -17,6 +17,7 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import Orchard
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -24,8 +25,8 @@ import ".."
 
 ComboBox {
     id: control
-    implicitHeight: 36
-    leftPadding: 16
+    implicitHeight: 32
+    leftPadding: 12
     rightPadding: 38
     hoverEnabled: true
     font.family: "Inter"
@@ -45,17 +46,17 @@ ComboBox {
         width: 14
         height: 14
         name: "chevron-down"
-        color: "#b4beb9"
+        color: "#c3c8c4"
         rotation: control.popup.visible ? 180 : 0
-        Behavior on rotation { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+        Behavior on rotation { NumberAnimation { duration: Motion.slow; easing.type: Easing.OutBack } }
     }
 
     background: Rectangle {
-        radius: height / 2
-        color: control.down || control.popup.visible ? "#2cffffff" : control.hovered ? "#1cffffff" : "#0fffffff"
-        border.color: control.visualFocus ? "#a6d4bf" : "#26ffffff"
+        radius: 5
+        color: control.down || control.popup.visible ? "#0affffff" : control.hovered ? "#18ffffff" : "#10ffffff"
+        border.color: control.visualFocus ? OrchardAppearance.accentStrong : "#14ffffff"
         opacity: control.enabled ? 1 : 0.5
-        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on color { ColorAnimation { duration: Motion.fast } }
     }
 
     delegate: ItemDelegate {
@@ -71,18 +72,37 @@ ComboBox {
         contentItem: Text {
             text: option.modelData[control.textRole] ?? option.modelData
             font: control.font
-            color: control.currentIndex === option.index ? "#c4e0cb" : "#f0eee7"
+            leftPadding: 6
+            color: "#f0eee7"
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
         background: Rectangle {
-            radius: 10
-            color: option.highlighted || option.hovered ? "#1cffffff" : "transparent"
+            radius: 5
+            color: option.highlighted || option.hovered ? "#14ffffff" : control.currentIndex === option.index ? "#0cffffff" : "transparent"
+
+            Rectangle {
+                visible: control.currentIndex === option.index
+                x: 0
+                anchors.verticalCenter: parent.verticalCenter
+                width: 3
+                height: 16
+                radius: 1.5
+                color: OrchardAppearance.accent
+            }
         }
     }
 
     popup: Popup {
-        y: control.height + 6
+        y: control.height + 4
+        transformOrigin: Item.Top
+        enter: Transition {
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Motion.fast; easing.type: Motion.enter }
+            NumberAnimation { property: "scale"; from: 0.96; to: 1; duration: Motion.normal; easing.type: Motion.enter }
+        }
+        exit: Transition {
+            NumberAnimation { property: "opacity"; to: 0; duration: Motion.fast; easing.type: Motion.exit }
+        }
         width: Math.max(control.width, 220)
         implicitHeight: Math.min(contentItem.implicitHeight + 12, 280)
         padding: 6
@@ -95,9 +115,9 @@ ComboBox {
             ScrollIndicator.vertical: ScrollIndicator {}
         }
         background: Rectangle {
-            radius: 14
-            color: "#f01a201c"
-            border.color: "#26ffffff"
+            radius: 8
+            color: OrchardAppearance.popupColor
+            border.color: "#1fffffff"
         }
     }
 }

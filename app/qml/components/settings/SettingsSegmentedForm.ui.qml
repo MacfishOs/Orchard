@@ -17,6 +17,7 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import Orchard
 import QtQuick
 import QtQuick.Controls
 
@@ -29,13 +30,27 @@ Rectangle {
     ]
     property var currentValue: "a"
     property alias repeater: repeater
+    // Selected segment; the accent highlight glides under it.
+    property Item highlightTarget: null
 
     implicitWidth: row.implicitWidth + 6
-    implicitHeight: 36
-    radius: height / 2
-    color: "#12ffffff"
-    border.color: "#10ffffff"
+    implicitHeight: 34
+    radius: 6
+    color: "#0affffff"
+    border.color: "#14ffffff"
     opacity: enabled ? 1 : 0.5
+
+    Rectangle {
+        visible: root.highlightTarget !== null
+        x: root.highlightTarget ? root.highlightTarget.x + 3 : 0
+        y: 3
+        width: root.highlightTarget ? root.highlightTarget.width : 0
+        height: root.height - 6
+        radius: 4
+        color: OrchardAppearance.accent
+        Behavior on x { NumberAnimation { duration: Motion.slow; easing.type: Easing.OutQuint } }
+        Behavior on width { NumberAnimation { duration: Motion.slow; easing.type: Easing.OutQuint } }
+    }
 
     Row {
         id: row

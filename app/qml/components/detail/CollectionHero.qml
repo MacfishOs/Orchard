@@ -52,8 +52,8 @@ Item {
     property string shareLabel
     property bool shareEnabled: true
 
-    property color accentColor: "#7fbe90"
-    property color accentSoftColor: "#96caa4"
+    property color accentColor: OrchardAppearance.accent
+    property color accentSoftColor: OrchardAppearance.accent
     property color accentInkColor: "#09100b"
     property color inkColor: "#080c0a"
 
@@ -359,14 +359,14 @@ Item {
         id: downloadMenu
         width: 210
         padding: 5
-        background: Rectangle { color: "#242c27"; radius: 10; border.color: "#455348" }
+        background: Rectangle { color: Qt.lighter(OrchardAppearance.popupColor, 1.25); radius: 8; border.color: "#24ffffff" }
 
         MenuItem {
             id: removeItem
             text: qsTr("Remove downloads")
             implicitHeight: 36
             onTriggered: root.removeDownloadsClicked()
-            background: Rectangle { radius: 6; color: removeItem.highlighted ? "#435247" : "#00435247" }
+            background: Rectangle { radius: 6; color: removeItem.highlighted ? "#1fffffff" : "#00ffffff" }
             contentItem: Text {
                 text: removeItem.text
                 color: "#f2f0eb"

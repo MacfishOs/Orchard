@@ -26,7 +26,7 @@ Button {
     id: ghost
 
     property string glyph: "shuffle"
-    property color accentSoftColor: "#96caa4"
+    property color accentSoftColor: OrchardAppearance.accent
 
     width: 44
     height: 44

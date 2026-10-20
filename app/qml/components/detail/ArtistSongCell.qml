@@ -33,7 +33,7 @@ ItemDelegate {
     property var menuMedia: track
     // Second line names the artist when the song is a feature, else the album.
     property bool showArtist: false
-    property color accentSoftColor: "#96caa4"
+    property color accentSoftColor: OrchardAppearance.accent
 
     readonly property bool current: Boolean(OrchardPlayback.track.id) && OrchardPlayback.track.id === track.id
     readonly property string artistLabel: (track.artists && track.artists.length ? track.artists.join(", ") : "")

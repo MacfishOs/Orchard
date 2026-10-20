@@ -221,7 +221,7 @@ Item {
             streamQuality: OrchardAlbum.streamQuality
             actionsEnabled: root.tracks.length > 0 && !OrchardAlbum.loading
             playing: root.collectionPlaying
-            shareLabel: qsTr("Copy album.link")
+            shareLabel: qsTr("Copy album link")
             shareEnabled: Boolean(root.shareId)
             downloadable: root.tracks.length > 0
             downloadState: root.downloadState

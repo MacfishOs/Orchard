@@ -18,6 +18,7 @@
  */
 
 #include "appearance_settings.h"
+#include "ui_scaling.h"
 #include <algorithm>
 #include <cmath>
 
@@ -27,8 +28,30 @@ double readNumber(QSettings &settings, const QString &key, double fallback, doub
     const double value = settings.value(key, fallback).toDouble(&ok);
     return ok && std::isfinite(value) ? std::clamp(value, low, high) : fallback;
 }
+
+QColor readColor(QSettings &settings, const QString &key, const QColor &fallback) {
+    const QColor color(settings.value(key).toString());
+    return color.isValid() ? QColor(color.red(), color.green(), color.blue()) : fallback;
+}
+
+QColor mix(const QColor &a, const QColor &b, double t) {
+    return QColor::fromRgbF(a.redF() + (b.redF() - a.redF()) * t, a.greenF() + (b.greenF() - a.greenF()) * t,
+                            a.blueF() + (b.blueF() - a.blueF()) * t);
+}
+
+double luminance(const QColor &color) {
+    return 0.2126 * color.redF() + 0.7152 * color.greenF() + 0.0722 * color.blueF();
+}
+
+const QColor defaultAccent{0x8c, 0xc4, 0xa0};
+const QColor defaultPopup{0x1b, 0x20, 0x1c};
+
+QVariantMap preset(const QString &name, const char *hex) {
+    return {{QStringLiteral("name"), name}, {QStringLiteral("color"), QColor(QLatin1String(hex))}};
+}
 }
 AppearanceSettings::AppearanceSettings(QObject *parent) : QObject(parent) {
+    m_initialUiScale = m_uiScale = UiScaling::savedScale();
     m_settings.beginGroup(QStringLiteral("appearance"));
     m_immersive = m_settings.value(QStringLiteral("immersiveBackground"), false).toBool();
     m_showBitrate = m_settings.value(QStringLiteral("showBitrate"), false).toBool();
@@ -40,6 +63,7 @@ AppearanceSettings::AppearanceSettings(QObject *parent) : QObject(parent) {
     m_intensity = readNumber(m_settings, QStringLiteral("intensity"), 0.92, 0.0, 1.0);
     m_saturation = readNumber(m_settings, QStringLiteral("saturation"), 1.24, 0.0, 3.0);
     m_brightness = readNumber(m_settings, QStringLiteral("brightness"), 1.0, 0.0, 2.0);
+    m_fullscreenWindowed = m_settings.value(QStringLiteral("fullscreenWindowed"), false).toBool();
     m_fullscreenAutoHide = m_settings.value(QStringLiteral("fullscreenAutoHide"), true).toBool();
     m_fullscreenPulse = m_settings.value(QStringLiteral("fullscreenPulse"), true).toBool();
     m_artistVideoBackdrop = m_settings.value(QStringLiteral("artistVideoBackdrop"), false).toBool();
@@ -47,6 +71,11 @@ AppearanceSettings::AppearanceSettings(QObject *parent) : QObject(parent) {
     m_animatedCollage = m_settings.value(QStringLiteral("animatedCollageEnabled"), false).toBool();
     m_artworkSource = m_settings.value(QStringLiteral("artworkSource"), QStringLiteral("apple_music")).toString();
     const QStringList savedMirrors = m_settings.value(QStringLiteral("mirrorOrder")).toStringList();
+    if (m_settings.value(QStringLiteral("accentMode")).toString() == QLatin1String("artwork"))
+        m_accentMode = QStringLiteral("artwork");
+    m_accentColor = readColor(m_settings, QStringLiteral("accentColor"), defaultAccent);
+    m_popupColor = readColor(m_settings, QStringLiteral("popupColor"), defaultPopup);
+    m_popupTranslucency = readNumber(m_settings, QStringLiteral("popupTranslucency"), 0.6, 0.0, 0.8);
     m_mirrorOrder = sanitizeMirrorOrder(savedMirrors.isEmpty() ? QStringList{QStringLiteral("m8tec"), QStringLiteral("boidu"), QStringLiteral("spotify")} : savedMirrors);
 }
 void AppearanceSettings::setImmersiveBackground(bool value) {
@@ -87,6 +116,11 @@ void AppearanceSettings::setNumber(const QString &key, double value, double &fie
     m_settings.setValue(key, value);
     emit changed();
 }
+void AppearanceSettings::setUiScale(double value) {
+    if (!std::isfinite(value)) return;
+    value = std::round(std::clamp(value, UiScaling::minimum, UiScaling::maximum) * 100) / 100;
+    setNumber(QStringLiteral("uiScale"), value, m_uiScale, UiScaling::minimum, UiScaling::maximum);
+}
 void AppearanceSettings::setSpeed(double value) { setNumber(QStringLiteral("speed"), value, m_speed, 0.0, 5.0); }
 void AppearanceSettings::setIntensity(double value) { setNumber(QStringLiteral("intensity"), value, m_intensity, 0.0, 1.0); }
 void AppearanceSettings::setSaturation(double value) { setNumber(QStringLiteral("saturation"), value, m_saturation, 0.0, 3.0); }
@@ -98,6 +132,7 @@ void AppearanceSettings::setFlag(const QString &key, bool value, bool &field) {
     m_settings.setValue(key, value);
     emit changed();
 }
+void AppearanceSettings::setFullscreenWindowed(bool value) { setFlag(QStringLiteral("fullscreenWindowed"), value, m_fullscreenWindowed); }
 void AppearanceSettings::setFullscreenAutoHide(bool value) { setFlag(QStringLiteral("fullscreenAutoHide"), value, m_fullscreenAutoHide); }
 void AppearanceSettings::setFullscreenPulse(bool value) { setFlag(QStringLiteral("fullscreenPulse"), value, m_fullscreenPulse); }
 void AppearanceSettings::setArtistVideoBackdrop(bool value) { setFlag(QStringLiteral("artistVideoBackdrop"), value, m_artistVideoBackdrop); }
@@ -207,12 +242,76 @@ QVariantList AppearanceSettings::availableMirrors() const {
     return list;
 }
 
+QColor AppearanceSettings::accent() const {
+    return m_accentMode == QLatin1String("artwork") && m_artworkAccent.alpha() > 0 ? m_artworkAccent : m_accentColor;
+}
+
+// Lifted toward white so focus rings and accent text stay legible on the dark surfaces.
+QColor AppearanceSettings::accentStrong() const { return mix(accent(), Qt::white, 0.35); }
+
+QColor AppearanceSettings::onAccent() const {
+    return luminance(accent()) > 0.45 ? QColor(0x10, 0x13, 0x10) : QColor(Qt::white);
+}
+
+void AppearanceSettings::setAccentMode(const QString &value) {
+    if ((value != QLatin1String("custom") && value != QLatin1String("artwork")) || value == m_accentMode) return;
+    m_accentMode = value;
+    m_settings.setValue(QStringLiteral("accentMode"), value);
+    emit themeChanged();
+}
+
+void AppearanceSettings::setAccentColor(const QColor &value) {
+    if (!value.isValid()) return;
+    const QColor opaque(value.red(), value.green(), value.blue());
+    if (opaque == m_accentColor) return;
+    m_accentColor = opaque;
+    m_settings.setValue(QStringLiteral("accentColor"), opaque.name());
+    emit themeChanged();
+}
+
+void AppearanceSettings::setArtworkAccent(const QColor &value) {
+    if (value == m_artworkAccent) return;
+    m_artworkAccent = value;
+    if (m_accentMode == QLatin1String("artwork")) emit themeChanged();
+}
+
+void AppearanceSettings::setPopupColor(const QColor &value) {
+    if (!value.isValid()) return;
+    const QColor opaque(value.red(), value.green(), value.blue());
+    if (opaque == m_popupColor) return;
+    m_popupColor = opaque;
+    m_settings.setValue(QStringLiteral("popupColor"), opaque.name());
+    emit themeChanged();
+}
+
+void AppearanceSettings::setPopupTranslucency(double value) {
+    if (!std::isfinite(value)) return;
+    value = std::clamp(value, 0.0, 0.8);
+    if (value == m_popupTranslucency) return;
+    m_popupTranslucency = value;
+    m_settings.setValue(QStringLiteral("popupTranslucency"), value);
+    emit themeChanged();
+}
+
+QVariantList AppearanceSettings::accentPresets() const {
+    return {preset(tr("Sage"), "#8cc4a0"),  preset(tr("Sky"), "#7fb6f0"),   preset(tr("Teal"), "#5fcfc4"),
+            preset(tr("Lime"), "#a8d672"),  preset(tr("Sun"), "#e9c46a"),   preset(tr("Peach"), "#f0a35e"),
+            preset(tr("Coral"), "#ef7b6b"), preset(tr("Rose"), "#f08fb5"),  preset(tr("Lilac"), "#b79cff"),
+            preset(tr("Silver"), "#c3c8c4")};
+}
+
+QVariantList AppearanceSettings::popupPresets() const {
+    return {preset(tr("Graphite"), "#1b201c"), preset(tr("Charcoal"), "#1b1b1d"), preset(tr("Forest"), "#1f3027"),
+            preset(tr("Midnight"), "#1d2538"), preset(tr("Plum"), "#2d2134"),     preset(tr("Mocha"), "#32281f")};
+}
+
 void AppearanceSettings::reset() {
     setLayoutStyle(QStringLiteral("glade"));
     setSpeed(1.38);
     setIntensity(0.92);
     setSaturation(1.24);
     setBrightness(1.0);
+    setFullscreenWindowed(false);
     setFullscreenAutoHide(true);
     setFullscreenPulse(true);
     setArtistVideoBackdrop(false);
@@ -220,5 +319,12 @@ void AppearanceSettings::reset() {
     setAnimatedCollageEnabled(false);
     setArtworkSource(QStringLiteral("apple_music"));
     resetMirrorOrder();
+}
+
+void AppearanceSettings::resetColors() {
+    setAccentMode(QStringLiteral("custom"));
+    setAccentColor(defaultAccent);
+    setPopupColor(defaultPopup);
+    setPopupTranslucency(0.6);
 }
 

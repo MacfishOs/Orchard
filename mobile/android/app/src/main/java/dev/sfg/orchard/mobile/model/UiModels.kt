@@ -153,6 +153,7 @@ data class OrchardSettings(
     val lyricTranslationProvider: LyricTranslationProvider = LyricTranslationProvider.LOCAL,
     val lyricTranslationModels: Map<String, String> = emptyMap(),
     val lyricTranslationEndpoint: String = "",
+    val lyricsProviders: List<LyricsProviderConfig> = LyricsProvider.entries.map(::LyricsProviderConfig),
 ) {
     /** Clamped, because a persisted value from an older build must not size the cache absurdly. */
     val cacheSizeBytes: Long

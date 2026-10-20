@@ -28,9 +28,8 @@ The docs are a window of their own with a page list on the left and the page on 
 
 Use any of these:
 
-- Select the **Docs** button (a book icon) in the top bar, left of **Account and settings**.
+- Select **Account and settings** in the top bar, then **Docs** at the bottom of the Settings sidebar. Settings closes and the docs open.
 - Press `/` or Ctrl+K, type "Docs", press the Down arrow once to highlight **Docs**, and press Enter. See [Search and Spotlight](search.md).
-- Select **Docs** at the bottom of the Settings sidebar. Settings closes and the docs open.
 
 ## Close the docs
 

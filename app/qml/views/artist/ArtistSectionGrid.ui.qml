@@ -35,7 +35,7 @@ GridView {
     property bool loading: false
     property string errorMessage: ""
     signal retryRequested()
-    property color accentSoftColor: "#96caa4"
+    property color accentSoftColor: OrchardAppearance.accent
     readonly property string presentation: kind === "videos" ? "video" : "album"
     readonly property int cardWidth: presentation === "video" ? 258 : albumWidth
 

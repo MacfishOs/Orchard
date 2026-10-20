@@ -17,27 +17,37 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import Orchard
 import QtQuick
 import QtQuick.Controls
 
 Button {
     id: control
-    implicitHeight: 38
-    padding: 12
+    implicitHeight: 32
+    leftPadding: 14
+    rightPadding: 14
+    topPadding: 0
+    bottomPadding: 0
     font.family: "Inter"
     font.pixelSize: 13
     hoverEnabled: true
     contentItem: Text {
         text: control.text
         font: control.font
-        color: "#f0eee7"
+        color: control.highlighted ? OrchardAppearance.onAccent : "#f0eee7"
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
     }
     background: Rectangle {
-        radius: height / 2
-        color: control.highlighted ? "#44604f" : control.down ? "#2cffffff" : control.hovered ? "#1cffffff" : "#0fffffff"
-        border.color: control.activeFocus ? "#a6d4bf" : control.highlighted ? "#6f9a80" : "#26ffffff"
-        Behavior on color { ColorAnimation { duration: 120 } }
+        radius: 5
+        opacity: control.enabled ? 1 : 0.5
+        color: control.highlighted
+               ? (control.down ? Qt.darker(OrchardAppearance.accent, 1.12) : control.hovered ? Qt.lighter(OrchardAppearance.accent, 1.08) : OrchardAppearance.accent)
+               : control.down ? "#0affffff" : control.hovered ? "#18ffffff" : "#10ffffff"
+        border.color: control.visualFocus ? OrchardAppearance.accentStrong : control.highlighted ? "transparent" : "#14ffffff"
+        border.width: control.visualFocus ? 2 : 1
+        scale: control.down ? 0.97 : 1
+        Behavior on color { ColorAnimation { duration: Motion.fast } }
+        Behavior on scale { NumberAnimation { duration: Motion.fast; easing.type: Motion.enter } }
     }
 }

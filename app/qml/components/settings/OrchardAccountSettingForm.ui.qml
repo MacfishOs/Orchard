@@ -101,7 +101,7 @@ ColumnLayout {
             Image {
                 anchors.fill: parent
                 source: root.userPicture
-                sourceSize: Qt.size(96, 96)
+                sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
             }

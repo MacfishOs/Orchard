@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/qt/qml/Orchard">
+    <file alias="app/qml/components/settings/LyricsProvidersSection.qml">../app/qml/components/settings/LyricsProvidersSection.qml</file>
+    <file alias="app/qml/components/player/LyricsSourceBar.qml">../app/qml/components/player/LyricsSourceBar.qml</file>
     <file alias="app/qml/Main.qml">../app/qml/Main.qml</file>
     <file alias="app/qml/components/settings/SettingsSection.qml">../app/qml/components/settings/SettingsSection.qml</file>
     <file alias="app/qml/components/settings/SettingsSegmented.qml">../app/qml/components/settings/SettingsSegmented.qml</file>
@@ -8,6 +10,8 @@
     <file alias="app/qml/components/settings/OrchardAccountSetting.qml">../app/qml/components/settings/OrchardAccountSetting.qml</file>
     <file alias="app/qml/components/settings/AppearanceSection.qml">../app/qml/components/settings/AppearanceSection.qml</file>
     <file alias="app/qml/components/settings/AppearanceSlider.qml">../app/qml/components/settings/AppearanceSlider.qml</file>
+    <file alias="app/qml/components/settings/ColorSwatchRow.qml">../app/qml/components/settings/ColorSwatchRow.qml</file>
+    <file alias="app/qml/components/settings/ColorsSection.qml">../app/qml/components/settings/ColorsSection.qml</file>
     <file alias="app/qml/components/settings/AudioEngineSection.qml">../app/qml/components/settings/AudioEngineSection.qml</file>
     <file alias="app/qml/components/settings/PlaybackSection.qml">../app/qml/components/settings/PlaybackSection.qml</file>
     <file alias="app/qml/components/settings/DownloadsSection.qml">../app/qml/components/settings/DownloadsSection.qml</file>

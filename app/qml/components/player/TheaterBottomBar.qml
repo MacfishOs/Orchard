@@ -281,7 +281,7 @@ Item {
                     background: Rectangle {
                         implicitWidth: 212
                         radius: 12
-                        color: "#ee141518"
+                        color: Qt.alpha(OrchardAppearance.popupColor, 0.93)
                         border.color: "#1fffffff"
                     }
 

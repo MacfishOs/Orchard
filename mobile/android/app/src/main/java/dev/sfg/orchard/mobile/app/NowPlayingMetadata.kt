@@ -29,8 +29,10 @@ import dev.sfg.orchard.mobile.model.PlaybackSnapshot
 import dev.sfg.orchard.mobile.model.PlaybackTarget
 import dev.sfg.orchard.mobile.model.PlaybackTargetState
 import dev.sfg.orchard.mobile.model.Track
+import dev.sfg.orchard.mobile.model.normalizeLyricsProviders
 import dev.sfg.orchard.mobile.playback.LocalPlaybackController
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -157,8 +159,16 @@ internal class NowPlayingMetadata(
 
     fun observeLyrics(playback: Flow<PlaybackSnapshot>) {
         scope.launch {
-            playback.map { it.currentTrack }.distinctUntilChanged { old, new -> old?.id == new?.id }
-                .collectLatest { track ->
+            combine(
+                playback.map { it.currentTrack }.distinctUntilChanged { old, new -> old?.id == new?.id },
+                graph.settings.loadedSettings.map { it.lyricsProviders }.distinctUntilChanged(),
+                graph.lyrics.providerOverrides,
+            ) { track, configs, overrides ->
+                val enabled = normalizeLyricsProviders(configs).filter { it.enabled }.map { it.provider }
+                val selected = overrides[track?.id]?.takeIf { it in enabled }
+                track to (selected?.let(::listOf) ?: enabled)
+            }.distinctUntilChanged { old, new -> old.first?.id == new.first?.id && old.second == new.second }
+                .collectLatest { (track, providers) ->
                     if (track == null) {
                         mutableLyrics.value = LoadState.Idle
                         return@collectLatest
@@ -166,11 +176,17 @@ internal class NowPlayingMetadata(
                     mutableLyrics.value = LoadState.Loading
                     // A song from this phone uses the user's own lyrics, and is never looked up online.
                     mutableLyrics.value = runCatching {
-                        if (track.isLocal) graph.localLibrary.lyricsFor(track) else graph.lyrics.lyrics(track)
+                        if (track.isLocal) graph.localLibrary.lyricsFor(track) else graph.lyrics.lyrics(track, providers)
                     }
+                        .onFailure { if (it is CancellationException) throw it }
                         .fold(
                             onSuccess = {
-                                if (it.isEmpty()) LoadState.Empty("Lyrics are not available for this track.")
+                                if (it.isEmpty()) LoadState.Empty(
+                                    if (track.isLocal) "Lyrics are not available for this track."
+                                    else if (providers.isEmpty())
+                                        "All lyrics providers are disabled. Enable one in Settings, Appearance."
+                                    else "Lyrics are not available from the selected providers. Try another lyrics source.",
+                                )
                                 else LoadState.Content(it)
                             },
                             onFailure = { LoadState.Error(it.message ?: "Lyrics could not be loaded.") },

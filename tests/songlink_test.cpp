@@ -18,6 +18,7 @@
  */
 
 #include "backend_info.h"
+#include <QClipboard>
 #include <QSignalSpy>
 #include <QTest>
 
@@ -25,78 +26,79 @@ class SongLinkTest : public QObject {
   Q_OBJECT
 
 private slots:
-  // Testing song.link generation to prove our link transformer is not drinking
-  // decaf.
   void resolvesVideoId() {
     BackendInfo backend;
     QCOMPARE(backend.songLink(QStringLiteral("dQw4w9WgXcQ")),
              QStringLiteral(
-                 "https://song.link/y/dQw4w9WgXcQ")); // GET RICKROLLED1!1!
+                 "https://music.youtube.com/watch?v=dQw4w9WgXcQ"));
   }
 
   void resolvesAlbumBrowseId() {
     BackendInfo backend;
-    // OLAK5uy_ IDs are true album playlists that album.link accepts.
     QCOMPARE(backend.songLink(QStringLiteral("OLAK5uy_sample")),
-             QStringLiteral("https://album.link/y/OLAK5uy_sample"));
+             QStringLiteral("https://music.youtube.com/playlist?list=OLAK5uy_sample"));
     QCOMPARE(backend.songlinkAlbumUrl(QStringLiteral("OLAK5uy_sample")),
-             QStringLiteral("https://album.link/y/OLAK5uy_sample"));
+             QStringLiteral("https://music.youtube.com/playlist?list=OLAK5uy_sample"));
     QCOMPARE(backend.songLinkAlbumUrl(QStringLiteral("OLAK5uy_sample")),
-             QStringLiteral("https://album.link/y/OLAK5uy_sample"));
+             QStringLiteral("https://music.youtube.com/playlist?list=OLAK5uy_sample"));
     QCOMPARE(backend.songLink(QStringLiteral("OLAK5uy_sample"), QStringLiteral("album")),
-             QStringLiteral("https://album.link/y/OLAK5uy_sample"));
+             QStringLiteral("https://music.youtube.com/playlist?list=OLAK5uy_sample"));
+    QCOMPARE(backend.songLink(QStringLiteral("MPREb_internal"), QStringLiteral("album")),
+             QStringLiteral("https://music.youtube.com/browse/MPREb_internal"));
   }
 
   void stripsPlaylistBrowsePrefix() {
     BackendInfo backend;
-    // YouTube's VL prefix is like an appendix: completely useless to external
-    // link resolvers. Playlists route to album.link so users get playlist landing pages.
     QCOMPARE(backend.songLink(QStringLiteral("VLPL123456789")),
-             QStringLiteral("https://album.link/y/PL123456789"));
+             QStringLiteral("https://music.youtube.com/playlist?list=PL123456789"));
     QCOMPARE(backend.songLink(QStringLiteral("PL123456789")),
-             QStringLiteral("https://album.link/y/PL123456789"));
+             QStringLiteral("https://music.youtube.com/playlist?list=PL123456789"));
   }
 
   void extractsFromYouTubeUrls() {
     BackendInfo backend;
     QCOMPARE(backend.songLink(QStringLiteral(
                  "https://music.youtube.com/watch?v=dQw4w9WgXcQ")),
-             QStringLiteral("https://song.link/y/dQw4w9WgXcQ"));
+             QStringLiteral("https://music.youtube.com/watch?v=dQw4w9WgXcQ"));
     QCOMPARE(backend.songLink(QStringLiteral(
                  "https://music.youtube.com/playlist?list=PL12345")),
-             QStringLiteral("https://album.link/y/PL12345"));
+             QStringLiteral("https://music.youtube.com/playlist?list=PL12345"));
     QCOMPARE(backend.songLink(QStringLiteral(
                  "https://music.youtube.com/playlist?list=OLAK5uy_test")),
-             QStringLiteral("https://album.link/y/OLAK5uy_test"));
+             QStringLiteral("https://music.youtube.com/playlist?list=OLAK5uy_test"));
     QCOMPARE(backend.songLink(QStringLiteral("https://youtu.be/dQw4w9WgXcQ")),
-             QStringLiteral("https://song.link/y/dQw4w9WgXcQ"));
+             QStringLiteral("https://music.youtube.com/watch?v=dQw4w9WgXcQ"));
+    QCOMPARE(backend.songLink(QStringLiteral("https://www.youtube.com/watch?si=share&v=dQw4w9WgXcQ&t=42")),
+             QStringLiteral("https://music.youtube.com/watch?v=dQw4w9WgXcQ"));
   }
 
-  void preservesExistingSongLink() {
+  void convertsExistingSongLink() {
     BackendInfo backend;
     QCOMPARE(
         backend.songLink(QStringLiteral("https://song.link/y/dQw4w9WgXcQ")),
-        QStringLiteral("https://song.link/y/dQw4w9WgXcQ"));
+        QStringLiteral("https://music.youtube.com/watch?v=dQw4w9WgXcQ"));
     QCOMPARE(
         backend.songLink(QStringLiteral("https://album.link/y/OLAK5uy_sample")),
-        QStringLiteral("https://album.link/y/OLAK5uy_sample"));
+        QStringLiteral("https://music.youtube.com/playlist?list=OLAK5uy_sample"));
   }
 
   void handlesEmptyInput() {
     BackendInfo backend;
-    QCOMPARE(backend.songLink(QString()), QStringLiteral("https://song.link"));
-    QCOMPARE(backend.songlinkAlbumUrl(QString()), QStringLiteral("https://album.link"));
+    QCOMPARE(backend.songLink(QString()), QStringLiteral("https://music.youtube.com"));
+    QCOMPARE(backend.songlinkAlbumUrl(QString()), QStringLiteral("https://music.youtube.com"));
   }
 
   void copiesWithNoticeSignal() {
     BackendInfo backend;
     QSignalSpy spy(&backend, &BackendInfo::noticeRequested);
     backend.copySongLink(QStringLiteral("dQw4w9WgXcQ"));
+    QCOMPARE(QGuiApplication::clipboard()->text(), QStringLiteral("https://music.youtube.com/watch?v=dQw4w9WgXcQ"));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(spy.takeFirst().at(0).toString(),
-             QStringLiteral("Copied song.link to clipboard"));
+             QStringLiteral("Copied song link to clipboard"));
 
     backend.copySongLink(QStringLiteral("OLAK5uy_sample"), QStringLiteral("album"));
+    QCOMPARE(QGuiApplication::clipboard()->text(), QStringLiteral("https://music.youtube.com/playlist?list=OLAK5uy_sample"));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(spy.takeFirst().at(0).toString(),
              QStringLiteral("Copied album link to clipboard"));

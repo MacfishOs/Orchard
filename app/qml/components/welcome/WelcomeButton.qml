@@ -39,7 +39,7 @@ Rectangle {
             return mouse.containsPress ? "#e2e5e9" : (mouse.containsMouse ? "#f4f5f7" : "#ffffff");
         return mouse.containsMouse ? "#252932" : "#181b20";
     }
-    border.color: activeFocus ? "#c4e0cb" : (primary || flat ? "transparent" : "#252932")
+    border.color: activeFocus ? OrchardAppearance.accentStrong : (primary || flat ? "transparent" : "#252932")
     border.width: activeFocus ? 2 : 1
     activeFocusOnTab: true
     Accessible.role: Accessible.Button

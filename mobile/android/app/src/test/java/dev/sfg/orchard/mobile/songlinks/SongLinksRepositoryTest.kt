@@ -32,12 +32,12 @@ class SongLinksRepositoryTest {
 
     @Test
     fun buildsDesktopCompatibleLinksWithoutResolver() {
-        assertEquals("https://song.link/y/dQw4w9WgXcQ",
+        assertEquals("https://music.youtube.com/watch?v=dQw4w9WgXcQ",
             repo.trackUrl(Track(id = "dQw4w9WgXcQ", title = "Song", artist = "Artist")))
-        assertEquals("https://album.link/y/OLAK5uy_sample",
+        assertEquals("https://music.youtube.com/playlist?list=OLAK5uy_sample",
             repo.collectionUrl(BrowseDetail(id = "MPREb_internal", kind = CatalogKind.ALBUM,
                 title = "Album", audioPlaylistId = "OLAK5uy_sample")))
-        assertEquals("https://album.link/y/PL123456789",
+        assertEquals("https://music.youtube.com/playlist?list=PL123456789",
             repo.collectionUrl(BrowseDetail(id = "VLPL123456789", kind = CatalogKind.PLAYLIST,
                 title = "Playlist")))
         assertEquals("https://music.youtube.com/channel/UC123456789",

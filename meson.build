@@ -423,7 +423,7 @@ auth_helper = executable('orchard-auth-helper', files(auth_sources) + helper_moc
 
 qml_startup_test = executable('orchard_qml_startup_test',
   files('tests/qml_startup_test.cpp'),
-  objects: [orchard.extract_objects(qml_module, qmldir_resources, qml_files_qrc, exe_moc,
+  objects: [orchard.extract_objects(qml_module, qmldir_resources, qml_files_qrc, assets_qrc, exe_moc,
     files('app/src/appearance/artwork_palette.cpp',
       'app/src/appearance/kawarp_background.cpp',
       'app/src/appearance/liquid_glass.cpp')), app_lib.extract_objects(
@@ -434,8 +434,30 @@ qml_startup_test = executable('orchard_qml_startup_test',
 
 if get_option('tests')
   test('orchard_qml_startup', qml_startup_test, timeout: 60,
-    env: ['QT_QPA_PLATFORM=offscreen'])
+    env: ['QT_QPA_PLATFORM=offscreen', 'QT_QUICK_BACKEND=software'])
   qt_test_dep = dependency('qt6', modules: ['Test'])
+  ui_scaling_moc = qt6.compile_moc(sources: ['tests/ui_scaling_test.cpp'],
+    headers: ['app/src/appearance/appearance_settings.h'],
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
+  ui_scaling_test = executable('orchard_ui_scaling_tests',
+    files('tests/ui_scaling_test.cpp', 'app/src/appearance/appearance_settings.cpp',
+      'app/src/appearance/ui_scaling.cpp') + ui_scaling_moc,
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
+  test('orchard_ui_scaling', ui_scaling_test, timeout: 120)
+  lyrics_providers_moc = qt6.compile_moc(sources: ['tests/lyrics_provider_settings_test.cpp'],
+    headers: ['app/src/lyrics/lyrics_provider_settings.h'],
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
+  lyrics_providers_test = executable('orchard_lyrics_provider_settings_tests',
+    files('tests/lyrics_provider_settings_test.cpp', 'app/src/lyrics/lyrics_provider_settings.cpp') + lyrics_providers_moc,
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
+  test('orchard_lyrics_provider_settings', lyrics_providers_test, timeout: 15)
+  startup_test_moc = qt6.compile_moc(sources: ['tests/startup_settings_test.cpp'],
+    headers: ['app/src/startup_settings.h'],
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
+  startup_test = executable('orchard_startup_settings_tests',
+    files('tests/startup_settings_test.cpp', 'app/src/startup_settings.cpp') + startup_test_moc,
+    include_directories: app_inc, dependencies: [qt_test_dep, qt_dep])
+  test('orchard_startup_settings', startup_test, timeout: 15)
   page_memory_moc = qt6.compile_moc(sources: ['tests/page_memory_test.cpp'],
     dependencies: [qt_test_dep, qt_dep])
   page_memory_test = executable('orchard_page_memory_tests',

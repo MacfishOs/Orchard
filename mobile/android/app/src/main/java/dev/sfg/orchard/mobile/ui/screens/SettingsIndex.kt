@@ -60,6 +60,7 @@ private val entries = listOf(
     SettingsEntry("Download animated artwork", "Save motion covers offline", SettingsPage.Appearance),
     SettingsEntry("Animated background", "Cover colours drift behind the app", SettingsPage.Appearance, "kawarp wallpaper"),
     SettingsEntry("Translate lyrics", "Show foreign lyrics in English", SettingsPage.Appearance, "translation language english korean japanese"),
+    SettingsEntry("Lyrics providers", "Enable sources and change their priority", SettingsPage.Appearance, "lyrics source order betterlyrics bini lyricsplus lrclib youtube"),
     SettingsEntry("Translation quality", "Standard or High translation models", SettingsPage.Appearance, "lyrics model size"),
     SettingsEntry("Translation source", "Local, OpenAI, Claude, Gemini, or a custom API", SettingsPage.Appearance, "lyrics api provider"),
     SettingsEntry("Discord", "Share what you are listening to", SettingsPage.Connections, "presence"),

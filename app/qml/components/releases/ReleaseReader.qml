@@ -144,7 +144,7 @@ ColumnLayout {
             background: Rectangle {
                 radius: width / 2
                 color: closeButton.down ? "#30ffffff" : closeButton.hovered ? "#20ffffff" : "#10ffffff"
-                border.color: closeButton.visualFocus ? "#a6d4bf" : "transparent"
+                border.color: closeButton.visualFocus ? OrchardAppearance.accentStrong : "transparent"
             }
         }
     }
@@ -350,7 +350,7 @@ ColumnLayout {
         background: Rectangle {
             radius: 12
             color: nav.down ? "#22ffffff" : nav.hovered && nav.enabled ? "#16ffffff" : "#0affffff"
-            border.color: nav.visualFocus ? "#a6d4bf" : "#1cffffff"
+            border.color: nav.visualFocus ? OrchardAppearance.accentStrong : "#1cffffff"
             Behavior on color { ColorAnimation { duration: 120 } }
         }
     }

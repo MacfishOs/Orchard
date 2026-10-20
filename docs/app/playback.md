@@ -60,6 +60,8 @@ Select the heart button in the player bar or in the fullscreen player. Its toolt
 
 Click the cover art in the player bar, or press F while a song is loaded. The fullscreen player shows "PLAYING FROM" followed by the album or playlist the song came from.
 
+To use this layout in a movable, resizable app window, turn on **Keep player windowed** under **Settings**, **Appearance**, **Fullscreen player**. It applies the next time you open the player. See [Appearance](appearance.md).
+
 Inside the fullscreen player:
 
 - Click the cover art to play or pause.

@@ -52,7 +52,7 @@ Item {
     // Visible page height; the header leaves room for Top Songs above the player.
     property real viewportHeight: 1080
 
-    property color accentSoftColor: "#96caa4"
+    property color accentSoftColor: OrchardAppearance.accent
 
     readonly property bool masked: GraphicsInfo.api !== GraphicsInfo.Software
     // Anything wider than 4:3 is a real banner; squarer images would lose the face to cropping.

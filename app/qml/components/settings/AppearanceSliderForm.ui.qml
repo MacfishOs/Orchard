@@ -17,6 +17,7 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
  
+import Orchard
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -42,7 +43,7 @@ ColumnLayout {
         }
         Text {
             text: root.displayValue
-            color: "#b3c5b9"
+            color: "#c3c8c4"
             font.family: "Inter"
             font.pixelSize: 12
         }
@@ -56,29 +57,42 @@ ColumnLayout {
         stepSize: root.stepSize
         value: root.value
         Accessible.name: root.label
+        hoverEnabled: true
         background: Rectangle {
             x: slider.leftPadding
             y: slider.topPadding + slider.availableHeight / 2 - height / 2
             width: slider.availableWidth
             height: 4
             radius: 2
-            color: "#3e423b"
+            color: "#40ffffff"
             Rectangle {
                 width: slider.visualPosition * parent.width
                 height: parent.height
                 radius: 2
-                color: root.enabled ? "#9ac3a8" : "#69756b"
+                color: root.enabled ? OrchardAppearance.accent : "#69756b"
             }
         }
+        // Windows-style thumb: a ring whose accent dot swells on hover and shrinks while dragging.
         handle: Rectangle {
             x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
             y: slider.topPadding + slider.availableHeight / 2 - height / 2
-            width: 16
-            height: 16
-            radius: 8
-            color: root.enabled ? "#c4e0cb" : "#69756b"
-            border.width: slider.activeFocus ? 2 : 0
-            border.color: "white"
+            width: 20
+            height: 20
+            radius: 10
+            color: "#454a46"
+            border.width: slider.visualFocus ? 2 : 1
+            border.color: slider.visualFocus ? OrchardAppearance.accentStrong : "#1fffffff"
+
+            Rectangle {
+                readonly property real size: slider.pressed ? 10 : slider.hovered ? 14 : 12
+                anchors.centerIn: parent
+                width: size
+                height: size
+                radius: size / 2
+                color: root.enabled ? OrchardAppearance.accent : "#69756b"
+                Behavior on width { NumberAnimation { duration: Motion.fast; easing.type: Motion.enter } }
+                Behavior on height { NumberAnimation { duration: Motion.fast; easing.type: Motion.enter } }
+            }
         }
     }
 }

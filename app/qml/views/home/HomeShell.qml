@@ -171,7 +171,7 @@ Item {
     // The window follows the player into fullscreen, and only leaves it if the player put it there.
     function setFullscreen(open) {
         const win = root.Window.window;
-        if (win && open && win.visibility !== Window.FullScreen) {
+        if (win && open && !OrchardAppearance.fullscreenWindowed && win.visibility !== Window.FullScreen) {
             root.visibilityBeforeFullscreen = win.visibility;
             if (win.visibility === Window.Windowed)
                 root.sizeBeforeFullscreen = Qt.size(win.width, win.height);

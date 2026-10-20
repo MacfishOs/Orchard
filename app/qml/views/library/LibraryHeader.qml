@@ -94,7 +94,7 @@ Column {
                 height: 32
                 radius: 16
                 color: filterField.activeFocus ? "#14ffffff" : "#08ffffff"
-                border.color: filterField.activeFocus ? "#b8d4bd" : "#18ffffff"
+                border.color: filterField.activeFocus ? OrchardAppearance.accentStrong : "#18ffffff"
                 Behavior on color { ColorAnimation { duration: Motion.normal } }
 
                 LucideIcon {
@@ -175,14 +175,14 @@ Column {
 
         width: 220
         padding: 5
-        background: Rectangle { color: "#242c27"; radius: 10; border.color: "#455348" }
+        background: Rectangle { color: Qt.lighter(OrchardAppearance.popupColor, 1.25); radius: 8; border.color: "#24ffffff" }
 
         component Entry: MenuItem {
             id: entry
             implicitHeight: 36
             background: Rectangle {
                 radius: 6
-                color: entry.highlighted ? "#435247" : "#00435247"
+                color: entry.highlighted ? "#1fffffff" : "#00ffffff"
             }
             contentItem: Text {
                 text: entry.text

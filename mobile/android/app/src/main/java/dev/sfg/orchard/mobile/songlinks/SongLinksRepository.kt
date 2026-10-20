@@ -29,7 +29,7 @@ class SongLinksRepository {
     fun trackUrl(track: Track): String? = track.id.trim()
         .takeIf { track.playbackSource.equals("youtube", ignoreCase = true) && !track.isUpload }
         ?.takeIf { YOUTUBE_ID_REGEX.matches(it) }
-        ?.let { "https://song.link/y/$it" }
+        ?.let { "https://music.youtube.com/watch?v=$it" }
 
     fun collectionUrl(detail: BrowseDetail): String? {
         if (detail.kind == CatalogKind.ARTIST) {
@@ -40,12 +40,11 @@ class SongLinksRepository {
         if (detail.kind != CatalogKind.ALBUM && detail.kind != CatalogKind.PLAYLIST) return null
 
         val rawId = detail.audioPlaylistId.ifBlank { detail.id }.trim().substringBefore(':')
-        // VL is a browse wrapper, not part of the public playlist ID. MPREb is
-        // also browse-only; album.link would send it straight to the 400 club.
+        // VL is a browse wrapper, not part of the public playlist ID.
         val id = if (rawId.startsWith("VL")) rawId.removePrefix("VL") else rawId
         return id.takeIf { PUBLIC_ID_REGEX.matches(it) &&
             (it.startsWith("OLAK") || it.startsWith("PL") || it.startsWith("RD")) }
-            ?.let { "https://album.link/y/$it" }
+            ?.let { "https://music.youtube.com/playlist?list=$it" }
     }
 
     fun parseLink(rawInput: String): SongLinkTarget? {

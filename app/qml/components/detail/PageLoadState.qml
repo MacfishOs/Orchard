@@ -27,7 +27,7 @@ Item {
 
     property bool loading: false
     property string errorMessage
-    property color accentColor: "#7fbe90"
+    property color accentColor: OrchardAppearance.accent
 
     signal retryRequested
 

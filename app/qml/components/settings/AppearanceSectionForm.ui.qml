@@ -25,7 +25,12 @@ ColumnLayout {
     id: root
 
     property string layoutStyle: "glade"
+    property real uiScale: 1
+    property bool uiScaleRestartRequired: false
+    property alias uiScaleSlider: uiScaleSlider
+    property alias resetUiScaleButton: resetUiScaleButton
     property bool showBitrate: false
+    property bool fullscreenWindowed: false
     property bool fullscreenAutoHide: true
     property bool fullscreenPulse: true
     property bool artistVideoBackdrop: false
@@ -41,6 +46,7 @@ ColumnLayout {
     property string speedText: "1.00×"
     property alias layoutPicker: layoutPicker
     property alias bitrateSwitch: bitrateSwitch
+    property alias windowedSwitch: windowedSwitch
     property alias autoHideSwitch: autoHideSwitch
     property alias pulseSwitch: pulseSwitch
     property alias artistVideoSwitch: artistVideoSwitch
@@ -57,6 +63,57 @@ ColumnLayout {
 
     spacing: 28
     Layout.fillWidth: true
+
+    ColorsSection {
+        Layout.fillWidth: true
+    }
+
+    SettingsSection {
+        Layout.fillWidth: true
+        title: qsTr("Display scaling")
+        rowSpacing: 0
+        verticalPadding: 0
+
+        SettingsRow {
+            iconName: "monitor"
+            title: qsTr("Interface scale")
+            description: qsTr("Resize text, buttons, artwork, and menus together. Applied on top of your system display scaling. Restart Orchard to apply changes.")
+        }
+
+        SettingsRow {
+            AppearanceSlider {
+                id: uiScaleSlider
+                objectName: "uiScaleControl"
+                Layout.fillWidth: true
+                label: qsTr("Interface scale")
+                from: 0.75
+                to: 2.5
+                stepSize: 0.05
+                value: root.uiScale
+                displayValue: Math.round(root.uiScale * 100) + "%"
+            }
+        }
+
+        SettingsRow {
+            SettingsHint {
+                Layout.fillWidth: true
+                text: root.uiScaleRestartRequired
+                    ? qsTr("Restart Orchard to apply the selected scale.")
+                    : qsTr("100% follows your system display scaling.")
+            }
+            SettingsButton {
+                id: resetUiScaleButton
+                objectName: "resetUiScale"
+                text: qsTr("Reset scale")
+                enabled: root.uiScale !== 1
+                Accessible.name: qsTr("Reset interface scale to 100%")
+            }
+        }
+    }
+
+    LyricsProvidersSection {
+        Layout.fillWidth: true
+    }
 
     SettingsSection {
         Layout.fillWidth: true
@@ -108,6 +165,19 @@ ColumnLayout {
         title: qsTr("Fullscreen player")
         rowSpacing: 0
         verticalPadding: 0
+
+        SettingsRow {
+            iconName: "app-window"
+            title: qsTr("Keep player windowed")
+            description: qsTr("Open the fullscreen player inside the app window, keeping its size and position.")
+
+            SettingsSwitch {
+                id: windowedSwitch
+                objectName: "fullscreenWindowedToggle"
+                checked: root.fullscreenWindowed
+                Accessible.name: qsTr("Keep player windowed")
+            }
+        }
 
         SettingsRow {
             iconName: "maximize"

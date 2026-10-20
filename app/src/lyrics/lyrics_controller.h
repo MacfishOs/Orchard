@@ -26,6 +26,7 @@
 #include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
+#include "lyrics_provider_settings.h"
 
 class AuthManager;
 class LocalLibrary;
@@ -42,6 +43,8 @@ class LyricsController final : public QObject {
   Q_PROPERTY(QString source READ source NOTIFY stateChanged)
   Q_PROPERTY(QString trackId READ trackId NOTIFY stateChanged)
   Q_PROPERTY(QVariantList lines READ lines NOTIFY stateChanged)
+  Q_PROPERTY(LyricsProviderSettings *providerSettings READ providerSettings CONSTANT)
+  Q_PROPERTY(QString selectedProvider READ selectedProvider NOTIFY stateChanged)
 
 public:
   explicit LyricsController(YouTubeProvider *provider, AuthManager *auth,
@@ -54,6 +57,9 @@ public:
   [[nodiscard]] QString source() const { return m_source; }
   [[nodiscard]] QString trackId() const { return m_trackId; }
   [[nodiscard]] QVariantList lines() const { return m_lines; }
+  LyricsProviderSettings *providerSettings() { return &m_providerSettings; }
+  QString selectedProvider() const;
+  Q_INVOKABLE void selectProvider(const QString &provider);
   Q_INVOKABLE int indexAt(double time) const;
 
   [[nodiscard]] bool followIncoming() const { return m_followIncoming; }
@@ -71,6 +77,8 @@ signals:
   void activeLineChanged(const QString &trackId, const QString &text);
 
 private:
+  void invalidateProviders();
+  QStringList providersForTrack(const QString &trackId) const;
   void syncTrack();
   QVariantMap viewTrack() const;
   void prefetchTransition();
@@ -86,6 +94,9 @@ private:
   void updateActiveLine();
 
   YouTubeProvider *m_provider;
+  LyricsProviderSettings m_providerSettings;
+  QHash<QString, QString> m_providerOverrides;
+  QStringList m_overrideOrder;
   AuthManager *m_auth;
   PlaybackController *m_playback;
   LocalLibrary *m_local{nullptr};

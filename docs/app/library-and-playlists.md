@@ -11,7 +11,7 @@ keywords:
   - new playlist
   - remove from playlist
   - share link
-  - song.link
+  - share link
   - liked songs
   - filter library
   - sort songs
@@ -84,12 +84,12 @@ Select the heart button in the player bar or in the fullscreen player. Select it
 
 Right-click a song, album, playlist, or artist and pick the copy entry:
 
-- **Copy song.link** for a song.
-- **Copy album.link** for an album.
+- **Copy song link** for a song.
+- **Copy album link** for an album.
 - **Copy playlist link** for a playlist.
 - **Copy artist link** for an artist (a YouTube Music channel link).
 
-Album, playlist, and artist pages also have a share button that copies the same link. A song.link or album.link opens a page that lists the song on other music services.
+Album, playlist, and artist pages also have a share button that copies the same link. Share links open the song, album, playlist, or artist directly on YouTube Music.
 
 ## Open an album or artist from a song
 

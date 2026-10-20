@@ -100,7 +100,7 @@ Item {
                 background: Rectangle {
                     radius: 16
                     color: root.filter === tab.modelData.value ? "#f1f0ec" : tab.hovered ? "#20ffffff" : "#08ffffff"
-                    border.color: tab.activeFocus ? "#b8d4bd" : "#18ffffff"
+                    border.color: tab.activeFocus ? OrchardAppearance.accentStrong : "#18ffffff"
                     Behavior on color { ColorAnimation { duration: Motion.normal } }
                 }
                 contentItem: Caption {
@@ -132,7 +132,7 @@ Item {
                     anchors.fill: parent; anchors.margins: 12
                     onClicked: root.activate(root.topResult, "")
                     Accessible.name: root.topResult.title || ""
-                    background: Rectangle { radius: 8; color: hero.hovered ? "#08ffffff" : "transparent"; border.color: hero.activeFocus ? "#b8d4bd" : "transparent" }
+                    background: Rectangle { radius: 8; color: hero.hovered ? "#08ffffff" : "transparent"; border.color: hero.activeFocus ? OrchardAppearance.accentStrong : "transparent" }
                     contentItem: Item {
                         RoundedArtwork {
                             id: heroArt
@@ -214,7 +214,7 @@ Item {
                                             anchors.fill: parent; padding: 0
                                             onClicked: root.activate(entry.modelData, panel.modelData.key)
                                             Accessible.name: entry.modelData.title || ""
-                                            background: Rectangle { radius: 8; color: itemButton.hovered ? "#23ffffff" : "transparent"; border.color: itemButton.activeFocus ? "#b8d4bd" : "transparent" }
+                                            background: Rectangle { radius: 8; color: itemButton.hovered ? "#23ffffff" : "transparent"; border.color: itemButton.activeFocus ? OrchardAppearance.accentStrong : "transparent" }
                                             contentItem: Item {
                                                 RoundedArtwork {
                                                     id: art

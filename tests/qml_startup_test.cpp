@@ -1,10 +1,76 @@
 #include <QGuiApplication>
 #include <QQuickStyle>
 #include <QFile>
+#include <QEventLoop>
+#include <QKeyEvent>
 #include <QQmlComponent>
+#include <QQmlContext>
 #include <QQmlEngine>
+#include <QQmlPropertyMap>
+#include <QQuickItem>
+#include <QQuickWindow>
 #include <QTextStream>
+#include <QTimer>
 #include <QUrl>
+#include <memory>
+
+class SettingsMap final : public QQmlPropertyMap {
+public:
+  SettingsMap() : QQmlPropertyMap(this, nullptr) {}
+};
+
+static bool verifyScaleControls(QQmlEngine &engine, QTextStream &output) {
+  SettingsMap appearance;
+  const QVariantMap values{
+      {"layoutStyle", "glade"}, {"uiScale", 1.0}, {"uiScaleRestartRequired", false},
+      {"showBitrate", false}, {"fullscreenWindowed", false}, {"fullscreenAutoHide", true},
+      {"fullscreenPulse", true}, {"artistVideoBackdrop", false}, {"animatedArtworkEnabled", true},
+      {"animatedCollageEnabled", false}, {"artworkSource", "apple_music"},
+      {"immersiveBackground", false}, {"speed", 1.38}, {"intensity", 0.92},
+      {"saturation", 1.24}, {"brightness", 1.0}, {"availableMirrors", QVariantList{}}};
+  for (auto it = values.cbegin(); it != values.cend(); ++it)
+    appearance.insert(it.key(), it.value());
+  engine.rootContext()->setContextProperty(QStringLiteral("OrchardAppearance"), &appearance);
+  engine.rootContext()->setContextProperty(QStringLiteral("OrchardAppleMusic"),
+                                         QVariantMap{{"connected", false}});
+  engine.rootContext()->setContextProperty(QStringLiteral("OrchardLyrics"),
+      QVariantMap{{"providerSettings", QVariantMap{{"providers", QVariantList{}}}}});
+  QQuickWindow window;
+  window.resize(640, 480);
+  QQmlComponent component(&engine,
+      QUrl(QStringLiteral("qrc:/qt/qml/Orchard/app/qml/components/settings/AppearanceSection.qml")));
+  std::unique_ptr<QObject> object(component.create());
+  auto *section = qobject_cast<QQuickItem *>(object.get());
+  if (!section) {
+    for (const auto &error : component.errors())
+      output << error.toString() << '\n';
+    return false;
+  }
+  section->setParentItem(window.contentItem());
+  section->setWidth(600);
+  window.show();
+  QEventLoop loop;
+  QTimer::singleShot(400, &loop, &QEventLoop::quit);
+  loop.exec();
+  auto *control = section->findChild<QObject *>(QStringLiteral("uiScaleControl"));
+  auto *slider = control ? control->findChild<QQuickItem *>(QStringLiteral("slider")) : nullptr;
+  auto *reset = section->findChild<QObject *>(QStringLiteral("resetUiScale"));
+  if (!slider || !reset) return false;
+  slider->forceActiveFocus();
+  QKeyEvent press(QEvent::KeyPress, Qt::Key_Right, Qt::NoModifier);
+  QKeyEvent release(QEvent::KeyRelease, Qt::Key_Right, Qt::NoModifier);
+  QCoreApplication::sendEvent(&window, &press);
+  QCoreApplication::sendEvent(&window, &release);
+  if (!qFuzzyCompare(appearance.value(QStringLiteral("uiScale")).toDouble(), 1.05)) {
+    output << "Interface scale slider did not persist a keyboard adjustment.\n";
+    return false;
+  }
+  QMetaObject::invokeMethod(reset, "clicked");
+  if (appearance.value(QStringLiteral("uiScale")).toDouble() != 1.0) return false;
+  appearance.insert(QStringLiteral("uiScale"), 1.5);
+  if (control->property("displayValue").toString() != QStringLiteral("150%")) return false;
+  return true;
+}
 
 int main(int argc, char *argv[]) {
   QGuiApplication application(argc, argv);
@@ -29,6 +95,10 @@ int main(int argc, char *argv[]) {
     for (const auto &error : component.errors())
       output << error.toString() << '\n';
     output << "Orchard could not compile its QML entry point.\n";
+    return 1;
+  }
+  if (!verifyScaleControls(engine, output)) {
+    output << "Orchard interface scale controls failed their runtime check.\n";
     return 1;
   }
   output << "Orchard QML startup check passed.\n";

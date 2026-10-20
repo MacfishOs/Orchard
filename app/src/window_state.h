@@ -27,6 +27,7 @@
 #include "window_occlusion.h"
 
 class QWindow;
+class QScreen;
 
 // Remembers the main window size and maximized state between launches.
 class WindowState final : public QObject
@@ -36,6 +37,8 @@ class WindowState final : public QObject
     Q_PROPERTY(int initialWidth READ initialWidth CONSTANT)
     Q_PROPERTY(int initialHeight READ initialHeight CONSTANT)
     Q_PROPERTY(bool initialMaximized READ initialMaximized CONSTANT)
+    Q_PROPERTY(int availableWidth READ availableWidth NOTIFY availableGeometryChanged)
+    Q_PROPERTY(int availableHeight READ availableHeight NOTIFY availableGeometryChanged)
     Q_PROPERTY(bool idle READ idle NOTIFY idleChanged)
     Q_PROPERTY(bool unfocused READ unfocused NOTIFY unfocusedChanged)
     Q_PROPERTY(bool backgroundIdle READ backgroundIdle NOTIFY backgroundIdleChanged)
@@ -48,6 +51,8 @@ public:
     [[nodiscard]] int initialWidth() const { return m_width; }
     [[nodiscard]] int initialHeight() const { return m_height; }
     [[nodiscard]] bool initialMaximized() const { return m_maximized; }
+    [[nodiscard]] int availableWidth() const;
+    [[nodiscard]] int availableHeight() const;
     void setWindow(QWindow *window);
     // True when the window is hidden, minimized, or reported as covered by the platform.
     [[nodiscard]] bool idle() const { return m_idle; }
@@ -57,6 +62,7 @@ public:
     [[nodiscard]] bool backgroundIdle() const { return m_backgroundIdle; }
 
 signals:
+    void availableGeometryChanged();
     void enabledChanged();
     void idleChanged();
     void unfocusedChanged();
@@ -66,6 +72,7 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
+    void watchScreen(QScreen *screen);
     void save();
     void updateState();
     void setIdle(bool value);
@@ -74,6 +81,8 @@ private:
 
     QSettings m_settings;
     QPointer<QWindow> m_window;
+    QPointer<QScreen> m_screen;
+    QMetaObject::Connection m_screenGeometryConnection;
     QTimer m_saveTimer;
     QTimer m_unfocusedTimer;
     WindowOcclusion m_occlusion;

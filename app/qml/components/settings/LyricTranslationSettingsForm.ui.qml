@@ -34,6 +34,7 @@ SettingsSection {
     property string endpoint: ""
     property bool hasApiKey: false
     property string credentialMessage: ""
+    property string accountQuotaMessage: ""
     // Downloaded packs: { name, code, quality, sizeBytes, credit }.
     property var installed: []
     property alias enableSwitch: enableSwitch
@@ -55,7 +56,7 @@ SettingsSection {
         title: qsTr("Translate lyrics to English")
         description: root.provider === "local"
             ? qsTr("Orchard detects each song's language and translates it on this computer. Lyrics never leave your computer.")
-            : root.provider === "orchard" ? qsTr("Gemma 4 translates up to 10 songs per account and IP each day. Resets at 00:00 UTC. Cached songs are free.")
+            : root.provider === "orchard" ? qsTr("Gemma 4. %1 Resets at 00:00 UTC. Cached songs are free.").arg(root.accountQuotaMessage)
             : qsTr("Orchard sends lyric lines to your selected API for translation. Your provider may charge for requests.")
 
         SettingsSwitch {

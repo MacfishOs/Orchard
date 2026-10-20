@@ -38,6 +38,6 @@ TextField {
     background: Rectangle {
         radius: 10
         color: "#1b201c"
-        border.color: field.activeFocus ? "#8cc5a5" : "#3a413b"
+        border.color: field.activeFocus ? OrchardAppearance.accent : "#3a413b"
     }
 }

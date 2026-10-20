@@ -41,7 +41,7 @@ Item {
             Layout.preferredWidth: 34
             Layout.preferredHeight: 34
             name: root.signedIn ? "github" : "bug"
-            color: "#c4e0cb"
+            color: OrchardAppearance.accentStrong
         }
 
         Text {

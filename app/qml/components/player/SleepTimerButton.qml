@@ -94,7 +94,7 @@ Button {
 
         background: Rectangle {
             radius: 14
-            color: "#f01a1d19"
+            color: Qt.alpha(OrchardAppearance.popupColor, 0.94)
             border.color: "#26ffffff"
         }
 

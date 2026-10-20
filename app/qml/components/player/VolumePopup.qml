@@ -45,7 +45,7 @@ Popup {
 
     background: Rectangle {
         radius: 14
-        color: "#f20e1210"
+        color: Qt.alpha(OrchardAppearance.popupColor, 0.95)
         border.color: "#1cffffff"
         border.width: 1
     }

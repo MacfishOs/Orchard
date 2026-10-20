@@ -18,6 +18,7 @@
  */
 
 import ".."
+import Orchard
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -29,8 +30,8 @@ ItemDelegate {
     property var entry: ({ key: "general", label: "General", icon: "sliders-horizontal" })
     property bool current: false
 
-    implicitHeight: 40
-    leftPadding: 12
+    implicitHeight: 38
+    leftPadding: 14
     rightPadding: 12
     hoverEnabled: true
     Accessible.name: entry.label
@@ -39,31 +40,31 @@ ItemDelegate {
         spacing: 12
 
         LucideIcon {
-            Layout.preferredWidth: 17
-            Layout.preferredHeight: 17
+            Layout.preferredWidth: 18
+            Layout.preferredHeight: 18
             name: navItem.entry.icon
-            color: navItem.current ? "#c4e0cb" : "#a4aaa1"
-            scale: navItem.current ? 1.1 : 1.0
-            Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+            color: OrchardAppearance.accent
+            scale: navItem.down ? 0.88 : navItem.current ? 1.08 : 1.0
+            Behavior on scale { NumberAnimation { duration: Motion.slow; easing.type: Easing.OutBack } }
         }
 
         Text {
             Layout.fillWidth: true
             text: navItem.entry.label
-            color: navItem.current ? "#f0eee7" : "#c9ccc4"
+            color: navItem.current ? "#ffffff" : "#d6d9d5"
             font.family: "Inter"
             font.pixelSize: 14
-            font.weight: navItem.current ? Font.DemiBold : Font.Normal
+            font.weight: navItem.current ? Font.Medium : Font.Normal
             elide: Text.ElideRight
             Behavior on color { ColorAnimation { duration: 160 } }
         }
     }
 
-    // Hover tint only; the selection pill sits underneath.
+    // Hover tint only; the selection fill and its accent bar sit underneath.
     background: Rectangle {
-        radius: 10
-        color: navItem.current ? "transparent" : navItem.down ? "#22ffffff" : navItem.hovered ? "#14ffffff" : "transparent"
-        border.color: navItem.visualFocus ? "#a6d4bf" : "transparent"
+        radius: 6
+        color: navItem.current ? "transparent" : navItem.down ? "#0cffffff" : navItem.hovered ? "#0fffffff" : "transparent"
+        border.color: navItem.visualFocus ? OrchardAppearance.accentStrong : "transparent"
         Behavior on color { ColorAnimation { duration: 120 } }
     }
 }

@@ -29,6 +29,7 @@ Window {
     id: mainWindow
 
     property bool troubleModalOpen: false
+    readonly property bool nativeWindowFrame: Qt.platform.os === "windows"
     // Height the floating player overlaps at the bottom of scrolling pages.
     property real playerInset: 0
 
@@ -40,17 +41,17 @@ Window {
     }
 
     visible: true
-    width: OrchardWindowState.initialWidth
-    height: OrchardWindowState.initialHeight
-    minimumWidth: 900
-    minimumHeight: 600
+    width: Math.min(OrchardWindowState.initialWidth, OrchardWindowState.availableWidth)
+    height: Math.min(OrchardWindowState.initialHeight, OrchardWindowState.availableHeight)
+    minimumWidth: Math.min(900, OrchardWindowState.availableWidth)
+    minimumHeight: Math.min(600, OrchardWindowState.availableHeight)
     title: qsTr("Orchard")
     Component.onCompleted: {
         if (OrchardWindowState.initialMaximized)
             mainWindow.showMaximized();
     }
     color: "#0d0f12"
-    flags: Qt.Window | Qt.FramelessWindowHint
+    flags: nativeWindowFrame ? Qt.Window : Qt.Window | Qt.FramelessWindowHint
     onClosing: close => {
         // Closing to the tray keeps the music going; the tray menu holds the real exit.
         if (OrchardTray.available && OrchardTray.closeToTray && OrchardAuth.isSignedIn) {
@@ -126,6 +127,7 @@ Window {
         anchors.top: parent.top
         targetWindow: mainWindow
         z: 10
+        visible: (!mainWindow.nativeWindowFrame || mainWindow.visibility === Window.FullScreen) && reveal > 0.01
         autoHide: mainWindow.visibility === Window.FullScreen && homeShell.item !== null && homeShell.item.fullscreenOpen
     }
 
@@ -205,6 +207,7 @@ Window {
     // Above everything, including window controls, so edges stay grabbable.
     WindowResizeHandles {
         targetWindow: mainWindow
+        enabled: !mainWindow.nativeWindowFrame
         z: 100
     }
 }

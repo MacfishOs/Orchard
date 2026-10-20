@@ -24,6 +24,9 @@ ColumnLayout {
     id: root
 
     property bool trayAvailable: true
+    property bool startupAvailable: false
+    property string startupError: ""
+    property alias startupSwitch: startupSwitch
     property bool signedIn: true
     property string authError: ""
     property alias persistSwitch: persistSwitch
@@ -51,6 +54,24 @@ ColumnLayout {
         title: qsTr("Launch")
         rowSpacing: 0
         verticalPadding: 0
+
+        SettingsRow {
+            visible: root.startupAvailable
+            iconName: "power"
+            title: qsTr("Start with Windows")
+            description: qsTr("Open Orchard when you sign in to Windows. Music stays paused.")
+
+            SettingsSwitch {
+                id: startupSwitch
+                objectName: "settingsStartWithWindows"
+                Accessible.name: qsTr("Start with Windows")
+            }
+        }
+
+        SettingsHint {
+            visible: root.startupAvailable && root.startupError.length > 0
+            text: root.startupError
+        }
 
         SettingsRow {
             iconName: "history"
@@ -145,7 +166,7 @@ ColumnLayout {
                 width: parent.width * root.updateProgress
                 height: parent.height
                 radius: 2
-                color: "#7fbe90"
+                color: OrchardAppearance.accent
             }
         }
 

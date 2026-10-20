@@ -30,7 +30,7 @@ Item {
     required property Item view
     required property int index
     property bool reorderable: false
-    property color accentColor: "#7fbe90"
+    property color accentColor: OrchardAppearance.accent
     readonly property bool dragging: dragHandler.active
     default property alias content: holder.data
 

@@ -354,8 +354,6 @@ Item {
         // Floats over the artist page, which runs under it.
         z: 1
         onSettingsRequested: scene.shell.openSettings()
-        onDocsRequested: scene.shell.openDocs()
-        onSupportRequested: scene.shell.openSupport("")
     }
 
     Loader {

@@ -36,7 +36,7 @@ Rectangle {
     implicitHeight: 52
     radius: height / 2
     color: "#e6141815"
-    border.color: "#556f9a80"
+    border.color: Qt.alpha(OrchardAppearance.accent, 0.33)
     // No fade-out: the capture happens right after this flips.
     visible: root.active
 
@@ -50,7 +50,7 @@ Rectangle {
             Layout.preferredWidth: 18
             Layout.preferredHeight: 18
             name: "camera"
-            color: "#c4e0cb"
+            color: OrchardAppearance.accentStrong
         }
 
         Text {
@@ -70,7 +70,7 @@ Rectangle {
             onClicked: root.capture()
             contentItem: Text {
                 text: captureButton.text
-                color: "#0d120f"
+                color: OrchardAppearance.onAccent
                 font.family: "Inter"
                 font.pixelSize: 13
                 font.weight: Font.DemiBold
@@ -79,7 +79,7 @@ Rectangle {
             }
             background: Rectangle {
                 radius: height / 2
-                color: captureButton.down ? "#9ccfb1" : captureButton.hovered ? "#b5e0c6" : "#a6d4bf"
+                color: captureButton.down ? Qt.darker(OrchardAppearance.accentStrong, 1.1) : captureButton.hovered ? Qt.lighter(OrchardAppearance.accentStrong, 1.08) : OrchardAppearance.accentStrong
             }
         }
 

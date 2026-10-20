@@ -29,6 +29,7 @@
 #include "docs/docs_embedder.h"
 #include "docs/docs_library.h"
 #include "appearance/appearance_settings.h"
+#include "appearance/ui_scaling.h"
 #include "appearance/animated_artwork_service.h"
 #include "appearance/artwork_video_cache.h"
 #include "heap_trim.h"
@@ -57,6 +58,7 @@
 #include "support/support_center.h"
 #include "system_media_bridge.h"
 #include "system_tray.h"
+#include "startup_settings.h"
 #include "update/bootstrapper_client.h"
 #include "window_state.h"
 
@@ -167,6 +169,7 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setOrganizationDomain(QStringLiteral("sfg.dev"));
   QCoreApplication::setOrganizationName(QStringLiteral("SFG545"));
   QCoreApplication::setApplicationName(QStringLiteral("Orchard"));
+  UiScaling::configure();
 
   // QApplication for QSystemTrayIcon, whose menus are still widgets in 2026.
   QApplication application(argc, argv);
@@ -308,6 +311,7 @@ int main(int argc, char *argv[]) {
   connectService.setArtwork(&animatedArtwork);
   SystemTray tray(playback.get(), &authManager);
   WindowState windowState;
+  StartupSettings startup;
   ScreenWakeLock screenWake;
   // Talks to the bootstrapper that launched us; inert in development builds.
   BootstrapperClient updates;
@@ -363,6 +367,7 @@ int main(int argc, char *argv[]) {
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardOffline"), &offlineLibrary);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardTray"), &tray);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardWindowState"), &windowState);
+  engine.rootContext()->setContextProperty(QStringLiteral("OrchardStartup"), &startup);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardScreenWake"), &screenWake);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardUpdates"), &updates);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardReleaseNotes"),

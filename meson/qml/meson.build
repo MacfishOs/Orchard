@@ -1,5 +1,7 @@
 # QML, asset and shader lists, kept apart from the C++ and Rust source lists.
 qml_sources = [
+  'app/qml/components/settings/LyricsProvidersSection.qml',
+  'app/qml/components/player/LyricsSourceBar.qml',
   'app/qml/Main.qml',
   'app/qml/components/settings/SettingsSection.qml',
   'app/qml/components/settings/SettingsSegmented.qml',
@@ -8,6 +10,8 @@ qml_sources = [
   'app/qml/components/settings/OrchardAccountSetting.qml',
   'app/qml/components/settings/AppearanceSection.qml',
   'app/qml/components/settings/AppearanceSlider.qml',
+  'app/qml/components/settings/ColorSwatchRow.qml',
+  'app/qml/components/settings/ColorsSection.qml',
   'app/qml/components/settings/AudioEngineSection.qml',
   'app/qml/components/settings/PlaybackSection.qml',
   'app/qml/components/settings/DownloadsSection.qml',
@@ -214,6 +218,7 @@ qml_assets = [
   'app/qml/assets/lucide/search.svg',
   'app/qml/assets/lucide/mic-vocal.svg',
   'app/qml/assets/lucide/moon.svg',
+  'app/qml/assets/lucide/power.svg',
   'app/qml/assets/lucide/pause.svg',
   'app/qml/assets/lucide/play.svg',
   'app/qml/assets/lucide/skip-back.svg',

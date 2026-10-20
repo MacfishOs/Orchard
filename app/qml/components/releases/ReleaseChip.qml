@@ -25,7 +25,7 @@ Rectangle {
     id: root
 
     property string text
-    property color tone: "#8cc5a5"
+    property color tone: OrchardAppearance.accent
 
     implicitWidth: label.implicitWidth + 14
     implicitHeight: 20

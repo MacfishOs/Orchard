@@ -21,10 +21,11 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 
-// Modal panel on frosted glass. Subclasses set the size and the content item.
+// Modal panel on frosted glass, or a solid one with frosted off. Subclasses set the size and the content item.
 Popup {
     id: root
     required property Item backdrop
+    property bool frosted: true
 
     parent: Overlay.overlay
     anchors.centerIn: parent
@@ -52,7 +53,24 @@ Popup {
 
     background: Loader {
         active: root.visible
-        sourceComponent: Item {
+        sourceComponent: root.frosted ? frostedSurface : solidSurface
+    }
+
+    Component {
+        id: solidSurface
+
+        Rectangle {
+            radius: 20
+            color: OrchardAppearance.popupColor
+            border.color: "#1cffffff"
+            border.width: 1
+        }
+    }
+
+    Component {
+        id: frostedSurface
+
+        Item {
             Glass {
                 anchors.fill: parent
                 backdrop: root.backdrop
@@ -69,7 +87,7 @@ Popup {
             Rectangle {
                 anchors.fill: parent
                 radius: 20
-                color: "#660e1210"
+                color: Qt.alpha(OrchardAppearance.popupColor, 1 - OrchardAppearance.popupTranslucency)
                 border.color: "#1cffffff"
                 border.width: 1
             }

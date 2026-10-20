@@ -5,6 +5,7 @@
 #include "remote_translation.h"
 #include "account/orchard_account.h"
 #include "lyrics/lyrics_controller.h"
+#include <QDateTime>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -17,14 +18,62 @@
 void LyricsTranslator::setAccount(OrchardAccount *account) {
   if (m_account) disconnect(m_account, nullptr, this, nullptr);
   m_account = account;
+  acceptAccountQuota({});
   if (account) connect(account, &OrchardAccount::statusChanged, this, [this] {
+    acceptAccountQuota({});
     if (m_provider != QStringLiteral("orchard")) return;
+    refreshAccountQuota();
     ++*m_generation;
     cancelRemote();
     m_key.clear();
     sync();
   });
-  if (m_provider == QStringLiteral("orchard")) { m_key.clear(); sync(); }
+  if (m_provider == QStringLiteral("orchard")) { refreshAccountQuota(); m_key.clear(); sync(); }
+}
+
+QString LyricsTranslator::accountQuotaMessage() const {
+  if (m_accountQuota.value(QStringLiteral("resets_at")).toInteger() <= QDateTime::currentSecsSinceEpoch())
+    return tr("Translation allowance unavailable.");
+  return tr("%1 translations left today. Your account allows up to %2 per day.")
+      .arg(m_accountQuota.value(QStringLiteral("remaining")).toInteger())
+      .arg(m_accountQuota.value(QStringLiteral("daily_limit")).toInteger());
+}
+
+void LyricsTranslator::acceptAccountQuota(const QJsonObject &body) {
+  ++m_quotaGeneration;
+  const auto quota = body.value(QStringLiteral("quota")).toObject();
+  const auto limit = quota.value(QStringLiteral("daily_limit")).toInteger(-1);
+  const auto remaining = quota.value(QStringLiteral("remaining")).toInteger(-1);
+  m_accountQuota = limit >= 0 && remaining >= 0 && remaining <= limit &&
+      quota.value(QStringLiteral("resets_at")).toInteger() > QDateTime::currentSecsSinceEpoch() ? quota : QJsonObject();
+  emit accountQuotaChanged();
+}
+
+void LyricsTranslator::refreshAccountQuota() {
+  if (!m_account || !m_account->isSignedIn()) { acceptAccountQuota({}); return; }
+  if (m_accountQuota.value(QStringLiteral("resets_at")).toInteger() <= QDateTime::currentSecsSinceEpoch())
+    acceptAccountQuota({});
+  const int generation = ++m_quotaGeneration;
+  QPointer<LyricsTranslator> guard(this);
+  const QString userId = m_account->userId();
+  m_account->withAccessToken([guard, generation, userId](const QString &token) {
+    if (!guard || generation != guard->m_quotaGeneration || !guard->m_account ||
+        !guard->m_account->isSignedIn() || guard->m_account->userId() != userId) return;
+    if (token.isEmpty()) { guard->acceptAccountQuota({}); return; }
+    QNetworkRequest request(guard->m_account->serviceUrl().resolved(QUrl(QStringLiteral("/lyrics/quota"))));
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
+    request.setRawHeader("Authorization", QByteArray("Bearer ") + token.toUtf8());
+    request.setTransferTimeout(15000);
+    auto *reply = guard->m_network->get(request);
+    QTimer::singleShot(15000, reply, [reply] { if (!reply->isFinished()) reply->abort(); });
+    connect(reply, &QNetworkReply::finished, guard.data(), [guard, reply, generation, userId] {
+      reply->deleteLater();
+      if (!guard || generation != guard->m_quotaGeneration || !guard->m_account ||
+          !guard->m_account->isSignedIn() || guard->m_account->userId() != userId) return;
+      guard->acceptAccountQuota(reply->error() == QNetworkReply::NoError
+          ? QJsonDocument::fromJson(reply->readAll()).object() : QJsonObject());
+    });
+  });
 }
 
 void LyricsTranslator::runAccountRemote() {
@@ -66,13 +115,14 @@ void LyricsTranslator::runAccountRemote() {
       const int http = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
       const auto error = reply->error();
       reply->deleteLater();
+      self->acceptAccountQuota(QJsonDocument::fromJson(body).object());
       if (error != QNetworkReply::NoError || http >= 300) {
         const QString code = QJsonDocument::fromJson(body).object().value(QStringLiteral("error")).toString();
         const bool timedOut = error == QNetworkReply::TimeoutError || error == QNetworkReply::OperationCanceledError || http == 504;
         const QString message = timedOut ? self->tr("Translation took too long. Try again.")
             : code == QStringLiteral("translation_busy") ? self->tr("Translation is busy. Try again shortly.")
             : code == QStringLiteral("translation_invalid_result") ? self->tr("The model returned invalid lyric lines. Try again.")
-            : http == 429 ? self->tr("The account or IP has reached 10 songs today. Resets at 00:00 UTC.")
+            : http == 429 ? self->tr("No translations left today. Resets at 00:00 UTC. Cached songs are still available.")
             : http == 409 ? self->tr("This song is being translated. Try again shortly.")
             : http == 401 ? self->tr("Sign in to Orchard again.")
             : self->tr("Account translation failed. Try again later.");

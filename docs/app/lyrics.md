@@ -9,6 +9,9 @@ keywords:
   - sing along
   - lyrics unavailable
   - lrclib
+  - betterlyrics
+  - lyrics providers
+  - provider priority
   - translate lyrics
   - translation
   - english lyrics
@@ -43,7 +46,19 @@ In the fullscreen player, the lyrics fade out halfway through a blend. Orchard l
 
 ## Find out where lyrics come from
 
-The lyrics view shows "Lyrics from" followed by the source. The sources are am-lyrics, LRCLIB, and YouTube Music.
+The lyrics view shows "Lyrics from" followed by the source. The sources are Bini Lyrics, BetterLyrics, LyricsPlus, LRCLIB, and YouTube Music.
+
+## Choose and rank lyrics providers
+
+Open **Settings**, select **Appearance**, and find **Lyrics providers**. Enable or disable each provider with its switch. Use the up and down buttons to set the order. Orchard tries enabled providers from top to bottom and uses the first lyrics it finds. If a provider fails or has no lyrics, Orchard tries the next one.
+
+Provider order and enabled switches are saved between launches. Changes refresh the current song's lyrics. Turning off every provider stops online lyrics lookups; lyrics attached to local songs still work.
+
+## Change the lyrics source for one song
+
+Use the source menu at the top of the lyrics view. Choose an enabled provider to use it for this song. If it has no lyrics, choose another provider. Choose **Automatic** to return to your saved provider order.
+
+A song's source choice lasts for the current app session and does not change the provider order for other songs.
 
 ## Fix "Lyrics unavailable"
 
@@ -76,7 +91,7 @@ On Android, find the same choices in Settings > Appearance > Lyrics. API keys ar
 
 Sign in to your [Orchard Account](accounts.md), then choose **Orchard Account** under **Translation source**. On desktop, open Settings > Downloads > Lyric translation. On Android, open Settings > Appearance > Lyrics. The choice appears while you are signed in and needs no API key or model ID.
 
-Orchard Account sends the song's lyrics to Cloudflare Workers AI and uses Gemma 4 26B A4B to translate them into English. You can start up to 10 new song translations each day per account and per IP address. Both limits reset at **00:00 UTC**. Devices on the same account share the account limit, and accounts on the same network share the IP limit.
+Orchard Account sends the song's lyrics to Cloudflare Workers AI and uses Gemma 4 26B A4B to translate them into English. Translation settings show your account's daily allowance and how many translations you have left, as reported by the account service. The remaining count includes any shared network limit. Accounts with an elevated allowance only use their account limit. Limits reset at **00:00 UTC**. Devices on the same account share the account limit.
 
 Cached songs do not use the daily allowance. Orchard keeps translations by song ID for 90 days, and checks the lyric version so lines stay aligned. A translation that starts and then fails still uses one slot. If the daily limit is reached, cached translations remain available; wait until 00:00 UTC to translate a new song.
 

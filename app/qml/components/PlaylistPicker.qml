@@ -47,7 +47,7 @@ Menu {
     Component.onCompleted: if ("popupType" in root) root["popupType"] = 0
     width: 250
     padding: 5
-    background: Rectangle { color: "#242c27"; radius: 10; border.color: "#455348" }
+    background: Rectangle { color: Qt.lighter(OrchardAppearance.popupColor, 1.25); radius: 8; border.color: "#24ffffff" }
     // Grow from the click point. Menus that just appear are how you get jump scares in a music app.
     transformOrigin: Popup.TopLeft
     enter: Transition {
@@ -63,7 +63,7 @@ Menu {
         implicitHeight: 36
         background: Rectangle {
             radius: 6
-            color: entry.highlighted ? "#435247" : "#00435247"
+            color: entry.highlighted ? "#1fffffff" : "#00ffffff"
             Behavior on color { ColorAnimation { duration: Motion.fast } }
         }
         contentItem: Text {

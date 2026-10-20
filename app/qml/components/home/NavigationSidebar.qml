@@ -60,6 +60,16 @@ Item {
         color: "#18ffffff"
         opacity: root.navIndex >= 0 ? 1 : 0
 
+        // Accent bar on the active entry, Windows style.
+        Rectangle {
+            x: 0
+            anchors.verticalCenter: parent.verticalCenter
+            width: 3
+            height: 18
+            radius: 1.5
+            color: OrchardAppearance.accent
+        }
+
         Binding on shownIndex {
             value: root.navIndex
             when: root.navIndex >= 0
@@ -145,7 +155,7 @@ Item {
                 background: Rectangle {
                     radius: 9
                     color: root.currentPage !== nav.modelData.key && nav.hovered ? "#0cffffff" : "#00ffffff"
-                    border.color: nav.activeFocus ? "#99c3ac" : "transparent"
+                    border.color: nav.activeFocus ? OrchardAppearance.accent : "transparent"
 
                     Behavior on color {
                         ColorAnimation { duration: Motion.fast }
@@ -160,7 +170,11 @@ Item {
                         width: 19
                         height: 19
                         name: nav.modelData.icon
-                        color: "#c1c7ca"
+                        color: root.currentPage === nav.modelData.key ? OrchardAppearance.accent : "#c1c7ca"
+
+                        Behavior on color {
+                            ColorAnimation { duration: Motion.normal }
+                        }
                     }
 
                     Text {
@@ -208,7 +222,7 @@ Item {
             background: Rectangle {
                 radius: 8
                 color: newPlaylistButton.hovered ? "#1affffff" : "#0cffffff"
-                border.color: newPlaylistButton.activeFocus ? "#99c3ac" : "#18ffffff"
+                border.color: newPlaylistButton.activeFocus ? OrchardAppearance.accent : "#18ffffff"
 
                 Behavior on color {
                     ColorAnimation { duration: Motion.fast }
@@ -280,7 +294,7 @@ Item {
                 background: Rectangle {
                     radius: 8
                     color: shortcut.hovered ? "#12ffffff" : "#00ffffff"
-                    border.color: shortcut.activeFocus ? "#99c3ac" : "transparent"
+                    border.color: shortcut.activeFocus ? OrchardAppearance.accent : "transparent"
 
                     Behavior on color {
                         ColorAnimation { duration: Motion.fast }

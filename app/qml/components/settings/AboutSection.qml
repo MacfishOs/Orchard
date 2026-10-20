@@ -100,7 +100,7 @@ AboutSectionForm {
         }
 
         background: Rectangle {
-            color: "#181b1e"
+            color: OrchardAppearance.popupColor
             radius: 14
             border.color: "#35ffffff"
             border.width: 1

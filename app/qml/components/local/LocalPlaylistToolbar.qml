@@ -29,8 +29,8 @@ Flow {
 
     // The playlist detail map from OrchardPlaylist.
     property var playlist: ({})
-    property color accentColor: "#7fbe90"
-    property color accentSoftColor: "#96caa4"
+    property color accentColor: OrchardAppearance.accent
+    property color accentSoftColor: OrchardAppearance.accent
 
     readonly property string playlistId: playlist.id || ""
 
@@ -106,7 +106,7 @@ Flow {
             nameField.selectAll();
         }
         Overlay.modal: Rectangle { color: "#80000000" }
-        background: Rectangle { color: "#181b1e"; radius: 14; border.color: "#35ffffff" }
+        background: Rectangle { color: OrchardAppearance.popupColor; radius: 12; border.color: "#24ffffff" }
 
         contentItem: ColumnLayout {
             spacing: 12
@@ -135,7 +135,7 @@ Flow {
                 background: Rectangle {
                     radius: 10
                     color: "#1b201c"
-                    border.color: nameField.activeFocus ? "#8cc5a5" : "#3a413b"
+                    border.color: nameField.activeFocus ? OrchardAppearance.accent : "#3a413b"
                 }
             }
         }
@@ -152,7 +152,7 @@ Flow {
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         Overlay.modal: Rectangle { color: "#80000000" }
-        background: Rectangle { color: "#181b1e"; radius: 14; border.color: "#35ffffff" }
+        background: Rectangle { color: OrchardAppearance.popupColor; radius: 12; border.color: "#24ffffff" }
 
         contentItem: ColumnLayout {
             spacing: 12

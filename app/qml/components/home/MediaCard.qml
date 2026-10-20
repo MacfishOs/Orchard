@@ -119,7 +119,7 @@ Item {
         anchors.fill: parent
         radius: root.songlist ? 6 : 12
         color: hover.hovered && (root.songlist || !root.plain) ? (root.songlist ? "#0dffffff" : "#16ffffff") : "transparent"
-        border.color: root.activeFocus ? "#96caa4" : "transparent"
+        border.color: root.activeFocus ? OrchardAppearance.accent : "transparent"
 
         Behavior on color {
             ColorAnimation {
@@ -226,7 +226,7 @@ Item {
             Text {
                 width: Math.min(implicitWidth, parent.width - (explicitBadge.visible ? 20 : 0))
                 text: root.media.title || qsTr("Untitled")
-                color: root.nowPlaying ? "#c4e0cb" : "#f2f0eb"
+                color: root.nowPlaying ? OrchardAppearance.accentStrong : "#f2f0eb"
                 font.family: "Inter"
                 font.pixelSize: 13
                 font.weight: root.plain ? Font.Medium : Font.DemiBold

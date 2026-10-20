@@ -271,7 +271,7 @@ async function resolveLyrics(payload = {}) {
     loadYouTubeLyricsText: (videoId) => loadYouTubeLyricsText({ session, videoId })
   });
   const track = payload.track || {};
-  return payload.provider ? resolver(track, String(payload.provider)) : resolveLyricsChain(resolver, track);
+  return payload.provider ? resolver(track, String(payload.provider)) : resolveLyricsChain(resolver, track, payload.providers);
 }
 
 async function invoke(method, payload) {

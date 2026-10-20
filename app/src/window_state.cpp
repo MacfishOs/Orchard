@@ -21,6 +21,7 @@
 
 #include <QEvent>
 #include <QGuiApplication>
+#include <QScreen>
 #include <QWindow>
 
 namespace {
@@ -32,6 +33,7 @@ constexpr int kUnfocusedGraceMs = 2500;
 
 WindowState::WindowState(QObject *parent) : QObject(parent)
 {
+    watchScreen(qGuiApp->primaryScreen());
     m_enabled = m_settings.value(QStringLiteral("window/remember"), true).toBool();
     if (m_enabled) {
         m_width = qMax(m_settings.value(QStringLiteral("window/width"), kDefaultWidth).toInt(), 1);
@@ -66,6 +68,8 @@ void WindowState::setWindow(QWindow *window)
     m_window = window;
     if (!window)
         return;
+    watchScreen(window->screen());
+    connect(window, &QWindow::screenChanged, this, &WindowState::watchScreen);
     const auto schedule = [this] { m_saveTimer.start(); };
     connect(window, &QWindow::widthChanged, this, schedule);
     connect(window, &QWindow::heightChanged, this, schedule);
@@ -75,6 +79,26 @@ void WindowState::setWindow(QWindow *window)
     window->installEventFilter(this);
     m_occlusion.setWindow(window);
     updateState();
+}
+
+int WindowState::availableWidth() const
+{
+    return m_screen ? qMax(1, m_screen->availableGeometry().width() - 32) : kDefaultWidth;
+}
+
+int WindowState::availableHeight() const
+{
+    return m_screen ? qMax(1, m_screen->availableGeometry().height() - 48) : kDefaultHeight;
+}
+
+void WindowState::watchScreen(QScreen *screen)
+{
+    disconnect(m_screenGeometryConnection);
+    m_screen = screen;
+    if (screen)
+        m_screenGeometryConnection = connect(screen, &QScreen::availableGeometryChanged,
+                                            this, &WindowState::availableGeometryChanged);
+    emit availableGeometryChanged();
 }
 
 bool WindowState::eventFilter(QObject *watched, QEvent *event)

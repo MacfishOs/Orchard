@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +50,7 @@ import dev.sfg.orchard.mobile.lyrics.translation.TranslationNative
 import dev.sfg.orchard.mobile.model.LyricTranslationQuality
 import dev.sfg.orchard.mobile.model.LyricTranslationProvider
 import dev.sfg.orchard.mobile.model.OrchardSettings
+import kotlinx.coroutines.delay
 
 /** Lyric translation source, API credentials, and the models already on this phone. */
 @Composable
@@ -61,7 +63,16 @@ internal fun LyricTranslationSection(
     val translator = OrchardGraph.from(LocalContext.current).lyricTranslation
     val installed by translator.installed.collectAsStateWithLifecycle()
     val apiKeys by translator.apiKeyState.collectAsStateWithLifecycle()
+    val quota by translator.accountQuota.collectAsStateWithLifecycle()
     val provider = settings.lyricTranslationProvider
+    LaunchedEffect(provider, account.email, account.deviceId) {
+        if (provider == LyricTranslationProvider.ORCHARD && account.signedIn) {
+            while (true) {
+                translator.refreshAccountQuota()
+                delay(60_000)
+            }
+        }
+    }
     var sourceDialog by remember { mutableStateOf(false) }
     var modelDraft by remember(provider, settings.lyricTranslationModels[provider.key]) {
         mutableStateOf(settings.lyricTranslationModels[provider.key].orEmpty())
@@ -76,7 +87,7 @@ internal fun LyricTranslationSection(
             subtitle = if (provider == LyricTranslationProvider.LOCAL)
                 "Runs on this phone. Each language downloads its model the first time you need it."
             else if (provider == LyricTranslationProvider.ORCHARD)
-                "Gemma 4: 10 songs per account and IP each day. Resets at 00:00 UTC. Cached songs are free."
+                "Gemma 4. ${quota?.description() ?: "Translation allowance unavailable."} Resets at 00:00 UTC. Cached songs are free."
             else "Sends lyric lines to ${provider.label}; your provider may charge for requests.",
             icon = Icons.Rounded.Translate,
             checked = settings.translateLyrics,

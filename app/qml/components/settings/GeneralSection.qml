@@ -28,6 +28,11 @@ GeneralSectionForm {
     trayAvailable: OrchardTray.available
     signedIn: OrchardAuth.isSignedIn
     authError: OrchardAuth.errorMessage
+    startupAvailable: OrchardStartup.available
+    startupError: OrchardStartup.error
+
+    startupSwitch.checked: OrchardStartup.enabled
+    startupSwitch.onToggled: OrchardStartup.setEnabled(startupSwitch.checked)
 
     persistSwitch.checked: OrchardPlayback.playbackPersistenceEnabled
     persistSwitch.onToggled: OrchardPlayback.playbackPersistenceEnabled = persistSwitch.checked

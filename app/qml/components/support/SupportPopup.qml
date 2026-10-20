@@ -23,6 +23,8 @@ import ".."
 // Report a bug. The complaints department, now with a ticket number.
 GlassPopup {
     id: root
+    // Long reading and writing; a solid surface keeps the text steady.
+    frosted: false
 
     // Report to show on open; empty opens the list on a new report.
     property string reportId: ""

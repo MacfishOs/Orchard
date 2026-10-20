@@ -25,6 +25,17 @@ SettingsSegmentedForm {
 
     signal picked(var value)
 
+    readonly property int selectedIndex: {
+        const entries = root.model || [];
+        for (let i = 0; i < entries.length; i++) {
+            if (entries[i].value === root.currentValue)
+                return i;
+        }
+        return -1;
+    }
+    // Reading count re-evaluates once the delegates exist.
+    highlightTarget: repeater.count > 0 && selectedIndex >= 0 ? repeater.itemAt(selectedIndex) : null
+
     repeater.delegate: SettingsSegment {
         required property var modelData
         height: root.height - 6

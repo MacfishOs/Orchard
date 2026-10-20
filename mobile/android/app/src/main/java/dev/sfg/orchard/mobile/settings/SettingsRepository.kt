@@ -52,7 +52,8 @@ private val Context.orchardDataStore: DataStore<Preferences> by preferencesDataS
 /** Transactional settings and bounded search history backed by DataStore. */
 class SettingsRepository(context: Context, private val scope: CoroutineScope) {
     private val store = context.applicationContext.orchardDataStore
-    val settings: StateFlow<OrchardSettings> = store.data
+    // Lyrics lookups wait for saved preferences rather than using the UI's initial defaults.
+    internal val loadedSettings = store.data
         .catch { emit(androidx.datastore.preferences.core.emptyPreferences()) }
         .map { values ->
             OrchardSettings(
@@ -100,6 +101,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 betaChannelEnabled = values[BETA_CHANNEL_ENABLED] ?: false,
                 videoMaxHeight = values[VIDEO_MAX_HEIGHT] ?: OrchardSettings.DEFAULT_VIDEO_MAX_HEIGHT,
                 translateLyrics = values[TRANSLATE_LYRICS] ?: false,
+                lyricsProviders = decodeLyricsProviders(values[LYRICS_PROVIDERS]),
                 lyricTranslationQuality = LyricTranslationQuality.entries
                     .firstOrNull { it.key == values[LYRIC_TRANSLATION_QUALITY] } ?: LyricTranslationQuality.STANDARD,
                 lyricTranslationProvider = LyricTranslationProvider.entries
@@ -111,6 +113,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 lyricTranslationEndpoint = values[LYRIC_TRANSLATION_ENDPOINT] ?: "",
             )
         }
+    val settings: StateFlow<OrchardSettings> = loadedSettings
         .stateIn(scope, SharingStarted.Eagerly, OrchardSettings())
 
     val searchHistory: StateFlow<List<String>> = store.data
@@ -159,6 +162,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 it[BETA_CHANNEL_ENABLED] = value.betaChannelEnabled
                 it[VIDEO_MAX_HEIGHT] = value.videoMaxHeight
                 it[TRANSLATE_LYRICS] = value.translateLyrics
+                it[LYRICS_PROVIDERS] = encodeLyricsProviders(value.lyricsProviders)
                 it[LYRIC_TRANSLATION_QUALITY] = value.lyricTranslationQuality.key
                 it[LYRIC_TRANSLATION_PROVIDER] = value.lyricTranslationProvider.key
                 it[LYRIC_TRANSLATION_MODELS] = org.json.JSONObject(value.lyricTranslationModels).toString()
@@ -251,6 +255,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
         val CELLULAR_AUDIO_QUALITY = stringPreferencesKey("cellular_audio_quality")
         val VIDEO_MAX_HEIGHT = intPreferencesKey("video_max_height")
         val TRANSLATE_LYRICS = booleanPreferencesKey("translate_lyrics")
+        val LYRICS_PROVIDERS = stringPreferencesKey("lyrics_providers")
         val LYRIC_TRANSLATION_QUALITY = stringPreferencesKey("lyric_translation_quality")
         val LYRIC_TRANSLATION_PROVIDER = stringPreferencesKey("lyric_translation_provider")
         val LYRIC_TRANSLATION_MODELS = stringPreferencesKey("lyric_translation_models")

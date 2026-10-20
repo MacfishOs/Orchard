@@ -125,7 +125,7 @@ Item {
         text: root.sortName(key)
         implicitHeight: 36
         onTriggered: root.chooseSort(key)
-        background: Rectangle { radius: 6; color: entry.highlighted ? "#435247" : "transparent" }
+        background: Rectangle { radius: 6; color: entry.highlighted ? "#1fffffff" : "transparent" }
         contentItem: Item {
             Text {
                 anchors.left: parent.left
@@ -203,7 +203,7 @@ Item {
         padding: 5
         // Keep in the scene like MediaMenu so it matches on every desktop.
         Component.onCompleted: if ("popupType" in sortMenu) sortMenu["popupType"] = 0
-        background: Rectangle { color: "#242c27"; radius: 10; border.color: "#455348" }
+        background: Rectangle { color: Qt.lighter(OrchardAppearance.popupColor, 1.25); radius: 8; border.color: "#24ffffff" }
         SortEntry { key: "" }
         SortEntry { key: "title" }
         SortEntry { key: "artist" }

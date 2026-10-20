@@ -49,12 +49,12 @@ Rectangle {
             implicitHeight: 24
             radius: 12
             color: "#2a4535"
-            border.color: "#52735d"
+            border.color: Qt.alpha(OrchardAppearance.accent, 0.45)
 
             Text {
                 anchors.centerIn: parent
                 text: "" + (mirrorRow.position + 1)
-                color: "#c4e0cb"
+                color: OrchardAppearance.accentStrong
                 font.family: "Inter"
                 font.pixelSize: 11
                 font.bold: true

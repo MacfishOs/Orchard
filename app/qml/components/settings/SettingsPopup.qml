@@ -17,11 +17,12 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import Orchard
 import QtQuick
 import QtQuick.Controls
 import ".."
 
-// Settings popup shell and transitions. The panel lives in SettingsPanel.ui.qml.
+// Settings window shell and transitions. The panel lives in SettingsPanel.ui.qml.
 Popup {
     id: root
     // Docs live in their own popup; the shell closes this one and opens it.
@@ -32,68 +33,84 @@ Popup {
     signal releaseNotesRequested
     parent: Overlay.overlay
     anchors.centerIn: parent
-    width: Math.min(980, parent.width - 64)
-    height: Math.min(680, parent.height - 64)
+    width: Math.min(1180, parent.width - 48)
+    height: Math.min(820, parent.height - 48)
     padding: 0
     modal: true
     focus: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
     Overlay.modal: Rectangle {
-        color: "#66000000"
+        color: "#73000000"
+        Behavior on opacity { NumberAnimation { duration: Motion.normal } }
     }
+
+    function matches(entry, query) {
+        const needle = String(query || "").trim().toLowerCase();
+        if (needle.length === 0)
+            return true;
+        const haystack = (entry.label + " " + entry.blurb + " " + (entry.keywords || "")).toLowerCase();
+        return needle.split(/\s+/).every(word => haystack.indexOf(word) >= 0);
+    }
+
+    function firstMatch(query) {
+        for (let i = 0; i < panel.sections.length; i++) {
+            if (matches(panel.sections[i], query))
+                return i;
+        }
+        return -1;
+    }
+
+    onClosed: panel.searchField.text = ""
 
     enter: Transition {
         ParallelAnimation {
-            NumberAnimation {
-                property: "opacity"
-                from: 0.0
-                to: 1.0
-                duration: 250
-                easing.type: Easing.OutCubic
-            }
-            NumberAnimation {
-                property: "scale"
-                from: 0.95
-                to: 1.0
-                duration: 250
-                easing.type: Easing.OutCubic
-            }
+            NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 220; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "scale"; from: 0.94; to: 1.0; duration: 380; easing.type: Easing.OutQuint }
         }
     }
 
     exit: Transition {
         ParallelAnimation {
-            NumberAnimation {
-                property: "opacity"
-                from: 1.0
-                to: 0.0
-                duration: 200
-                easing.type: Easing.InCubic
-            }
-            NumberAnimation {
-                property: "scale"
-                from: 1.0
-                to: 0.95
-                duration: 200
-                easing.type: Easing.InCubic
-            }
+            NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 160; easing.type: Easing.InCubic }
+            NumberAnimation { property: "scale"; from: 1.0; to: 0.97; duration: 160; easing.type: Easing.InCubic }
         }
     }
 
     background: Rectangle {
-        radius: 20
-        color: "#0e1210"
-        border.color: "#1cffffff"
+        radius: 12
+        color: OrchardAppearance.popupColor
+        border.color: "#1fffffff"
         border.width: 1
+        Behavior on color { ColorAnimation { duration: Motion.slow } }
     }
 
     contentItem: SettingsPanel {
         id: panel
 
+        matchCount: {
+            let count = 0;
+            for (const entry of sections) {
+                if (root.matches(entry, searchField.text))
+                    count++;
+            }
+            return count;
+        }
+
         docsLink.onClicked: root.docsRequested()
         supportLink.onClicked: root.supportRequested()
         closeButton.onClicked: root.close()
+        profileButton.onClicked: panel.currentIndex = 0
 
+        searchField.onTextChanged: {
+            const index = root.firstMatch(searchField.text);
+            if (index >= 0 && !root.matches(sections[currentIndex], searchField.text))
+                currentIndex = index;
+        }
+        searchField.onAccepted: {
+            const index = root.firstMatch(searchField.text);
+            if (index >= 0)
+                currentIndex = index;
+        }
         navList.delegate: SettingsNavItem {
             required property var modelData
             required property int index
@@ -101,13 +118,25 @@ Popup {
             width: parent ? parent.width : 0
             entry: modelData
             current: panel.currentIndex === index
+            visible: root.matches(modelData, panel.searchField.text)
             onClicked: panel.currentIndex = index
         }
 
-        // Cards animate themselves in; start each section from the top.
+        // Cards animate themselves in; start each section from the top and ease the header in.
         sectionLoader.onLoaded: {
             panel.scroller.contentItem.contentY = 0;
             panel.headerFade.restart();
+            headerIn.restart();
+        }
+
+        NumberAnimation {
+            id: headerIn
+            target: panel.headerSlide
+            property: "x"
+            from: -12
+            to: 0
+            duration: 380
+            easing.type: Easing.OutQuint
         }
 
         Connections {

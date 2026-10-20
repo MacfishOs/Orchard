@@ -45,7 +45,7 @@ Rectangle {
     height: 34
     radius: 8
     color: search.activeFocus ? "#1affffff" : "#10ffffff"
-    border.color: search.activeFocus || spotlightButton.activeFocus ? "#99c3ac" : "#24ffffff"
+    border.color: search.activeFocus || spotlightButton.activeFocus ? OrchardAppearance.accent : "#24ffffff"
     Behavior on color { ColorAnimation { duration: Motion.fast } }
     Behavior on border.color { ColorAnimation { duration: Motion.fast } }
 

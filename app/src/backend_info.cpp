@@ -18,6 +18,7 @@
  */
 
 #include "backend_info.h"
+#include "youtube_links.h"
 #include "orchard_core.h"
 #include <QClipboard>
 #include <QDesktopServices>
@@ -25,48 +26,6 @@
 #include <QGuiApplication>
 #include <QHash>
 #include <QUrl>
-#include <QUrlQuery>
-
-namespace {
-// Strips YouTube excess baggage and browse prefixes to get the raw identifier.
-QString cleanYouTubeId(const QString &input)
-{
-    QString text = input.trimmed();
-    if (text.isEmpty()) {
-        return {};
-    }
-
-    // Strip YouTube Music's internal browse prefix for playlist / album lists (e.g. VLPL... -> PL...)
-    if (text.startsWith(QStringLiteral("VLPL")) || text.startsWith(QStringLiteral("VLOLAK"))) {
-        return text.mid(2);
-    }
-
-    if (text.contains(QStringLiteral("watch?v="))) {
-        const QUrl url(text);
-        const QUrlQuery query(url);
-        if (query.hasQueryItem(QStringLiteral("v"))) {
-            return query.queryItemValue(QStringLiteral("v"));
-        }
-    } else if (text.contains(QStringLiteral("playlist?list="))) {
-        const QUrl url(text);
-        const QUrlQuery query(url);
-        if (query.hasQueryItem(QStringLiteral("list"))) {
-            return query.queryItemValue(QStringLiteral("list"));
-        }
-    } else if (text.contains(QStringLiteral("youtu.be/"))) {
-        const QUrl url(text);
-        QString path = url.path();
-        if (path.startsWith(QLatin1Char('/'))) {
-            path.remove(0, 1);
-        }
-        if (!path.isEmpty()) {
-            return path;
-        }
-    }
-
-    return text;
-}
-} // namespace
 
 BackendInfo::BackendInfo(QObject *parent)
     : QObject(parent)
@@ -139,19 +98,7 @@ QString BackendInfo::licenseText(const QString &key) const
 
 QString BackendInfo::songlinkAlbumUrl(const QString &audioPlaylistId) const
 {
-    // Album links accept audio playlist IDs (OLAK5uy_... or PL...).
-    // Feeding MPREb_ here results in a swift 400 Bad Request kick out the door.
-    const QString target = cleanYouTubeId(audioPlaylistId);
-    if (target.isEmpty()) {
-        return QStringLiteral("https://album.link");
-    }
-
-    if (target.startsWith(QStringLiteral("https://album.link/")) ||
-        target.startsWith(QStringLiteral("http://album.link/"))) {
-        return target;
-    }
-
-    return QStringLiteral("https://album.link/y/") + target;
+    return youtubeShareUrl(audioPlaylistId, true);
 }
 
 QString BackendInfo::songLinkAlbumUrl(const QString &audioPlaylistId) const
@@ -161,30 +108,10 @@ QString BackendInfo::songLinkAlbumUrl(const QString &audioPlaylistId) const
 
 QString BackendInfo::songLink(const QString &idOrUrl, const QString &kind) const
 {
-    const QString target = cleanYouTubeId(idOrUrl);
-    if (target.isEmpty()) {
-        return QStringLiteral("https://song.link");
-    }
-
-    if (target.startsWith(QStringLiteral("https://song.link/")) ||
-        target.startsWith(QStringLiteral("http://song.link/")) ||
-        target.startsWith(QStringLiteral("https://album.link/")) ||
-        target.startsWith(QStringLiteral("http://album.link/"))) {
-        return target;
-    }
-
     const bool isAlbumOrPlaylist =
         kind.compare(QLatin1String("album"), Qt::CaseInsensitive) == 0 ||
-        kind.compare(QLatin1String("playlist"), Qt::CaseInsensitive) == 0 ||
-        target.startsWith(QStringLiteral("OLAK")) ||
-        target.startsWith(QStringLiteral("PL")) ||
-        target.startsWith(QStringLiteral("RD"));
-
-    if (isAlbumOrPlaylist) {
-        return songlinkAlbumUrl(target);
-    }
-
-    return QStringLiteral("https://song.link/y/") + target;
+        kind.compare(QLatin1String("playlist"), Qt::CaseInsensitive) == 0;
+    return youtubeShareUrl(idOrUrl, isAlbumOrPlaylist);
 }
 
 void BackendInfo::copyToClipboard(const QString &text, const QString &notice)
@@ -204,7 +131,7 @@ void BackendInfo::copySongLink(const QString &idOrUrl, const QString &label)
 {
     const QString link = songLink(idOrUrl, label);
     const QString notice = label.trimmed().isEmpty()
-        ? tr("Copied song.link to clipboard")
+        ? tr("Copied song link to clipboard")
         : tr("Copied %1 link to clipboard").arg(label.trimmed());
     copyToClipboard(link, notice);
 }

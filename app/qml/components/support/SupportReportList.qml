@@ -90,7 +90,7 @@ Item {
                     Layout.preferredWidth: 16
                     Layout.preferredHeight: 16
                     name: "plus"
-                    color: "#c4e0cb"
+                    color: OrchardAppearance.accentStrong
                 }
                 Text {
                     Layout.fillWidth: true
@@ -103,7 +103,7 @@ Item {
             background: Rectangle {
                 radius: 12
                 color: root.composing ? "#2244604f" : newButton.hovered ? "#14ffffff" : "transparent"
-                border.color: root.composing ? "#556f9a80" : newButton.visualFocus ? "#a6d4bf" : "#1cffffff"
+                border.color: root.composing ? Qt.alpha(OrchardAppearance.accent, 0.33) : newButton.visualFocus ? OrchardAppearance.accentStrong : "#1cffffff"
                 Behavior on color { ColorAnimation { duration: 120 } }
             }
         }
@@ -162,13 +162,13 @@ Item {
                         Layout.preferredHeight: 8
                         radius: 4
                         visible: row.modelData.unread > 0
-                        color: "#8cc5a5"
+                        color: OrchardAppearance.accent
                     }
                 }
                 background: Rectangle {
                     radius: 12
                     color: row.current ? "#1cffffff" : row.hovered ? "#10ffffff" : "transparent"
-                    border.color: row.visualFocus ? "#a6d4bf" : "transparent"
+                    border.color: row.visualFocus ? OrchardAppearance.accentStrong : "transparent"
                     Behavior on color { ColorAnimation { duration: 120 } }
                 }
             }

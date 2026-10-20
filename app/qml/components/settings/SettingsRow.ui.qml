@@ -21,7 +21,7 @@ import QtQuick
 import QtQuick.Layouts
 import ".."
 
-// One setting inside a SettingsSection: icon tile, title, description, control on the right.
+// One setting inside a SettingsSection: icon, title, description, control on the right.
 Item {
     id: root
     property string iconName
@@ -31,14 +31,15 @@ Item {
     default property alias controls: slot.data
 
     Layout.fillWidth: true
-    implicitHeight: content.implicitHeight + 32
+    implicitHeight: Math.max(64, content.implicitHeight + 28)
 
-    // The first row of a panel sits at y 0 and gets no divider. Nobody needs a line above the first line.
+    // The first row of a panel sits at y 0 and gets no divider.
     Rectangle {
         visible: root.y > 0
-        width: parent.width
+        x: -18
+        width: parent.width + 36
         height: 1
-        color: "#12ffffff"
+        color: "#0fffffff"
     }
 
     RowLayout {
@@ -48,36 +49,26 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 16
 
-        Rectangle {
+        LucideIcon {
             visible: root.iconName.length > 0
-            Layout.preferredWidth: 36
-            Layout.preferredHeight: 36
-            Layout.alignment: Qt.AlignTop
-            radius: 10
-            color: "#12ffffff"
-            border.color: "#10ffffff"
-
-            LucideIcon {
-                anchors.centerIn: parent
-                width: 18
-                height: 18
-                name: root.iconName
-                color: "#a8cdb6"
-            }
+            Layout.preferredWidth: 20
+            Layout.preferredHeight: 20
+            Layout.rightMargin: 2
+            name: root.iconName
+            color: root.enabled ? "#e8ebe8" : "#7c857f"
         }
 
         ColumnLayout {
             visible: root.title.length > 0
             Layout.fillWidth: true
-            spacing: 3
+            spacing: 2
 
             Text {
                 Layout.fillWidth: true
                 text: root.title
-                color: root.enabled ? "#f0eee7" : "#92998f"
+                color: root.enabled ? "#f4f4f2" : "#92998f"
                 font.family: "Inter"
-                font.pixelSize: 15
-                font.weight: Font.Medium
+                font.pixelSize: 14
                 wrapMode: Text.WordWrap
             }
 
@@ -85,9 +76,10 @@ Item {
                 Layout.fillWidth: true
                 visible: root.description.length > 0
                 text: root.description
-                color: "#a3ada5"
+                color: "#b9bfba"
                 font.family: "Inter"
-                font.pixelSize: 13
+                font.pixelSize: 12
+                lineHeight: 1.1
                 wrapMode: Text.WordWrap
             }
         }

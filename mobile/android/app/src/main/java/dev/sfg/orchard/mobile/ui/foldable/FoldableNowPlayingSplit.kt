@@ -70,6 +70,7 @@ import dev.sfg.orchard.mobile.model.Track
 import dev.sfg.orchard.mobile.model.TransitionMarker
 import dev.sfg.orchard.mobile.ui.components.SmartCrossfadeBadge
 import dev.sfg.orchard.mobile.ui.screens.LyricLines
+import dev.sfg.orchard.mobile.ui.screens.PlayerLyrics
 import dev.sfg.orchard.mobile.ui.screens.LyricsNotice
 import dev.sfg.orchard.mobile.ui.screens.NowPlayingArtworkCard
 import dev.sfg.orchard.mobile.ui.screens.PlayerControlStack
@@ -339,20 +340,10 @@ internal fun FoldableNowPlayingSplit(
                             onSleepTimer = onSleepTimer,
                         )
                     } else {
-                        when (lyrics) {
-                            is LoadState.Content -> LyricLines(
-                                lines = lyrics.value,
-                                songId = track.id,
-                                playing = playback.isPlaying,
-                                onSeek = onSeek,
-                                contentPadding = PaddingValues(vertical = 16.dp),
-                                accent = lyricAccent,
-                            )
-                            LoadState.Loading -> LyricsNotice("Finding lyrics…", isLoading = true)
-                            is LoadState.Empty -> LyricsNotice(lyrics.message, icon = Icons.Rounded.MusicNote)
-                            is LoadState.Error -> LyricsNotice(lyrics.message, icon = Icons.Rounded.Info)
-                            LoadState.Idle -> LyricsNotice("Start a song to see its lyrics.", icon = Icons.Rounded.MusicNote)
-                        }
+                        PlayerLyrics(
+                            track = track, lyrics = lyrics, playing = playback.isPlaying,
+                            onSeek = onSeek, contentPadding = PaddingValues(vertical = 16.dp), accent = lyricAccent,
+                        )
                     }
                 }
             }

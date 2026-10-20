@@ -17,6 +17,7 @@
  * along with Orchard. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import Orchard
 import QtQuick
 import QtQuick.Controls
 
@@ -40,7 +41,8 @@ AbstractButton {
 
     contentItem: Text {
         text: seg.text
-        color: seg.selected ? "#f0eee7" : "#b4beb9"
+        color: seg.selected ? OrchardAppearance.onAccent : "#d6d9d5"
+        Behavior on color { ColorAnimation { duration: Motion.normal } }
         font.family: "Inter"
         font.pixelSize: 13
         font.weight: Font.Medium
@@ -48,9 +50,10 @@ AbstractButton {
         verticalAlignment: Text.AlignVCenter
     }
     background: Rectangle {
-        radius: height / 2
-        color: seg.selected ? "#2cffffff" : seg.hovered ? "#12ffffff" : "transparent"
-        border.color: seg.visualFocus ? "#a6d4bf" : seg.selected ? "#1cffffff" : "transparent"
-        Behavior on color { ColorAnimation { duration: 120 } }
+        radius: 4
+        color: !seg.selected && seg.hovered ? "#12ffffff" : "transparent"
+        border.color: seg.visualFocus ? OrchardAppearance.accentStrong : "transparent"
+        border.width: 2
+        Behavior on color { ColorAnimation { duration: Motion.fast } }
     }
 }

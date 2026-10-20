@@ -103,7 +103,7 @@ The R2 token needs read, list, and write access to the release bucket. The signi
 
 ## In-app documentation
 
-The Docs window opens from the book icon in the top bar, a Spotlight entry, or a link in Settings. It renders the pages in [`docs/app`](app). Meson embeds every `docs/app/*.md` file. **Copy page** and **Copy all docs for AI** put raw Markdown on the clipboard.
+The Docs window opens from a Spotlight entry or a link in Settings. It renders the pages in [`docs/app`](app). Meson embeds every `docs/app/*.md` file. **Copy page** and **Copy all docs for AI** put raw Markdown on the clipboard.
 
 Page rules, enforced by `orchard_docs_tests`:
 

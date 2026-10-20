@@ -50,7 +50,6 @@ class SongLinksCoordinator(private val repository: SongLinksRepository) {
             SongShareState.Ready(title, detail.subtitle, detail.artworkUrl, explicit, url,
                 isCollection = true)
         } else {
-            // A browse-only album ID cannot be fixed by adding it to album.link.
             SongShareState.Error(title, detail.subtitle, detail.artworkUrl, explicit,
                 "This collection has no public link to share.")
         }

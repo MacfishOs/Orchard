@@ -101,7 +101,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     text: qsTr("#%1 · %2").arg(root.field("number")).arg(root.stateText())
-                    color: root.field("state") === "closed" ? "#c4e0cb" : "#a4aaa1"
+                    color: root.field("state") === "closed" ? OrchardAppearance.accentStrong : "#a4aaa1"
                     font.family: "Inter"
                     font.pixelSize: 12
                 }
@@ -172,7 +172,7 @@ Item {
                             width: 15
                             height: 15
                             name: root.icon(row.modelData.kind)
-                            color: "#c4e0cb"
+                            color: OrchardAppearance.accentStrong
                         }
 
                         Image {
@@ -205,12 +205,12 @@ Item {
                                 implicitHeight: 18
                                 radius: 9
                                 color: "#2244604f"
-                                border.color: "#556f9a80"
+                                border.color: Qt.alpha(OrchardAppearance.accent, 0.33)
                                 Text {
                                     id: badge
                                     anchors.centerIn: parent
                                     text: qsTr("Maintainer")
-                                    color: "#c4e0cb"
+                                    color: OrchardAppearance.accentStrong
                                     font.family: "Inter"
                                     font.pixelSize: 10
                                 }

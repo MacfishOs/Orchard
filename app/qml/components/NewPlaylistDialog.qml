@@ -85,7 +85,7 @@ Popup {
     }
 
     background: Rectangle {
-        color: "#181b1e"
+        color: OrchardAppearance.popupColor
         radius: 14
         border.color: "#35ffffff"
         border.width: 1
@@ -104,7 +104,7 @@ Popup {
         onClicked: root.source = value
         contentItem: Text {
             text: choice.text
-            color: choice.chosen ? "#10120e" : choice.enabled ? "#d6d9d4" : "#5c625d"
+            color: choice.chosen ? OrchardAppearance.onAccent : choice.enabled ? "#d6d9d4" : "#5c625d"
             font.family: "Inter"
             font.pixelSize: 12
             font.weight: Font.DemiBold
@@ -113,7 +113,7 @@ Popup {
         }
         background: Rectangle {
             radius: 8
-            color: choice.chosen ? "#8cc5a5" : choice.hovered && choice.enabled ? "#1effffff" : "#14ffffff"
+            color: choice.chosen ? OrchardAppearance.accent : choice.hovered && choice.enabled ? "#1effffff" : "#14ffffff"
         }
     }
 
@@ -163,7 +163,7 @@ Popup {
             background: Rectangle {
                 radius: 10
                 color: "#1b201c"
-                border.color: nameField.activeFocus ? "#8cc5a5" : "#3a413b"
+                border.color: nameField.activeFocus ? OrchardAppearance.accent : "#3a413b"
             }
         }
 
@@ -225,7 +225,7 @@ Popup {
                 onClicked: root.create(false)
                 contentItem: Text {
                     text: createButton.text
-                    color: createButton.enabled ? "#10120e" : "#6b716c"
+                    color: createButton.enabled ? OrchardAppearance.onAccent : "#6b716c"
                     font.family: "Inter"
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
@@ -236,7 +236,7 @@ Popup {
                     implicitWidth: 84
                     implicitHeight: 34
                     radius: 8
-                    color: !createButton.enabled ? "#2a302c" : createButton.hovered ? "#a3d6b8" : "#8cc5a5"
+                    color: !createButton.enabled ? "#2a302c" : createButton.hovered ? Qt.lighter(OrchardAppearance.accent, 1.1) : OrchardAppearance.accent
                 }
             }
         }

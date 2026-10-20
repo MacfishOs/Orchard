@@ -96,7 +96,7 @@ Rectangle {
                 radius: height / 2
                 color: retry.hovered ? "#f6f4ef" : "#f1efea"
                 opacity: retry.enabled ? 1 : 0.6
-                border.color: retry.activeFocus ? "#b8d4bd" : "transparent"
+                border.color: retry.activeFocus ? OrchardAppearance.accentStrong : "transparent"
                 border.width: 2
             }
             contentItem: Row {

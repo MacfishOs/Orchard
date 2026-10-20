@@ -70,13 +70,13 @@ ColumnLayout {
             text: body.confirmText
             background: Rectangle {
                 radius: height / 2
-                color: body.destructive ? (confirm.hovered ? "#d98273" : "#c9705f") : (confirm.hovered ? "#7fb596" : "#6fa587")
+                color: body.destructive ? (confirm.hovered ? "#d98273" : "#c9705f") : (confirm.hovered ? Qt.lighter(OrchardAppearance.accent, 1.1) : OrchardAppearance.accent)
                 border.color: confirm.activeFocus ? "#f2eee7" : "transparent"
             }
             contentItem: Text {
                 text: confirm.text
                 font: confirm.font
-                color: "#10120e"
+                color: body.destructive ? "#10120e" : OrchardAppearance.onAccent
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }

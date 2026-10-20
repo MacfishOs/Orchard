@@ -20,7 +20,7 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Caption above one translucent panel. Rows (SettingsRow) set rowSpacing and verticalPadding to 0.
+// Caption above one card. Rows (SettingsRow) set rowSpacing and verticalPadding to 0.
 Item {
     id: root
     property string title
@@ -32,14 +32,13 @@ Item {
     implicitHeight: panel.y + panel.height
     transform: Translate { id: slide; y: 0 }
 
-    // Panels rise in one after another when a section loads. The Mexican wave of settings.
     SequentialAnimation {
         id: entrance
         property int delay: 0
         PauseAnimation { duration: entrance.delay }
         ParallelAnimation {
             NumberAnimation { target: root; property: "opacity"; to: 1; duration: 260; easing.type: Easing.OutCubic }
-            NumberAnimation { target: slide; property: "y"; to: 0; duration: 340; easing.type: Easing.OutCubic }
+            NumberAnimation { target: slide; property: "y"; to: 0; duration: 420; easing.type: Easing.OutQuint }
         }
     }
 
@@ -51,16 +50,14 @@ Item {
 
         Text {
             id: caption
-            x: 4
-            width: parent.width - 4
+            x: 2
+            width: parent.width - 2
             visible: root.title.length > 0
             text: root.title
-            color: "#8d968e"
+            color: "#f0eee7"
             font.family: "Inter"
-            font.pixelSize: 12
+            font.pixelSize: 14
             font.weight: Font.DemiBold
-            font.letterSpacing: 0.9
-            font.capitalization: Font.AllUppercase
             elide: Text.ElideRight
         }
     }
@@ -70,15 +67,16 @@ Item {
         y: heading.height
         width: parent.width
         height: body.implicitHeight + root.verticalPadding * 2
-        radius: 16
-        color: "#0affffff"
-        border.color: "#1cffffff"
+        radius: 8
+        color: "#0dffffff"
+        border.color: "#12ffffff"
+        Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
         ColumnLayout {
             id: body
-            x: 20
+            x: 18
             y: root.verticalPadding
-            width: panel.width - 40
+            width: panel.width - 36
             spacing: root.rowSpacing
         }
     }

@@ -45,7 +45,7 @@ class SongLinksCoordinatorTest {
         )
         coordinator.shareTrack(track)
         val ready = coordinator.shareState.value as SongShareState.Ready
-        assertEquals("https://song.link/y/dQw4w9WgXcQ", ready.shareUrl)
+        assertEquals("https://music.youtube.com/watch?v=dQw4w9WgXcQ", ready.shareUrl)
 
         coordinator.dismissShare()
         assertNull(coordinator.shareState.value)

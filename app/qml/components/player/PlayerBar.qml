@@ -179,6 +179,8 @@ Item {
         onAccentTargetChanged: fade.restart()
         onOnAccentTargetChanged: fade.restart()
         onInkTargetChanged: fade.restart()
+        // Feeds the "match the album art" accent; transparent tells settings to fall back.
+        onAccentChanged: OrchardAppearance.artworkAccent = artworkPalette.ready ? accent : "transparent"
         Component.onCompleted: {
             accent = accentTarget;
             onAccent = onAccentTarget;

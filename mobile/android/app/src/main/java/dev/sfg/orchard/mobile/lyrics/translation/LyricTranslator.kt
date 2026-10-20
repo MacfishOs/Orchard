@@ -79,6 +79,7 @@ class LyricTranslator(
     private val apiKeys = TranslationApiKeys(context.applicationContext)
     private val account = dev.sfg.orchard.mobile.auth.OrchardAccountService.get(context)
     private val accountRemote = AccountLyricTranslation(http, account)
+    val accountQuota = accountRemote.quota
     private val remote = RemoteLyricTranslation(http)
     data class ApiKeyState(val saved: Set<LyricTranslationProvider>, val message: String = "") {
         fun has(provider: LyricTranslationProvider) = provider in saved
@@ -121,6 +122,11 @@ class LyricTranslator(
     )
 
     init {
+        scope.launch {
+            account.state.map { it.email to it.deviceId }.distinctUntilChanged().collectLatest {
+                accountRemote.clearQuota()
+            }
+        }
         scope.launch(Dispatchers.IO) { mutableInstalled.value = packs.installedPacks() }
         val wanted = settings.map {
             Config(it.translateLyrics && (it.lyricTranslationProvider != LyricTranslationProvider.LOCAL || TranslationNative.available),
@@ -155,6 +161,16 @@ class LyricTranslator(
     fun retry() {
         removed = null
         retries.update { it + 1 }
+    }
+
+    suspend fun refreshAccountQuota() {
+        try {
+            accountRemote.refreshQuota()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            accountRemote.clearQuota()
+        }
     }
 
     fun saveApiKey(provider: LyricTranslationProvider, raw: String) {

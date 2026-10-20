@@ -58,7 +58,9 @@ Orchard listens to the audio rather than trusting a catalog. Smart Crossfade and
 * Home, search, library, playlists, albums, and artists
 * Native YouTube Music sign-in through a dedicated Compose screen - sign in for your library, or skip it and browse as a guest
 * Offline metadata cache and a configurable audio cache for instant re-listens
-* Synced and unsynced lyrics from Orchard's resolver chain
+* Synced and unsynced lyrics with provider switches, saved priority order, and a source picker for each song
+
+Open **Settings → Appearance → Lyrics providers** to enable Bini Lyrics, BetterLyrics, LyricsPlus, LRCLIB, or YouTube Music and move them up or down. The first enabled provider with lyrics wins. In the lyrics player, use **Lyrics source** to choose a different provider for the current song, or return to **Automatic**. Song-specific choices last for the current app session; the global order and switches are saved.
 
 ### Connected listening
 
@@ -68,7 +70,7 @@ Orchard listens to the audio rather than trusting a catalog. Smart Crossfade and
 * **Orchard account** - Google sign-in, an encrypted device session, and device management in Settings
 * **Apple Music** - sign in with MusicKit JS in a WebView; the session cookies persist and the WebView closes after sign-in
 * Discord Rich Presence, with animated artwork where available and an artist portrait over the cover
-* Shareable song.link and album.link URLs, matching desktop
+* Direct YouTube Music share links, matching desktop
 
 ## Install
 

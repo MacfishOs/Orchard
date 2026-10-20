@@ -18,6 +18,7 @@
  */
 
 import ".."
+import Orchard
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -28,9 +29,11 @@ ItemDelegate {
 
     property string glyph: "book-open"
     property string label: "Docs"
+    // Accent dot for unread news, such as replies on a bug report.
+    property bool badge: false
 
-    implicitHeight: 40
-    leftPadding: 12
+    implicitHeight: 38
+    leftPadding: 14
     rightPadding: 12
     hoverEnabled: true
     Accessible.name: label
@@ -39,32 +42,40 @@ ItemDelegate {
         spacing: 12
 
         LucideIcon {
-            Layout.preferredWidth: 17
-            Layout.preferredHeight: 17
+            Layout.preferredWidth: 18
+            Layout.preferredHeight: 18
             name: link.glyph
-            color: "#a4aaa1"
+            color: OrchardAppearance.accent
         }
 
         Text {
             Layout.fillWidth: true
             text: link.label
-            color: "#c9ccc4"
+            color: "#d6d9d5"
             font.family: "Inter"
             font.pixelSize: 14
+        }
+
+        Rectangle {
+            visible: link.badge
+            Layout.preferredWidth: 8
+            Layout.preferredHeight: 8
+            radius: 4
+            color: OrchardAppearance.accent
         }
 
         LucideIcon {
             Layout.preferredWidth: 14
             Layout.preferredHeight: 14
             name: "chevron-right"
-            color: "#7c857f"
+            color: "#9aa19c"
         }
     }
 
     background: Rectangle {
-        radius: 10
-        color: link.down ? "#22ffffff" : link.hovered ? "#14ffffff" : "transparent"
-        border.color: link.visualFocus ? "#a6d4bf" : "transparent"
+        radius: 6
+        color: link.down ? "#0cffffff" : link.hovered ? "#0fffffff" : "transparent"
+        border.color: link.visualFocus ? OrchardAppearance.accentStrong : "transparent"
         Behavior on color { ColorAnimation { duration: 120 } }
     }
 }
