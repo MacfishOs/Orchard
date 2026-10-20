@@ -19,6 +19,7 @@
 
 import { AppleMusicError } from './client.js';
 import { APPLE_MUSIC_SOURCE, parseBrowseId } from './ids.js';
+import { isLibraryId } from './library.js';
 import { ARTIST_INCLUDES, album, artworkUrl, items, notes, playlist, releaseInfo, track, yearOf } from './normalize.js';
 
 const SEARCH_TYPES = { songs: 'songs', albums: 'albums', artists: 'artists', playlists: 'playlists' };
@@ -29,7 +30,7 @@ function requireId(id, type) {
   return parsed.id;
 }
 
-export function createCatalog(client) {
+export function createCatalog(client, library) {
   const catalogPath = (path) => `/v1/catalog/${client.storefront()}/${path}`;
 
   async function resourceWithTracks(type, id) {
@@ -48,6 +49,8 @@ export function createCatalog(client) {
   }
 
   async function albumPage(id) {
+    const appleId = requireId(id, 'albums');
+    if (isLibraryId(appleId)) return library.libraryAlbumPage(appleId, id);
     const { resource, tracks } = await resourceWithTracks('albums', id);
     const attributes = resource.attributes || {};
     const card = album(resource);
@@ -73,6 +76,8 @@ export function createCatalog(client) {
   }
 
   async function playlistPage(id) {
+    const appleId = requireId(id, 'playlists');
+    if (isLibraryId(appleId)) return library.libraryPlaylistPage(appleId, id);
     const { resource, tracks } = await resourceWithTracks('playlists', id);
     const attributes = resource.attributes || {};
     const card = playlist(resource);

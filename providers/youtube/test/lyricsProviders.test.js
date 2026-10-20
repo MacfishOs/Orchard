@@ -72,13 +72,23 @@ test('each provider resolves independently and reports its own source', async (t
         assert.equal(id, track.id);
         assert.equal(provider, 'youtube');
         return 'Found lyrics';
-      } });
+      }, appleTtml: provider === 'apple' ? ttml : '' });
       const result = await resolver(track, provider);
       assert.equal(result.status, 'ready');
       assert.equal(result.source, provider);
       assert.equal(result.lines[0].text, 'Found lyrics');
-      if (provider === 'youtube') assert.equal(called.length, 0);
+      if (provider === 'youtube' || provider === 'apple') assert.equal(called.length, 0);
       else assert.equal(result.lines[0].startTime, 1);
     });
   }
+});
+
+test('Apple lyrics without TTML from the host are unavailable and never fetch', async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = () => assert.fail('Unexpected request');
+  const resolver = createLyricsResolver({ loadYouTubeLyricsText: async () => '' });
+  const result = await resolver(track, 'apple');
+  assert.equal(result.status, 'unavailable');
+  assert.equal(result.source, 'apple');
 });

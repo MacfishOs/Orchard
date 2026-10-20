@@ -268,7 +268,8 @@ const methods = new Map([
 async function resolveLyrics(payload = {}) {
   const session = payload.session || {};
   const resolver = createLyricsResolver({
-    loadYouTubeLyricsText: (videoId) => loadYouTubeLyricsText({ session, videoId })
+    loadYouTubeLyricsText: (videoId) => loadYouTubeLyricsText({ session, videoId }),
+    appleTtml: String(payload.appleTtml || '')
   });
   const track = payload.track || {};
   return payload.provider ? resolver(track, String(payload.provider)) : resolveLyricsChain(resolver, track, payload.providers);

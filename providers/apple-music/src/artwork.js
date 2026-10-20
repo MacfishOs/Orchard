@@ -18,50 +18,16 @@
  */
 
 import { browseId, parseBrowseId } from './ids.js';
+import { findSong, sameArtist, sameTitle } from './match.js';
 import { artworkUrl } from './normalize.js';
 
 const CANDIDATES = 10;
-
-function normalized(value) {
-  return String(value || '')
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/&/g, 'and')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
-/** Drops "(feat. X)", "[Deluxe]" and " - Single" so YouTube and Apple spellings meet. */
-function editionless(value) {
-  const stripped = String(value || '')
-    .replace(/\s*[([][^)\]]*[)\]]/g, '')
-    .replace(/\s+-\s+[^-]*\b(single|ep|deluxe|edition|version|remaster(ed)?|expanded|anniversary|bonus)\b.*$/i, '');
-  return normalized(stripped) || normalized(value);
-}
-
-function sameTitle(left, right) {
-  const a = editionless(left);
-  return a !== '' && a === editionless(right);
-}
-
-function sameArtist(left, right) {
-  const a = normalized(left);
-  const b = normalized(right);
-  return a !== '' && b !== '' && (a === b || a.includes(b) || b.includes(a));
-}
 
 /** Search results carry no relationships; the album id is in the song's web URL. */
 function albumIdOf(song) {
   const fromRelationship = song?.relationships?.albums?.data?.[0]?.id;
   if (fromRelationship) return fromRelationship;
   return /\/album\/[^/]+\/(\d+)/.exec(String(song?.attributes?.url || ''))?.[1] || '';
-}
-
-function pickSong(songs, { title, artist, album }) {
-  const matches = songs.filter((song) =>
-    sameTitle(song.attributes?.name, title) && sameArtist(song.attributes?.artistName, artist));
-  return matches.find((song) => album && sameTitle(song.attributes?.albumName, album)) || matches[0] || null;
 }
 
 export function createArtworkCatalog(client) {
@@ -85,19 +51,8 @@ export function createArtworkCatalog(client) {
     };
   }
 
-  async function songAlbumId({ appleId, isrc, title, artist, album }) {
-    if (appleId) {
-      const song = (await client.get(path('songs', appleId))).data?.[0];
-      return albumIdOf(song);
-    }
-    if (isrc) {
-      const songs = (await client.get(path('songs'), { 'filter[isrc]': isrc })).data || [];
-      const id = albumIdOf(pickSong(songs, { title, artist, album }) || songs[0]);
-      if (id) return id;
-    }
-    if (!title || !artist) return '';
-    const result = await client.get(path('search'), { term: `${title} ${artist}`, types: 'songs', limit: CANDIDATES });
-    return albumIdOf(pickSong(result.results?.songs?.data || [], { title, artist, album }));
+  async function songAlbumId(query) {
+    return albumIdOf(await findSong(client, query));
   }
 
   async function albumIdByName(name, artist) {

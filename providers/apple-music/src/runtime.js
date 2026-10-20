@@ -52,6 +52,14 @@ const methods = new Map([
   // Hosts parse the reply as an object, so a miss is {} rather than null.
   ['catalog.artwork', async (payload = {}) => (await appleMusic.artwork(payload)) || {}],
   ['catalog.search', async (payload = {}) => appleMusic.search(payload.query, payload.filter)],
+  ['library', async () => appleMusic.library()],
+  ['library.playlists', async () => ({ items: await appleMusic.libraryPlaylists() })],
+  ['library.like.status', async (payload = {}) => appleMusic.likeStatus(payload.track)],
+  ['library.like.set', async (payload = {}) => appleMusic.setLike(payload.track, Boolean(payload.liked))],
+  ['library.playlist.targets', async () => ({ playlists: await appleMusic.playlistTargets() })],
+  ['library.playlist.add', async (payload = {}) => appleMusic.addToPlaylist(payload.track, payload.playlistId, payload.title)],
+  ['library.playlist.create', async (payload = {}) => appleMusic.createPlaylist(payload.title, payload.track)],
+  ['lyrics', async (payload = {}) => (await appleMusic.lyrics(payload)) || {}],
   ['close', async () => {
     session = null;
     return null;

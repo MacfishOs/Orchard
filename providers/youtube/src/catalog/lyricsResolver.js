@@ -204,7 +204,8 @@ async function resolveLrclibLyrics(track = {}) {
 }
 
 // Lyrics: the only part of a song everyone is confident about until the chorus.
-export function createLyricsResolver({ loadYouTubeLyricsText }) {
+// [appleTtml] is Apple Music's TTML for this track, fetched by the host's Apple Music provider.
+export function createLyricsResolver({ loadYouTubeLyricsText, appleTtml = '' }) {
   async function resolveYoutubeLyrics(track = {}) {
     if (!track.id) return { status: 'unavailable', mode: '', lines: [], source: 'youtube' };
 
@@ -233,6 +234,14 @@ export function createLyricsResolver({ loadYouTubeLyricsText }) {
     if (provider === 'amlyrics') return resolveLyricsChain(resolveLyrics, track, lyricsProviders.slice(0, 3));
     if (provider === 'youtube') return resolveYoutubeLyrics(track);
     if (provider === 'lrclib') return resolveLrclibLyrics(track);
+    if (provider === 'apple') {
+      try {
+        if (appleTtml) return normalizeAmLyricsLines(parseAmLyricsTtml(appleTtml), 'apple');
+      } catch {
+        // Malformed TTML lets the configured chain continue.
+      }
+      return { status: 'unavailable', mode: '', lines: [], source: 'apple' };
+    }
     const metadata = lyricsMetadata(track);
     if (metadata) {
       try {
@@ -250,7 +259,7 @@ export function createLyricsResolver({ loadYouTubeLyricsText }) {
   };
 }
 
-export const lyricsProviders = Object.freeze(['bini', 'betterlyrics', 'lyricsplus', 'lrclib', 'youtube']);
+export const lyricsProviders = Object.freeze(['bini', 'betterlyrics', 'lyricsplus', 'lrclib', 'youtube', 'apple']);
 
 export async function resolveLyricsChain(resolveLyrics, track = {}, providers = lyricsProviders) {
   const order = Array.isArray(providers) ? [...new Set(providers)].filter((id) => lyricsProviders.includes(id)) : lyricsProviders;

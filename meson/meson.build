@@ -104,6 +104,7 @@ app_sources = [
   'app/src/lyrics/translation/translation_worker.cpp',
   'app/src/lyrics/translation/translation_worker.h',
   'app/src/library/library_actions.cpp',
+  'app/src/library/library_actions_apple.cpp',
   'app/src/library/library_actions.h',
   'app/src/offline/connectivity_monitor.cpp',
   'app/src/offline/connectivity_monitor.h',
@@ -532,8 +533,12 @@ apple_music_sources = [
   'providers/apple-music/src/home.js',
   'providers/apple-music/src/ids.js',
   'providers/apple-music/src/index.js',
+  'providers/apple-music/src/library.js',
+  'providers/apple-music/src/lyrics.js',
+  'providers/apple-music/src/match.js',
   'providers/apple-music/src/normalize.js',
   'providers/apple-music/src/runtime.js',
+  'providers/apple-music/src/webToken.js',
 ]
 
 

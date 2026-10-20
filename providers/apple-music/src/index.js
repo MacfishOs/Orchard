@@ -21,6 +21,9 @@ import { createArtistCatalog } from './artist.js';
 import { createArtworkCatalog } from './artwork.js';
 import { createCatalog } from './catalog.js';
 import { createHomeCatalog } from './home.js';
+import { createLibraryCatalog } from './library.js';
+import { createLibraryWrites } from './libraryWrite.js';
+import { createLyricsCatalog } from './lyrics.js';
 import { createAppleMusicClient } from './client.js';
 
 export { AppleMusicError, apiUrl } from './client.js';
@@ -35,10 +38,14 @@ export { artworkUrl, releaseInfo } from './normalize.js';
 export function createAppleMusic({ fetchImpl = fetch, session }) {
   if (typeof session !== 'function') throw new TypeError('createAppleMusic requires a session() function');
   const client = createAppleMusicClient({ fetchImpl, session });
+  const library = createLibraryCatalog(client);
   return {
     ...createArtistCatalog(client),
     ...createArtworkCatalog(client),
-    ...createCatalog(client),
-    ...createHomeCatalog(client)
+    ...createCatalog(client, library),
+    ...createHomeCatalog(client),
+    ...library,
+    ...createLibraryWrites(client),
+    ...createLyricsCatalog(client)
   };
 }

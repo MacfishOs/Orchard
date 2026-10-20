@@ -34,6 +34,14 @@ Apple resources travel as Orchard browse ids `am.<type>.<id>`, such as
 | `catalog.playlist` | `browseId` | playlist page with every track |
 | `catalog.artwork` | `albumId`, `appleId`, `isrc`, or `title`, `artist`, `album` (`kind: "album"` for albums) | `{albumId, name, artist, static, animated, animatedVertical}`, or `{}` when nothing matches |
 | `catalog.search` | `query`, `filter` | sections keyed `songs`, `albums`, `artists`, `playlists` |
+| `library` | none | the listener's library as sections keyed `artists`, `albums`, `songs`, `playlists` |
+| `library.playlists` | none | `{items}`: every playlist in the listener's library |
+| `library.like.status` | `track` | `{liked, songId}` from the song's rating |
+| `library.like.set` | `track`, `liked` | loves (and saves) or unloves the song; `{liked, songId}` |
+| `library.playlist.targets` | none | `{playlists}`: the listener's editable playlists |
+| `library.playlist.add` | `track`, `playlistId`, `title` | `{playlistId, title}` |
+| `library.playlist.create` | `title`, optional `track` | `{playlistId, title}` |
+| `lyrics` | `appleId`, `isrc`, or `title`, `artist`, `album` | `{songId, ttml}`, or `{}` when Apple has no lyrics |
 
 Apple API failures return `{error: {code, status, message}}`. Codes include
 `not_connected`, `not_signed_in`, `developer_token` (401), `user_token` (403),
@@ -61,6 +69,28 @@ back to YouTube Music if Apple Music is disconnected or Home fails.
 
 Apple Music tracks are catalog metadata; the hosts match them to YouTube Music
 for playback. Apple Music subscription audio is not streamed.
+
+## Library
+
+`library` reads `/v1/me/library/*` with the Music User Token. Cards use the
+catalog id from `playParams.catalogId` when Apple has one, so library songs
+match catalog songs for playback, artwork and lyrics. Library-only resources
+keep their library ids (`p.`, `l.`, `i.`), and `catalog.playlist` and
+`catalog.album` open `am.playlists.p.…` and `am.albums.l.…` from the library.
+Each section fails on its own and carries an `error`.
+
+The `library.like.*` and `library.playlist.*` writes take a track from any
+service and match it to a catalog song (library-only songs keep
+their `i.` id). Loving a song also adds it to the library, so it appears under
+Songs. Apple's API cannot remove or reorder playlist tracks.
+
+## Lyrics
+
+`lyrics` finds the catalog song like `catalog.artwork` does and reads
+`syllable-lyrics`, then `lyrics`, from `amp-api.music.apple.com` with
+music.apple.com's web token and the listener's token as `Media-User-Token`.
+It returns the raw TTML. The YouTube provider parses it through `lyrics.resolve`
+as the `apple` source, so Apple lyrics sit in the listener's provider order.
 
 ## Animated artwork
 

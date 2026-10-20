@@ -294,6 +294,7 @@ int main(int argc, char *argv[]) {
   syncDiscordLyrics();
   SleepTimer sleepTimer(playback.get());
   lyrics->setLocalLibrary(&localLibrary);
+  lyrics->setAppleMusic(&appleMusic);
   // Lyrics in English, courtesy of a 20 MB model that has never heard a song in its life.
   LyricsTranslator lyricsTranslation(lyrics.get());
   lyricsTranslation.setAccount(&orchardAccount);
@@ -303,6 +304,7 @@ int main(int argc, char *argv[]) {
   QObject::connect(&localLibrary, &LocalLibrary::noticeRequested, &backend, &BackendInfo::noticeRequested);
   QObject::connect(&downloads, &DownloadManager::noticeRequested, &backend, &BackendInfo::noticeRequested);
   auto libraryActions = std::make_unique<LibraryActions>(&youtubeProvider, &authManager, playback.get(), homeController.get());
+  libraryActions->setAppleMusic(&appleMusic, &catalogSource);
   QObject::connect(libraryActions.get(), &LibraryActions::removedFromPlaylist,
                    playlistController.get(), &PlaylistController::removeTrack);
   // Phone in one hand, desktop in the other, and only one of them gets to be the DJ.

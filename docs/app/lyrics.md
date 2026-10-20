@@ -10,6 +10,7 @@ keywords:
   - lyrics unavailable
   - lrclib
   - betterlyrics
+  - apple music lyrics
   - lyrics providers
   - provider priority
   - translate lyrics
@@ -46,7 +47,7 @@ In the fullscreen player, the lyrics fade out halfway through a blend. Orchard l
 
 ## Find out where lyrics come from
 
-The lyrics view shows "Lyrics from" followed by the source. The sources are Bini Lyrics, BetterLyrics, LyricsPlus, LRCLIB, and YouTube Music.
+The lyrics view shows "Lyrics from" followed by the source. The sources are Bini Lyrics, BetterLyrics, LyricsPlus, LRCLIB, and YouTube Music. While Apple Music is connected, Apple Music's own lyrics take the place of Bini Lyrics, BetterLyrics, and LyricsPlus.
 
 ## Choose and rank lyrics providers
 

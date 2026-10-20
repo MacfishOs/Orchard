@@ -83,39 +83,60 @@ export function createAppleMusicClient({ fetchImpl, session }) {
     return response.json();
   }
 
+  /** POST, PUT or DELETE on the listener's library; null when Apple answers without a body. */
+  async function send(method, path, body) {
+    const init = { method, headers: headers(true) };
+    if (body !== undefined) {
+      init.headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify(body);
+    }
+    const response = await fetchImpl(apiUrl(path), init);
+    if (!response.ok) {
+      const [code, message] = statusCodes.get(response.status) || ['http', `Apple Music returned ${response.status}.`];
+      throw new AppleMusicError(response.status, code, message);
+    }
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+  }
+
   /**
    * [path] from music.apple.com's API with its web token, for listeners signed in to Apple
-   * Music only. Null when unavailable so callers fall back to [get].
+   * Music only. Null when unavailable so callers fall back to [get]. [personal] reads such
+   * as lyrics also send the listener's token, which music.apple.com calls Media-User-Token.
    */
-  async function editorial(path, query = {}) {
-    if (!(session() || {}).userToken) return null;
+  async function editorial(path, query = {}, { personal = false } = {}) {
+    const userToken = (session() || {}).userToken;
+    if (!userToken) return null;
     const token = await webToken.get();
     if (!token) return null;
+    const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json', Origin: WEB_ORIGIN, Referer: `${WEB_ORIGIN}/` };
+    if (personal) headers['Media-User-Token'] = userToken;
     let response;
     try {
-      response = await fetchImpl(apiUrl(path, query, EDITORIAL_ORIGIN), {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', Origin: WEB_ORIGIN, Referer: `${WEB_ORIGIN}/` }
-      });
+      response = await fetchImpl(apiUrl(path, query, EDITORIAL_ORIGIN), { headers });
     } catch {
       return null;
     }
     if (response.ok) return response.json();
     if (response.status === 404) throw new AppleMusicError(404, 'not_found', statusCodes.get(404)[1]);
-    // Apple rotates the web token; refetch it on the next request.
-    if (response.status === 401 || response.status === 403) webToken.reset();
+    // Apple rotates the web token; refetch it on the next request. A personal read may
+    // instead be refusing the listener's token, which a new web token would not fix.
+    if (!personal && (response.status === 401 || response.status === 403)) webToken.reset();
     return null;
   }
 
   /** Every resource behind a paginated list, following `next` up to [maxPages]. */
   async function all(path, query = {}, maxPages = MAX_PAGES) {
     const items = [];
-    const includes = Object.fromEntries(Object.entries(query)
-      .filter(([key]) => key === 'include' || key.startsWith('include[')));
+    const carried = Object.entries(query)
+      .filter(([key]) => key === 'limit' || key === 'include' || key.startsWith('include['));
     let page = await get(path, query);
     for (let count = 1; ; count++) {
       items.push(...(page.data || []));
       if (!page.next || count >= maxPages) return { items, next: page.next || '' };
-      page = await get(page.next, includes);
+      // Apple's next links keep the offset but may drop the page size and includes.
+      const next = page.next;
+      page = await get(next, Object.fromEntries(carried.filter(([key]) => !next.includes(`${encodeURIComponent(key)}=`))));
     }
   }
 
@@ -123,5 +144,5 @@ export function createAppleMusicClient({ fetchImpl, session }) {
     return (session() || {}).storefront || 'us';
   }
 
-  return { get, editorial, all, storefront };
+  return { get, send, editorial, all, storefront };
 }
