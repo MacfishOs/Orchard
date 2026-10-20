@@ -2,7 +2,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { hashSecret } from './crypto.js';
-import { HttpError, json, nowSeconds, requireSession } from './http.js';
+import { HttpError, json, nowSeconds } from './http.js';
+import { readTranslationQuota, translationContext } from './translation_quota.js';
 
 import { inferSong, translationFailure } from './translation_inference.js';
 export { TRANSLATION_MODEL } from './translation_inference.js';
@@ -53,10 +54,18 @@ function retryError(status, code, message, seconds) {
 }
 
 export async function translateSong(request, env) {
-  const claims = await requireSession(request, env);
-  // Cloudflare sets this header at ingress. Never trust forwarded headers or body IPs.
-  const ip = request.headers.get('cf-connecting-ip');
-  if (!ip) throw new HttpError(403, 'missing_client_ip', 'Translation requires a Cloudflare connection');
+  const context = await translationContext(request, env);
+  try {
+    const result = await translateAuthorizedSong(request, env, context);
+    return json({ ...result, quota: await readTranslationQuota(env, context) });
+  } catch (error) {
+    if (!(error instanceof HttpError)) throw error;
+    return json({ error: error.code, error_description: error.message,
+      quota: await readTranslationQuota(env, context) }, error.status, error.headers);
+  }
+}
+
+async function translateAuthorizedSong(request, env, { accountId, ipHash }) {
   const { songId, lines } = await readSong(request);
   const lyricsHash = await hashSecret(JSON.stringify(lines));
   const key = [songId, TRANSLATION_REVISION, lyricsHash];
@@ -67,12 +76,11 @@ export async function translateSong(request, env) {
     'SELECT translations, expires_at FROM lyric_translations WHERE song_id = ? AND revision = ? AND lyrics_hash = ?',
   ).bind(...key).first();
   if (cached?.expires_at > now) {
-    if (cached.translations) return json({ song_id: songId, lines: JSON.parse(cached.translations), cached: true });
+    if (cached.translations) return { song_id: songId, lines: JSON.parse(cached.translations), cached: true };
     throw retryError(409, 'translation_pending', 'This song is being translated. Try again shortly.', 5);
   }
   if (!env.AI) throw new HttpError(503, 'translation_unavailable', 'Account translation is unavailable');
   const lease = crypto.randomUUID();
-  const ipHash = await hashSecret(`${env.SIGNING_KEY}\u001ftranslation-ip\u001f${ip}`);
   try {
     await env.DB.prepare('DELETE FROM lyric_translations WHERE song_id = ? AND revision = ? AND lyrics_hash = ? AND expires_at <= ?')
       .bind(...key, now).run();
@@ -80,11 +88,11 @@ export async function translateSong(request, env) {
       `INSERT INTO lyric_translations (song_id, revision, lyrics_hash, lease_token, expires_at, account_id, ip_hash, day)
        SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE NOT EXISTS
        (SELECT 1 FROM lyric_translations WHERE song_id = ? AND revision = ? AND lyrics_hash = ?)`,
-    ).bind(...key, lease, now + LEASE_SECONDS, claims.sub, ipHash, day, ...key).run();
+    ).bind(...key, lease, now + LEASE_SECONDS, accountId, ipHash, day, ...key).run();
     if (!result.meta?.changes) throw retryError(409, 'translation_pending', 'This song is being translated. Try again shortly.', 5);
   } catch (error) {
     if (error.message?.includes('translation_daily_limit')) {
-      throw retryError(429, 'translation_daily_limit', 'The account or IP has reached 10 songs today. Resets at 00:00 UTC.', resetSeconds);
+      throw retryError(429, 'translation_daily_limit', 'The daily translation limit has been reached. Resets at 00:00 UTC.', resetSeconds);
     }
     throw error;
   }
@@ -96,7 +104,7 @@ export async function translateSong(request, env) {
       WHERE song_id = ? AND revision = ? AND lyrics_hash = ? AND lease_token = ?`)
       .bind(JSON.stringify(translated), nowSeconds() + CACHE_SECONDS, ...key, lease).run();
     console.log(JSON.stringify({ event: 'translation.completed', request_id: lease, elapsed_ms: Date.now() - startedAt }));
-    return json({ song_id: songId, lines: translated, cached: false });
+    return { song_id: songId, lines: translated, cached: false };
   } catch (error) {
     const { failure, upstreamCode } = translationFailure(error);
     console.error(JSON.stringify({ event: 'translation.failed', request_id: lease, elapsed_ms: Date.now() - startedAt,

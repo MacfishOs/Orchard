@@ -28,6 +28,7 @@ import { ACCESS_TOKEN_AUDIENCE, publicJwk, signJwt } from "./jwt.js";
 import { createReport, getReport, isScreenshotPath, listReports, markReportRead, serveScreenshot } from "./support.js";
 import { githubWebhook } from "./support_sync.js";
 import { translateSong, purgeTranslations } from "./translation.js";
+import { translationQuota } from "./translation_quota.js";
 
 export const ACCESS_TOKEN_SECONDS = 15 * 60;
 export const AUTH_REQUEST_SECONDS = 10 * 60;
@@ -313,6 +314,7 @@ async function route(request, env, ctx) {
     await rateLimit(env, request, "apple");
     return appleDeveloperToken(request, env);
   }
+  if (method === "GET" && pathname === "/lyrics/quota") return translationQuota(request, env);
   if (method === "POST" && pathname === "/lyrics/translate") {
     const translation = translateSong(request, env);
     ctx?.waitUntil(translation.catch(() => {}));

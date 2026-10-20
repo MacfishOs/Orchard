@@ -107,7 +107,15 @@ does not implement Sign in with Apple or issue Orchard sessions.
 ## Lyric translation
 
 `POST /lyrics/translate` accepts `{song_id, lines}` for a whole song and returns
-`{song_id, lines, cached}` with exactly one English output for each input line.
+`{song_id, lines, cached, quota}` with exactly one English output for each input line.
+`GET /lyrics/quota` returns `{quota}` without consuming an allowance or running inference.
+Both routes require an active session and Cloudflare client IP. The quota contains
+`daily_limit`, `account_remaining`, `ip_remaining` (null for elevated accounts),
+`remaining` (the effective allowance after any shared IP limit), and `resets_at`
+(Unix seconds at the next UTC midnight). Translation errors after authentication
+and IP validation also include the current quota. Clients refresh it when opening
+translation settings, every minute while those settings are visible, and from
+translation responses; they show an unavailable allowance if quota data is missing.
 The model is fixed server-side to `@cf/google/gemma-4-26b-a4b-it` using the `AI`
 binding. Client model, identity, IP, quota, and reset fields are ignored.
 
@@ -116,10 +124,13 @@ revision, and a server-computed lyrics digest. The digest protects line alignmen
 when lyric sources differ. Cache reads require the same session/device checks as
 misses, and cache hits are free across accounts.
 
-Each cache miss reserves one slot in both the authenticated account's quota and
-Cloudflare's `CF-Connecting-IP` quota. Each quota allows 10 starts per UTC day and
-resets at 00:00 UTC from the server clock, independently of cron. D1 triggers check
-both counters and charge admission atomically, including concurrent requests.
+Each cache miss reserves one slot in the authenticated account's quota, which
+defaults to 10 starts per UTC day. Accounts with a limit of 10 or less also share
+a 10-start quota on Cloudflare's `CF-Connecting-IP`. Accounts with an elevated
+allowance only use their account quota, so a shared network cannot block their
+allowance and their translations do not consume other accounts' IP quota.
+Quotas reset at 00:00 UTC from the server clock, independently of cron. D1 triggers
+check counters and charge admission atomically, including concurrent requests.
 Changing song IDs or lyric content requires another admission. Failed generation
 counts too; failed or partial output is never cached. Missing Cloudflare IP fails
 closed. IPs are hashed with the signing key before storage, and completed cache
@@ -137,11 +148,27 @@ Structured logs record start, completion, elapsed time, and stable failure codes
 lyric text and credentials are excluded.
 The hourly purge removes expired entries and old daily counters.
 
-Apply migration `0005_translation.sql` and include `ai: {binding: "AI"}` in the
-production Wrangler config before deploying. The ignored production config on
+Apply all account migrations, including `0007_translation_allowances.sql`, and
+include `ai: {binding: "AI"}` in the production Wrangler config before deploying.
+The ignored production config on
 this checkout includes that binding; the tracked TOML includes its equivalent.
 The model's binding and completion format are documented in the
 [Cloudflare model reference](https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/).
+
+### Per-account daily allowances
+
+To give a donor 50 translations per UTC day, look up their Orchard account by
+sign-in email in `users`, verify the ID, then run this SQL in the production D1
+console (replace the placeholder with that ID):
+
+```sql
+UPDATE users SET translation_daily_limit = 50 WHERE id = 'ACCOUNT_ID';
+SELECT id, email, translation_daily_limit FROM users WHERE id = 'ACCOUNT_ID';
+```
+
+The allowance is recurring and takes effect immediately without signing in
+again. Starts already used today count toward the 50. Set the value back to 10
+to restore the default. Account deletion also removes the allowance.
 
 ## Artwork
 
