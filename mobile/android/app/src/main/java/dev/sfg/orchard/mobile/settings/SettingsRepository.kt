@@ -31,6 +31,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import dev.sfg.orchard.mobile.model.AudioQuality
 import dev.sfg.orchard.mobile.model.ArtworkSource
 import dev.sfg.orchard.mobile.model.EqualizerConfig
+import dev.sfg.orchard.mobile.model.LyricTranslationLanguage
 import dev.sfg.orchard.mobile.model.LyricTranslationQuality
 import dev.sfg.orchard.mobile.model.LyricTranslationProvider
 import dev.sfg.orchard.mobile.model.NonMusicSkipMode
@@ -102,6 +103,8 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 videoMaxHeight = values[VIDEO_MAX_HEIGHT] ?: OrchardSettings.DEFAULT_VIDEO_MAX_HEIGHT,
                 translateLyrics = values[TRANSLATE_LYRICS] ?: false,
                 lyricsProviders = decodeLyricsProviders(values[LYRICS_PROVIDERS]),
+                lyricTranslationLanguage = LyricTranslationLanguage.entries
+                    .firstOrNull { it.key == values[LYRIC_TRANSLATION_LANGUAGE] } ?: LyricTranslationLanguage.ENGLISH,
                 lyricTranslationQuality = LyricTranslationQuality.entries
                     .firstOrNull { it.key == values[LYRIC_TRANSLATION_QUALITY] } ?: LyricTranslationQuality.STANDARD,
                 lyricTranslationProvider = LyricTranslationProvider.entries
@@ -163,6 +166,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
                 it[VIDEO_MAX_HEIGHT] = value.videoMaxHeight
                 it[TRANSLATE_LYRICS] = value.translateLyrics
                 it[LYRICS_PROVIDERS] = encodeLyricsProviders(value.lyricsProviders)
+                it[LYRIC_TRANSLATION_LANGUAGE] = value.lyricTranslationLanguage.key
                 it[LYRIC_TRANSLATION_QUALITY] = value.lyricTranslationQuality.key
                 it[LYRIC_TRANSLATION_PROVIDER] = value.lyricTranslationProvider.key
                 it[LYRIC_TRANSLATION_MODELS] = org.json.JSONObject(value.lyricTranslationModels).toString()
@@ -256,6 +260,7 @@ class SettingsRepository(context: Context, private val scope: CoroutineScope) {
         val VIDEO_MAX_HEIGHT = intPreferencesKey("video_max_height")
         val TRANSLATE_LYRICS = booleanPreferencesKey("translate_lyrics")
         val LYRICS_PROVIDERS = stringPreferencesKey("lyrics_providers")
+        val LYRIC_TRANSLATION_LANGUAGE = stringPreferencesKey("lyric_translation_language")
         val LYRIC_TRANSLATION_QUALITY = stringPreferencesKey("lyric_translation_quality")
         val LYRIC_TRANSLATION_PROVIDER = stringPreferencesKey("lyric_translation_provider")
         val LYRIC_TRANSLATION_MODELS = stringPreferencesKey("lyric_translation_models")
