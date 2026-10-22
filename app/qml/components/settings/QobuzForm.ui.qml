@@ -35,29 +35,10 @@ ColumnLayout {
     property alias cancelButton: cancelButton
     property alias disconnectButton: disconnectButton
 
-    spacing: 22
+    spacing: 16
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 4
-
-        Text {
-            text: qsTr("Qobuz lossless playback")
-            color: "#f0eee7"
-            font.family: "Inter"
-            font.pixelSize: 14
-            font.weight: Font.Medium
-        }
-
-        SettingsHint {
-            text: qsTr("Connect your own Qobuz subscription to unlock the MAX streaming quality: lossless and Hi-Res up to 24-bit/192 kHz. YouTube Music stays the catalog, and songs Qobuz can't match play from YouTube. Adaptive mix is unavailable while MAX is on.")
-        }
-    }
-
-    Rectangle {
-        Layout.fillWidth: true
-        Layout.preferredHeight: 1
-        color: "#12ffffff"
+    SettingsHint {
+        text: qsTr("Lossless and Hi-Res playback (up to 24-bit/192 kHz) with the MAX streaming quality. Adaptive mix is unavailable while MAX is on.")
     }
 
     RowLayout {
@@ -68,14 +49,6 @@ ColumnLayout {
             Layout.fillWidth: true
             spacing: 4
 
-            Text {
-                text: qsTr("Account")
-                color: "#f0eee7"
-                font.family: "Inter"
-                font.pixelSize: 13
-                font.weight: Font.Medium
-            }
-
             SettingsHint {
                 text: root.status === "restoring" ? qsTr("Checking for a saved Qobuz connection...")
                     : root.status === "connecting" ? qsTr("Waiting for you to sign in to Qobuz in your browser.")
@@ -83,7 +56,7 @@ ColumnLayout {
                         ? (root.active
                             ? qsTr("Connected. Streaming quality is MAX, so matching songs play from Qobuz.")
                             : qsTr("Connected. Choose MAX under Settings, Playback, Streaming quality to play from Qobuz."))
-                        : qsTr("Connect a Qobuz account with an active subscription. This uses Qobuz's private web API, so it may break when Qobuz changes its web player.")
+                        : qsTr("Connect a Qobuz account with an active subscription.")
             }
         }
 

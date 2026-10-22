@@ -37,11 +37,11 @@ The small circle over the cover shows the artist portrait from TheAudioDB when a
 
 1. Start the Discord desktop app.
 2. Open Orchard **Settings**, then **Integrations**.
-3. In the **Discord** card, turn on the **Discord Rich Presence** switch.
+3. In the **Discord** card, turn on the **Rich Presence** switch.
 
-Every other Discord control is dimmed and disabled while the switch is off. The Discord card ends with a status line:
+Every other Discord control is dimmed and disabled while the switch is off. The line under **Rich Presence** shows the status:
 
-- "Discord Rich Presence is off."
+- "Show your current track in Discord." while the switch is off.
 - "Connected to Discord."
 - "Connecting to Discord…" while Orchard waits for a presence update response.
 - "Discord is unavailable:" followed by the reason when the connection fails.
@@ -52,7 +52,7 @@ During a crossfade or Adaptive mix, Discord's state text shows **Mixing into** t
 
 ## Change the text shown in Discord
 
-Three text boxes shape what Discord shows. Each one accepts these variables: `{song}`, `{artist}`, `{album}`, `{platform}`, `{status}`, `{app}`, `{position}`, `{duration}`, and `{url}`.
+Select **Customize text and display** in the Discord card to open a window with the text boxes and lists. Three text boxes shape what Discord shows. Each one accepts these variables: `{song}`, `{artist}`, `{album}`, `{platform}`, `{status}`, `{app}`, `{position}`, `{duration}`, and `{url}`.
 
 - **Activity text template**: the main line. The default is `{song}`.
 - **Secondary text template**: an optional second line, empty by default.
@@ -99,7 +99,7 @@ While Orchard waits for approval, the card says "Approve Orchard on Last.fm, the
 
 ## Pause Last.fm scrobbling
 
-Turn off the **Last.fm scrobbling** switch. The card then says "Connected as" followed by your user name and "Scrobbling is paused." The account stays connected. The switch is on by default. Orchard does not scrobble live streams.
+Turn off the **Scrobbling** switch. The card then says "Connected as" followed by your user name and "Scrobbling is paused." The account stays connected. The switch is on by default. Orchard does not scrobble live streams.
 
 ## Disconnect Last.fm
 
