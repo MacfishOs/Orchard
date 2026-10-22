@@ -290,4 +290,17 @@ Item {
             overlays.shell.wakeFullscreen();
         }
     }
+
+    // mpv-style speed steps; they need the Audio Engine.
+    Shortcut {
+        sequence: "["
+        enabled: overlays.shell.visible && !overlays.welcomeOpen && OrchardPlayback.audioEngine.enabled && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.readerOpen() && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
+        onActivated: OrchardPlayback.audioEngine.nudgeSpeed(-1)
+    }
+
+    Shortcut {
+        sequence: "]"
+        enabled: overlays.shell.visible && !overlays.welcomeOpen && OrchardPlayback.audioEngine.enabled && !overlays.overlayOpen(spotlightLoader) && !overlays.overlayOpen(settingsLoader) && !overlays.readerOpen() && !supportHost.popupOpen && !overlays.shell.isEditableFocused()
+        onActivated: OrchardPlayback.audioEngine.nudgeSpeed(1)
+    }
 }
