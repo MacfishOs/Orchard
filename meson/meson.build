@@ -157,6 +157,8 @@ app_sources = [
   'app/src/playback/music_video_controller.h',
   'app/src/playback/letterbox.cpp',
   'app/src/playback/letterbox.h',
+  'app/src/playback/autoplay_select.cpp',
+  'app/src/playback/autoplay_select.h',
   'app/src/playback/music_video_match.cpp',
   'app/src/playback/music_video_match.h',
   'app/src/playback/stream_download.h',

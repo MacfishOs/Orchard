@@ -502,6 +502,7 @@ if get_option('tests')
     ['connect_tracks', 'tests/connect/connect_tracks_test.cpp'],
     ['connect_mix', 'tests/connect/connect_mix_test.cpp'],
     ['adaptive_mix_output', 'tests/adaptive_mix_output_test.cpp'],
+    ['autoplay_select', 'tests/autoplay_select_test.cpp'],
     ['music_video_match', 'tests/music_video_match_test.cpp'],
     ['letterbox', 'tests/letterbox_test.cpp'],
     ['video_ambient', 'tests/video_ambient_test.cpp'],
