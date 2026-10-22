@@ -134,6 +134,9 @@ void PlaybackController::wirePlayer(QMediaPlayer *source) {
           [this, source](QMediaPlayer::Error error, const QString &message) {
             if (source->source().isEmpty())
               return;
+            if (qEnvironmentVariableIsSet("ORCHARD_PLAYBACK_TIMING"))
+              qInfo() << "Playback:" << (source == m_player ? "current" : "preload")
+                      << "decoder error" << error << message;
             if (source == m_player) {
               const bool retryable = error == QMediaPlayer::ResourceError ||
                                      error == QMediaPlayer::NetworkError;
