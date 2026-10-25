@@ -64,7 +64,7 @@ Column {
 
             Text {
                 width: parent.width
-                text: qsTr("Your library")
+                text: qsTr("Library")
                 color: "#f2eee7"
                 font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
                 font.pixelSize: 28

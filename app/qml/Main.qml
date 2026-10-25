@@ -68,7 +68,7 @@ Window {
         if (OrchardWindowState.initialMaximized)
             mainWindow.showMaximized();
     }
-    color: "#1c1c1f"
+    color: Qt.platform.os === "linux" ? "#9018181c" : "#1c1c1f"
     flags: nativeWindowFrame ? Qt.Window : Qt.Window | Qt.FramelessWindowHint
     onClosing: close => {
         // Closing to the tray keeps the music going; the tray menu holds the real exit.

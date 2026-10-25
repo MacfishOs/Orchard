@@ -125,7 +125,7 @@ Item {
             Text {
                 id: homeTitle
 
-                text: qsTr("Home")
+                text: qsTr("Listen Now")
                 color: "#f2eee7"
                 font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
                 font.pixelSize: 34

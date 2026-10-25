@@ -26,10 +26,43 @@ import "../../components/home"
 Item {
     id: root
 
+    property var shell
     signal settingsRequested
 
     readonly property real buttonsLeft: offlineStatus.visible ? offlineStatus.x : account.x
     readonly property real canopyPlayerWidth: Math.max(0, buttonsLeft - 12)
+
+    Row {
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 8
+
+        Button {
+            id: backButton
+            width: 32
+            height: 32
+            enabled: root.shell ? root.shell.history.length > 0 : false
+            opacity: enabled ? 1 : 0.35
+            ToolTip.visible: hovered && enabled
+            ToolTip.text: qsTr("Back")
+            Accessible.name: qsTr("Back")
+            onClicked: if (root.shell) root.shell.goBack()
+
+            background: Rectangle {
+                radius: 16
+                color: backButton.hovered && backButton.enabled ? "#24ffffff" : "#10ffffff"
+                border.color: backButton.activeFocus ? OrchardAppearance.accent : "transparent"
+                Behavior on color { ColorAnimation { duration: Motion.fast } }
+            }
+            contentItem: LucideIcon {
+                anchors.centerIn: parent
+                name: "chevron-left"
+                width: 16
+                height: 16
+                color: backButton.enabled ? "#ffffff" : "#66ffffff"
+            }
+        }
+    }
 
     OfflineStatusButton {
         id: offlineStatus

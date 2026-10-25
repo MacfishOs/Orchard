@@ -29,6 +29,7 @@
 #include "docs/docs_embedder.h"
 #include "docs/docs_library.h"
 #include "appearance/appearance_settings.h"
+#include "appearance/cutefish_window_blur.h"
 #include "appearance/ui_scaling.h"
 #include "appearance/animated_artwork_service.h"
 #include "appearance/artwork_video_cache.h"
@@ -173,6 +174,10 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setOrganizationName(QStringLiteral("SFG545"));
   QCoreApplication::setApplicationName(QStringLiteral("Orchard"));
   UiScaling::configure();
+
+  QSurfaceFormat surfaceFormat = QSurfaceFormat::defaultFormat();
+  surfaceFormat.setAlphaBufferSize(8);
+  QSurfaceFormat::setDefaultFormat(surfaceFormat);
 
   // QApplication for QSystemTrayIcon, whose menus are still widgets in 2026.
   QApplication application(argc, argv);
@@ -391,6 +396,8 @@ int main(int argc, char *argv[]) {
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardWindowState"), &windowState);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardStartup"), &startup);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardScreenWake"), &screenWake);
+  engine.rootContext()->setContextProperty(QStringLiteral("CutefishBlur"),
+                                           CutefishWindowBlur::instance());
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardUpdates"), &updates);
   engine.rootContext()->setContextProperty(QStringLiteral("OrchardReleaseNotes"),
                                            bundledReleaseNotes());
@@ -413,6 +420,7 @@ int main(int argc, char *argv[]) {
   if (auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().constFirst())) {
     tray.setWindow(window);
     windowState.setWindow(window);
+    CutefishWindowBlur::instance()->setWindow(window);
 #ifdef Q_OS_WIN
     systemMedia.start(window->winId());
 #else

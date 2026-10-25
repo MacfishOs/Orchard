@@ -245,6 +245,9 @@ app_sources = [
 app_executable_sources = [
   'app/src/appearance/artwork_palette.cpp',
   'app/src/appearance/artwork_palette.h',
+  'app/src/appearance/cutefish_window_blur.cpp',
+  'app/src/appearance/cutefish_window_blur.h',
+  'app/src/appearance/cutefish-surface-blur-v1-protocol.c',
   'app/src/appearance/kawarp_background.cpp',
   'app/src/appearance/kawarp_background.h',
   'app/src/appearance/liquid_glass.cpp',

@@ -55,7 +55,7 @@ Item {
     // Cutefish OS Color Palette (Light & Dark mode support)
     readonly property bool isDarkMode: true
     readonly property color cutefishBg: isDarkMode ? "#1C1C1F" : "#F5F6FA"
-    readonly property color cutefishSidebarBg: isDarkMode ? Qt.rgba(0.14, 0.14, 0.16, 0.86) : Qt.rgba(0.95, 0.95, 0.97, 0.90)
+    readonly property color cutefishSidebarBg: isDarkMode ? Qt.rgba(0.09, 0.09, 0.11, 0.48) : Qt.rgba(0.95, 0.95, 0.97, 0.60)
     readonly property color cutefishContainerBg: isDarkMode ? "#2C2C2D" : "#FFFFFF"
     readonly property color cutefishText: isDarkMode ? "#FFFFFF" : "#323238"
     readonly property color cutefishSecondaryText: isDarkMode ? "#888888" : "#64646E"
@@ -109,9 +109,13 @@ Item {
     // bar changes (the progress ticker) also skip redrawing the page. Draw once, blur everywhere.
     layer.enabled: true
 
-    // Cutefish OS main window background
+    // Cutefish OS main content background (starts after sidebar)
     Rectangle {
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.leftMargin: scene.sidebarWidth
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
         color: scene.cutefishBg
         z: -2
     }
@@ -130,7 +134,18 @@ Item {
         brightness: OrchardAppearance.brightness
     }
 
-    // Cutefish OS native sidebar background (#232326 in dark mode)
+    // Frosted glass blur under sidebar when immersive backdrop is active
+    Glass {
+        anchors.fill: sidebarBg
+        backdrop: immersive
+        radius: 0
+        blurRadius: 36
+        live: OrchardAppearance.immersiveBackground && immersive.running
+        visible: OrchardAppearance.immersiveBackground && immersive.ready
+        z: -1
+    }
+
+    // Cutefish OS native sidebar background (translucent so native blur shines through)
     Rectangle {
         id: sidebarBg
         anchors.left: parent.left
@@ -198,8 +213,8 @@ Item {
                 OrchardSearch.clear();
             }
         }
-        onPageRequested: function(page) {
-            scene.shell.navigateTo(page);
+        onPageRequested: function(page, filter) {
+            scene.shell.navigateTo(page, filter);
         }
         onPlaylistRequested: function(playlist) {
             scene.shell.openDetail("playlist", playlist);
@@ -337,6 +352,7 @@ Item {
     AppTopBar {
         id: topBar
 
+        shell: scene.shell
         anchors.left: home.left
         anchors.right: home.right
         anchors.top: parent.top

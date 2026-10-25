@@ -117,6 +117,10 @@ platform_deps = [thread_dep]
 # DBus (Linux) and IOKit (macOS) back the screen wake lock.
 if host_machine.system() == 'linux'
   platform_deps += [cpp.find_library('dl'), cpp.find_library('m'), dependency('qt6', modules: ['DBus'])]
+  wayland_client_dep = dependency('wayland-client', required: false)
+  if wayland_client_dep.found()
+    platform_deps += [wayland_client_dep]
+  endif
   # X11 visibility events detect a fully covered window.
   xcb_dep = dependency('xcb', required: false)
   if xcb_dep.found()
@@ -350,6 +354,7 @@ qml_module = qt6.qml_module('Orchard', version: '1.0',
   include_directories: app_inc,
   dependencies: [qt_dep])
 exe_moc = qt6.compile_moc(sources: ['app/src/appearance/liquid_glass.cpp'],
+  headers: ['app/src/appearance/cutefish_window_blur.h'],
   include_directories: app_inc, dependencies: [qt_dep, qt_gui_private])
 
 adaptive_platform = get_option('adaptive_platform')

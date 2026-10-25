@@ -57,7 +57,7 @@ Item {
     property color accentInkColor: "#09100b"
     property color inkColor: "#080c0a"
 
-    readonly property int coverRadius: 12
+    readonly property int coverRadius: 14
     readonly property real coverSize: compact ? Math.min(width, 240) : width
 
     signal bylineClicked(Item anchor, real x, real y)
@@ -77,19 +77,19 @@ Item {
         id: ghost
         property string glyph
         property color glyphColor: "#eef0ec"
-        width: 40
-        height: 40
-        padding: 11
+        width: 38
+        height: 38
+        padding: 9
         opacity: enabled ? 1 : 0.4
         ToolTip.visible: hovered && ToolTip.text.length > 0
         ToolTip.delay: 400
         background: Rectangle {
-            radius: 6
-            color: ghost.hovered ? "#1fffffff" : "transparent"
-            border.color: ghost.activeFocus ? root.accentSoftColor : "#33ffffff"
+            radius: 19
+            color: ghost.hovered ? "#24ffffff" : "#12ffffff"
+            border.color: ghost.activeFocus ? root.accentSoftColor : "#18ffffff"
             Behavior on color { ColorAnimation { duration: 120 } }
         }
-        contentItem: LucideIcon { name: ghost.glyph; color: ghost.glyphColor }
+        contentItem: LucideIcon { name: ghost.glyph; color: ghost.glyphColor; anchors.centerIn: parent; width: 17; height: 17 }
     }
 
     Column {
@@ -245,8 +245,8 @@ Item {
                 scale: down ? 0.97 : 1
                 Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                 background: Rectangle {
-                    radius: 8
-                    color: playButton.hovered ? "white" : "#f1efea"
+                    radius: 20
+                    color: playButton.hovered ? "#ffffff" : "#f1efea"
                     border.color: playButton.activeFocus ? root.accentSoftColor : "transparent"
                     border.width: 2
                 }
@@ -285,8 +285,8 @@ Item {
                 scale: down ? 0.97 : 1
                 Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                 background: Rectangle {
-                    radius: 8
-                    color: shuffleButton.hovered ? "#35353a" : "#28282c"
+                    radius: 20
+                    color: shuffleButton.hovered ? "#38383e" : "#28282d"
                     border.color: shuffleButton.activeFocus ? root.accentSoftColor : "#18ffffff"
                 }
                 contentItem: Item {

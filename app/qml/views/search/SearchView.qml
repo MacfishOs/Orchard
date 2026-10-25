@@ -66,7 +66,7 @@ Item {
     component Caption: Text {
         color: "#f2f0eb"; font.family: "SF Pro Text, SF Pro, Inter, sans-serif"; font.pixelSize: 12; elide: Text.ElideRight
     }
-    component Panel: Rectangle { radius: 12; color: "#28282c"; border.color: "#18ffffff" }
+    component Panel: Rectangle { radius: 12; color: "#232327"; border.color: "#14ffffff" }
     component Options: Button {
         id: options
         property var media: ({})
@@ -149,7 +149,7 @@ Item {
                         Column {
                             anchors.left: heroArt.right; anchors.leftMargin: 26; anchors.right: parent.right; anchors.rightMargin: 32
                             anchors.verticalCenter: parent.verticalCenter; spacing: 6
-                            Caption { text: qsTr("Top result"); color: "#bdbdb5"; font.pixelSize: 11 }
+                            Caption { text: qsTr("TOP RESULT"); color: "#8e8e93"; font.pixelSize: 10; font.weight: Font.DemiBold }
                             Caption { width: parent.width; text: root.topResult.title || ""; font.pixelSize: 24; font.weight: Font.DemiBold }
                             Caption { width: parent.width; text: root.credit(root.topResult); font.pixelSize: 17; color: "#dfdfd8" }
                             Caption { width: parent.width; text: [root.topResult.views, root.topResult.year].filter(Boolean).join(" • "); visible: Boolean(text); color: "#bcbdb6" }

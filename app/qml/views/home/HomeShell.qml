@@ -65,7 +65,7 @@ Item {
     function openSupport(reportId) { overlays.openSupport(reportId); }
     function openSpotlight(query) { overlays.openSpotlight(query); }
 
-    function navigateTo(page) {
+    function navigateTo(page, filter) {
         searchDebounce.stop();
         root.history = [];
         root.currentItem = ({
@@ -76,6 +76,12 @@ Item {
             scene.sidebar.clearSearch();
         }
         root.currentPage = page;
+        if (page === "library" && filter) {
+            Qt.callLater(() => {
+                if (scene.libraryLoader.item)
+                    scene.libraryLoader.item.filter = filter;
+            });
+        }
         if (page === "search") {
             scene.sidebar.focusSearch();
             if (root.searchQuery.trim())
