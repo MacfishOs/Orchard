@@ -26,6 +26,7 @@
 #include <QPointer>
 #include <QRegularExpression>
 #include <QStringList>
+#include <QUrl>
 #include <QtGlobal>
 
 QByteArray highResArtworkUrl(const QByteArray &url)
@@ -198,6 +199,9 @@ bool SystemMediaBridge::publish(const QVariantMap &state)
         artworkUrl = bytes(trackMap, "cover");
     }
     if (artworkUrl.isEmpty()) {
+        artworkUrl = bytes(trackMap, "coverPath");
+    }
+    if (artworkUrl.isEmpty()) {
         const QVariant thumbs = trackMap.value(QStringLiteral("thumbnails"));
         if (thumbs.canConvert<QVariantList>()) {
             const QVariantList list = thumbs.toList();
@@ -210,6 +214,9 @@ bool SystemMediaBridge::publish(const QVariantMap &state)
         }
     }
     artworkUrl = highResArtworkUrl(artworkUrl);
+    if (!artworkUrl.isEmpty() && artworkUrl.startsWith('/')) {
+        artworkUrl = QUrl::fromLocalFile(QString::fromUtf8(artworkUrl)).toString().toUtf8();
+    }
     QByteArray url = bytes(trackMap, "url");
     if (url.isEmpty() && !id.isEmpty()) {
         url = "https://music.youtube.com/watch?v=" + id;
