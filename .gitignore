@@ -15,3 +15,7 @@ node_modules/
 __pycache__/
 *.pyc
 **/wrangler.production.jsonc
+
+# Logs
+*.log
+
