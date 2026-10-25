@@ -20,8 +20,7 @@
 #pragma once
 
 class QObject;
+class QQmlEngine;
 
-// Periodically hands freed heap pages back to the OS on glibc. Layers that
-// re-render every frame churn vertex buffers between long-lived allocations,
-// and glibc otherwise keeps those freed pages resident. No-op elsewhere.
-void startHeapTrim(QObject *owner);
+// Periodically hands freed heap pages back to the OS on glibc and collects QML GC.
+void startHeapTrim(QObject *owner, QQmlEngine *engine = nullptr);

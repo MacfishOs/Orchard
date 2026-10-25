@@ -68,6 +68,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QFile>
+#include <QPixmapCache>
 #include <QFileInfo>
 #include <QFont>
 #include <QFontDatabase>
@@ -84,6 +85,7 @@
 #include <QTimer>
 #include <QUrl>
 #include <QVulkanInstance>
+#include <QVulkanFunctions>
 #include <chrono>
 #include <cstdlib>
 #include <memory>
@@ -202,11 +204,21 @@ int main(int argc, char *argv[]) {
   if (!qEnvironmentVariableIsSet("QSG_RHI_BACKEND") &&
       !qEnvironmentVariableIsSet("QT_QUICK_BACKEND")) {
     QVulkanInstance vulkanProbe;
-    if (vulkanProbe.create())
-      QQuickWindow::setGraphicsApi(QSGRendererInterface::Vulkan);
+    if (vulkanProbe.create()) {
+      uint32_t deviceCount = 0;
+      auto *vkFunctions = vulkanProbe.functions();
+      if (vkFunctions &&
+          vkFunctions->vkEnumeratePhysicalDevices(vulkanProbe.vkInstance(),
+                                                 &deviceCount, nullptr) ==
+              VK_SUCCESS &&
+          deviceCount > 0) {
+        QQuickWindow::setGraphicsApi(QSGRendererInterface::Vulkan);
+      }
+    }
   }
 #endif
   startHeapTrim(&application);
+  QPixmapCache::setCacheLimit(4096);
   authDiagnostic(QStringLiteral("startup diagnostic-build=3 built=" __DATE__ " " __TIME__));
   QObject::connect(&application, &QCoreApplication::aboutToQuit, &application, [] {
     authDiagnostic(QStringLiteral("application-quitting"));
@@ -387,6 +399,7 @@ int main(int argc, char *argv[]) {
 
   // Keep the QML folders intact; relative imports are breadcrumbs, not confetti.
   engine.load(QUrl(QStringLiteral("qrc:/qt/qml/Orchard/app/qml/Main.qml")));
+  startHeapTrim(&application, &engine);
   if (engine.rootObjects().isEmpty()) {
     QTextStream(stderr) << "Orchard could not load its QML entry point.\n";
     shutdownDeadline.exitCode = 1;

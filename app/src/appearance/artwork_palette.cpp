@@ -35,7 +35,7 @@ QHash<QString, QVariantMap> &paletteCache() {
   return cache;
 }
 
-constexpr qsizetype kPaletteCacheLimit = 64;
+constexpr qsizetype kPaletteCacheLimit = 16;
 
 } // namespace
 

@@ -186,14 +186,13 @@ if host_machine.system() == 'windows' and cpp.get_id() == 'msvc'
   keychain_lib_name = 'qt6keychain.lib'
 endif
 keychain_archive = custom_target('qtkeychain archive',
-  input: files('meson/meson.build'),
+  input: files('scripts/meson-build-qtkeychain.py'),
   output: keychain_lib_name,
   command: [python, files('scripts/meson-build-qtkeychain.py'),
     '--source', source_root / 'third_party/qtkeychain',
     '--build-dir', meson.current_build_dir() / 'qtkeychain-cmake',
     '--output', '@OUTPUT@', '--build-type', get_option('buildtype') == 'debug' ? 'Debug' : 'Release',
-    '--toolchain', meson.current_build_dir() / 'third_party/quickjs/__CMake_build/CMakeMesonToolchainFile.cmake'],
-  build_always_stale: true)
+    '--toolchain', meson.current_build_dir() / 'third_party/quickjs/__CMake_build/CMakeMesonToolchainFile.cmake'])
 keychain_deps = [qt_dep]
 if host_machine.system() == 'linux'
   keychain_deps += [dependency('qt6', modules: ['DBus']), dependency('libsecret-1')]

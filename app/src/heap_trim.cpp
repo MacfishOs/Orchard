@@ -20,20 +20,30 @@
 #include "heap_trim.h"
 
 #include <QObject>
+#include <QQmlEngine>
 #include <QTimer>
 
 #if defined(__GLIBC__)
 #include <malloc.h>
 #endif
 
-void startHeapTrim(QObject *owner) {
+void startHeapTrim(QObject *owner, QQmlEngine *engine) {
 #if defined(__GLIBC__)
+  mallopt(M_TRIM_THRESHOLD, 64 * 1024);
+  mallopt(M_MMAP_THRESHOLD, 64 * 1024);
+
   auto *timer = new QTimer(owner);
-  timer->setInterval(30000);
-  timer->setTimerType(Qt::VeryCoarseTimer);
-  QObject::connect(timer, &QTimer::timeout, timer, [] { malloc_trim(0); });
+  timer->setInterval(3000);
+  timer->setTimerType(Qt::CoarseTimer);
+  QObject::connect(timer, &QTimer::timeout, owner, [engine] {
+    if (engine) {
+      engine->collectGarbage();
+    }
+    malloc_trim(0);
+  });
   timer->start();
 #else
   Q_UNUSED(owner);
+  Q_UNUSED(engine);
 #endif
 }

@@ -104,7 +104,7 @@ private:
   QNetworkAccessManager m_network;
   QNetworkReply *m_artworkReply{nullptr};
   QNetworkReply *m_artistArtworkReply{nullptr};
-  QCache<QString, AudioDbArtist> m_artistArtworkCache{64};
+  QCache<QString, AudioDbArtist> m_artistArtworkCache{16};
   QVariantMap m_pendingItem;
   QVariantMap m_detail;
   QVariantMap m_palette;

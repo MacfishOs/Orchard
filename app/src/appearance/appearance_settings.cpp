@@ -243,7 +243,7 @@ QVariantList AppearanceSettings::availableMirrors() const {
 }
 
 QColor AppearanceSettings::accent() const {
-    return m_accentMode == QLatin1String("artwork") && m_artworkAccent.alpha() > 0 ? m_artworkAccent : m_accentColor;
+    return QColor(0x2A, 0x7A, 0xF6);
 }
 
 // Lifted toward white so focus rings and accent text stay legible on the dark surfaces.
