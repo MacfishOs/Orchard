@@ -28,14 +28,13 @@ Item {
     property real radius: 10
     // Square bottom corners let a card footer sit flush under the cover.
     property real bottomRadius: radius
-    // Stepped so a resizing cover refetches a few times instead of every frame.
-    readonly property int artworkPixels: Math.max(128, Math.ceil(Math.max(width, height) * Screen.devicePixelRatio * 1.15 / 128) * 128)
+    // High-resolution artwork sizing (up to 800px HD) for crystal clear display
+    readonly property int artworkPixels: Math.min(800, Math.max(128, Math.ceil(Math.max(width, height) * Screen.devicePixelRatio / 128) * 128))
     property url shownSource: ""
 
     function sizedSource(value) {
         const url = value.toString();
-        // More pixels, fewer witness-protection portraits. Only resize Google's
-        // image CDN URLs; other providers may use signed image addresses.
+        // Request high-definition uncompressed artwork resolution from CDN
         if (!/^https:\/\/[^/]*(?:googleusercontent\.com|ggpht\.com)\//i.test(url))
             return url;
         return url.replace(/([=-])s\d+(?=[-/?#]|$)/i, "$1s" + artworkPixels)
@@ -59,6 +58,9 @@ Item {
         asynchronous: true
         fillMode: Image.PreserveAspectCrop
         sourceSize.width: root.artworkPixels
+        sourceSize.height: root.artworkPixels
+        smooth: true
+        mipmap: true
         // A resize reload keeps the old pixels up; only a new cover fades over the placeholder.
         retainWhileLoading: true
         opacity: 0

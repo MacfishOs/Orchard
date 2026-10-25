@@ -79,7 +79,7 @@ RowLayout {
 
                 return false;
             }
-            implicitWidth: mainButton ? bar.controlSize + 8 : bar.controlSize
+            implicitWidth: mainButton ? 34 : modeButton ? 28 : 32
             implicitHeight: implicitWidth
             hoverEnabled: true
             focusPolicy: Qt.TabFocus
@@ -111,19 +111,15 @@ RowLayout {
 
             background: Rectangle {
                 radius: width / 2
-                border.color: transportButton.activeFocus ? bar.primaryText : "transparent"
+                border.color: transportButton.activeFocus ? "#ffffff" : "transparent"
                 color: {
                     if (transportButton.mainButton) {
-                        if (transportButton.down)
-                            return Qt.darker(bar.accentColor, 1.15);
-                        if (transportButton.hovered)
-                            return Qt.lighter(bar.accentColor, 1.08);
-                        return bar.accentColor;
+                        return transportButton.down ? "#e0e0e5" : "#ffffff";
                     }
                     if (transportButton.modeActive)
-                        return bar.tint(bar.accentColor, transportButton.hovered ? 0.3 : 0.2);
+                        return "#2a7af6";
                     if (transportButton.hovered && transportButton.enabled)
-                        return "#1fffffff";
+                        return "#22ffffff";
                     return "transparent";
                 }
                 opacity: transportButton.enabled ? 1 : 0.4
@@ -137,17 +133,17 @@ RowLayout {
                 name: transportButton.iconName
                 color: {
                     if (transportButton.mainButton)
-                        return bar.onAccentColor;
+                        return "#17171c";
 
                     if (!transportButton.enabled)
                         return "#6b6f68";
 
                     if (transportButton.modeActive)
-                        return bar.accentColor;
+                        return "#ffffff";
 
-                    return bar.controlColor;
+                    return "#ffffff";
                 }
-                implicitWidth: transportButton.mainButton ? 20 : 17
+                implicitWidth: transportButton.mainButton ? 18 : transportButton.modeButton ? 15 : 18
                 implicitHeight: implicitWidth
             }
         }

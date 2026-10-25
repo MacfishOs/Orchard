@@ -70,7 +70,7 @@ ColumnLayout {
             anchors.verticalCenter: parent.verticalCenter
             text: info.track.title || qsTr("Nothing playing")
             color: info.albumLinked && titleHover.containsMouse ? info.accentColor : info.primaryText
-            font.family: "Inter"
+            font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
             font.pixelSize: info.compact ? 22 : 26
             font.weight: Font.Bold
             font.underline: info.albumLinked && titleHover.containsMouse
@@ -109,7 +109,7 @@ ColumnLayout {
             width: Math.min(implicitWidth, Math.max(0, parent.width - (info.track.album ? 40 : 0)))
             text: info.artistText
             color: artistHover.containsMouse ? info.primaryText : info.dim
-            font.family: "Inter"
+            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
             font.pixelSize: 16
             font.weight: Font.Medium
             elide: Text.ElideRight

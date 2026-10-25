@@ -168,27 +168,8 @@ Item {
             fullscreenLoader.item.wake();
     }
 
-    // The window follows the player into fullscreen, and only leaves it if the player put it there.
+    // Opens Now Playing inside the window without forcing OS fullscreen
     function setFullscreen(open) {
-        const win = root.Window.window;
-        if (win && open && !OrchardAppearance.fullscreenWindowed && win.visibility !== Window.FullScreen) {
-            root.visibilityBeforeFullscreen = win.visibility;
-            if (win.visibility === Window.Windowed)
-                root.sizeBeforeFullscreen = Qt.size(win.width, win.height);
-            win.showFullScreen();
-        } else if (win && !open && root.visibilityBeforeFullscreen !== -1) {
-            if (win.visibility === Window.FullScreen) {
-                if (root.visibilityBeforeFullscreen === Window.Maximized) {
-                    // Go through Windowed so the compositor issues a fresh maximize configure.
-                    win.showNormal();
-                    restoreMaximize.restart();
-                } else {
-                    win.showNormal();
-                    root.restoreWindowedSize(win);
-                }
-            }
-            root.visibilityBeforeFullscreen = -1;
-        }
         root.measureFullscreenOrigin();
         root.fullscreenOpen = open;
     }
@@ -399,6 +380,7 @@ Item {
         visible: !root.fullscreenCovering
         onQueueRequested: root.queueOpen = !root.queueOpen
         onExpandRequested: root.setFullscreen(true)
+        onMiniPlayerRequested: mainWindow.toggleMiniPlayer()
         onAlbumRequested: function(album) {
             root.openDetail("album", album);
         }

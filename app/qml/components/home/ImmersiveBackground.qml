@@ -29,7 +29,7 @@ KawarpBackground {
 
     layer.enabled: visible && ready
     layer.textureSize: Qt.size(Math.max(2, Math.round(width * renderScale)), Math.max(2, Math.round(height * renderScale)))
-    layer.format: ShaderEffectSource.RGBA16F
+    layer.format: ShaderEffectSource.RGBA8
     layer.smooth: true
 
     layer.effect: ShaderEffect {

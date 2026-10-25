@@ -48,7 +48,7 @@ Item {
         spacing: 36
         boundsBehavior: Flickable.StopAtBounds
         model: root.feed
-        cacheBuffer: 400
+        cacheBuffer: 150
         ScrollBar.vertical.width: 5
 
         header: Item {

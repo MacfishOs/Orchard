@@ -76,6 +76,7 @@ Item {
     Image {
         id: bannerProbe
         source: root.banner
+        sourceSize.width: 128
         asynchronous: true
         visible: false
     }
@@ -184,6 +185,7 @@ Item {
                     anchors.fill: parent
                     source: root.poster.length > 0 ? root.poster : root.banner
                     fillMode: Image.PreserveAspectCrop
+                    sourceSize.width: 1920
                     // Banners keep heads near the top; video frames are composed around the middle.
                     verticalAlignment: root.poster.length > 0 ? Image.AlignVCenter : Image.AlignTop
                     asynchronous: true
@@ -275,7 +277,7 @@ Item {
             text: root.title
             horizontalAlignment: Text.AlignHCenter
             color: "#ffffff"
-            font.family: "Inter"
+            font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
             font.pixelSize: root.nameSize
             font.weight: Font.Bold
             font.letterSpacing: -root.nameSize * 0.02

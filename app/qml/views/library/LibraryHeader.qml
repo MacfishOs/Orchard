@@ -66,9 +66,10 @@ Column {
                 width: parent.width
                 text: qsTr("Your library")
                 color: "#f2eee7"
-                font.family: "Inter"
-                font.pixelSize: 26
-                font.weight: Font.DemiBold
+                font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
+                font.pixelSize: 28
+                font.weight: Font.Bold
+                font.letterSpacing: -0.5
                 elide: Text.ElideRight
             }
             Text {
@@ -76,7 +77,7 @@ Column {
                 visible: root.summary !== ""
                 text: root.summary
                 color: "#a4adb1"
-                font.family: "Inter"
+                font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                 font.pixelSize: 13
                 elide: Text.ElideRight
             }
@@ -114,7 +115,7 @@ Column {
                     placeholderText: qsTr("Filter")
                     placeholderTextColor: "#8d968e"
                     color: "#f2eee7"
-                    font.family: "Inter"
+                    font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                     font.pixelSize: 13
                     Accessible.name: qsTr("Filter your library")
                     Keys.onEscapePressed: clear()

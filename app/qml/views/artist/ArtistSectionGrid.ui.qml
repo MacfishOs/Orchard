@@ -40,9 +40,10 @@ GridView {
     readonly property int cardWidth: presentation === "video" ? 258 : albumWidth
 
     clip: true
+    reuseItems: true
     boundsBehavior: Flickable.StopAtBounds
     model: section.items || []
-    cacheBuffer: 400
+    cacheBuffer: 150
     // Stretch cards to fill each row instead of leaving a ragged right edge.
     cellWidth: width / Math.max(1, Math.floor(width / (cardWidth + 14)))
     cellHeight: (presentation === "video" ? Math.round((cellWidth - 14) * 9 / 16) + 57 : cellWidth - 14 + 52) + 18

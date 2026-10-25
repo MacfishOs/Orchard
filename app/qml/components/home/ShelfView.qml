@@ -112,7 +112,6 @@ Item {
         width: Math.max(0, parent.width - (controls.visible ? controls.width + 18 : seeAll.visible ? seeAll.width + 18 : 0))
         text: root.section.title || qsTr("Music")
         color: "#f2efe7"
-        font.family: "Inter"
         font.pixelSize: 20
         font.weight: root.homeStyle ? Font.Bold : Font.DemiBold
         elide: Text.ElideRight
@@ -130,7 +129,6 @@ Item {
             rightPadding: 2
             text: root.items.length
             color: "#777b72"
-            font.family: "Inter"
             font.pixelSize: 10
         }
 
@@ -197,7 +195,6 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: seeAll.text
                 color: seeAll.hovered ? "#f2efe7" : "#a4a9ad"
-                font.family: "Inter"
                 font.pixelSize: 13
                 font.weight: Font.DemiBold
                 font.underline: seeAll.visualFocus
@@ -222,6 +219,7 @@ Item {
         anchors.topMargin: root.songlist ? 10 : 14
         height: root.implicitHeight - 42
         clip: true
+        reuseItems: true
         boundsBehavior: Flickable.StopAtBounds
         flow: GridView.FlowTopToBottom
 
@@ -229,7 +227,7 @@ Item {
         cellHeight: root.cellH
 
         model: root.items
-        cacheBuffer: 190
+        cacheBuffer: 100
 
         WheelGlide {
             id: railAnimation

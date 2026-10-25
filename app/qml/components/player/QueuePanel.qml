@@ -359,6 +359,7 @@ Item {
                     interactive: root.dragIndex < 0
                     spacing: 2
                     model: root.rows
+                    reuseItems: true
                     boundsBehavior: Flickable.StopAtBounds
 
                     ScrollBar.vertical: ScrollBar {

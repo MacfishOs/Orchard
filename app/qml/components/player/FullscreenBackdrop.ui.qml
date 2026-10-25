@@ -55,73 +55,46 @@ Item {
         width: Math.max(parent.width, parent.height) * 1.4
         height: width
         source: backdrop.thumbnail
-        sourceSize.width: 128
-        sourceSize.height: 128
+        sourceSize.width: 256
+        sourceSize.height: 256
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
-        visible: false
+        opacity: 0.001
     }
 
     property real fallbackOpacity: blurSource.status === Image.Ready ? 0.9 : 0
-    Behavior on fallbackOpacity { NumberAnimation { duration: 500 } }
-    property real fallbackRotation: 0
-    RotationAnimation on fallbackRotation {
-        running: backdrop.visible && backdrop.playing
-        from: 0
-        to: 360
-        duration: 180000
-        loops: Animation.Infinite
-    }
+    Behavior on fallbackOpacity { NumberAnimation { duration: 300 } }
 
-    Loader {
+    // Permanent high-vibrancy Gaussian artwork blur (never turns black, 0% CPU/GPU idle load)
+    MultiEffect {
         anchors.fill: blurSource
-        // Keep the fallback through entry, exit, and the warp's opacity fade.
-        active: warp.opacity < 1 || backdrop.stage0 < 1
-        sourceComponent: MultiEffect {
-            anchors.fill: parent
-            source: blurSource
-            blurEnabled: true
-            blur: 1
-            blurMax: 64
-            saturation: 0.3
-            brightness: -0.12
-            opacity: backdrop.fallbackOpacity
-            rotation: backdrop.fallbackRotation
-        }
+        source: blurSource
+        blurEnabled: true
+        blur: 1.0
+        blurMax: 64
+        saturation: 0.65
+        brightness: 0.08
+        opacity: backdrop.fallbackOpacity
     }
 
-    ImmersiveBackground {
-        id: warp
-        anchors.fill: parent
-        source: backdrop.visible ? backdrop.thumbnail : ""
-        running: backdrop.warpRunning
-        throttled: backdrop.warpThrottled
-        speed: backdrop.warpSpeed
-        intensity: backdrop.warpIntensity
-        saturation: backdrop.warpSaturation
-        brightness: backdrop.warpBrightness
-        opacity: ready ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 700 } }
-    }
-
-    // Ink falls in from the edges so text keeps its contrast on bright covers.
+    // Soft contrast wash so text reads clearly while keeping the luminous artwork colors vibrant
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
             orientation: Gradient.Horizontal
-            GradientStop { position: 0; color: Qt.rgba(backdrop.inkColor.r, backdrop.inkColor.g, backdrop.inkColor.b, 0.55) }
-            GradientStop { position: 0.5; color: Qt.rgba(backdrop.inkColor.r, backdrop.inkColor.g, backdrop.inkColor.b, 0.28) }
-            GradientStop { position: 1; color: Qt.rgba(backdrop.inkColor.r, backdrop.inkColor.g, backdrop.inkColor.b, 0.5 + 0.15 * backdrop.split) }
+            GradientStop { position: 0; color: Qt.rgba(0.05, 0.05, 0.08, 0.28) }
+            GradientStop { position: 0.45; color: Qt.rgba(0.05, 0.05, 0.08, 0.12) }
+            GradientStop { position: 1.0; color: Qt.rgba(0.05, 0.05, 0.08, 0.22 + 0.1 * backdrop.split) }
         }
     }
 
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0; color: Qt.rgba(backdrop.inkColor.r, backdrop.inkColor.g, backdrop.inkColor.b, 0.35) }
+            GradientStop { position: 0; color: Qt.rgba(0.05, 0.05, 0.08, 0.20) }
             GradientStop { position: 0.3; color: "transparent" }
             GradientStop { position: 0.75; color: "transparent" }
-            GradientStop { position: 1; color: Qt.rgba(backdrop.inkColor.r, backdrop.inkColor.g, backdrop.inkColor.b, 0.6) }
+            GradientStop { position: 1.0; color: Qt.rgba(0.05, 0.05, 0.08, 0.30) }
         }
     }
 }

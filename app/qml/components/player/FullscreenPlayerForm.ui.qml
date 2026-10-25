@@ -101,12 +101,9 @@ Item {
     readonly property real stage30: 1 - Math.pow(1 - Math.max(0, Math.min(1, (reveal - 0.3) / 0.7)), 3)
     readonly property real stage35: 1 - Math.pow(1 - Math.max(0, Math.min(1, (reveal - 0.35) / 0.65)), 3)
 
-    // Wide displays place the pane beside the player; narrow displays stack it below.
-    readonly property bool wide: width >= 980
-    property real split: pane !== "" && wide ? 1 : 0
-    Behavior on split {
-        NumberAnimation { duration: 560; easing.type: Easing.OutCubic }
-    }
+    // Always display side-by-side layout (Player controls on left, Synced lyrics on right simultaneously)
+    readonly property bool wide: true
+    property real split: 1
 
     // Column width is independent of control height to keep measurement acyclic.
     readonly property var columns: FullscreenLayout.columns(width, split, lyricsFocus)

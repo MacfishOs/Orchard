@@ -76,6 +76,7 @@ Rectangle {
             clip: true
             spacing: 2
             model: OrchardPlayback.queue || []
+            reuseItems: true
             boundsBehavior: Flickable.StopAtBounds
 
             delegate: ItemDelegate {

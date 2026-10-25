@@ -74,7 +74,7 @@ Item {
         spacing: 36
         boundsBehavior: Flickable.StopAtBounds
         model: root.feed
-        cacheBuffer: 400
+        cacheBuffer: 150
         onModelChanged: Qt.callLater(() => {
             return scroll.positionViewAtBeginning();
         })
@@ -127,8 +127,8 @@ Item {
 
                 text: qsTr("Home")
                 color: "#f2eee7"
-                font.family: "Inter"
-                font.pixelSize: 32
+                font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
+                font.pixelSize: 34
                 font.weight: Font.Bold
                 font.letterSpacing: -0.6
             }
@@ -231,7 +231,6 @@ Item {
             wrapMode: Text.Wrap
             text: OrchardHome.loading ? qsTr("Loading your music…") : OrchardHome.errorMessage || qsTr("Your music home is empty. Refresh to try again.")
             color: "#a4adb1"
-            font.family: "Inter"
             font.pixelSize: 13
         }
 

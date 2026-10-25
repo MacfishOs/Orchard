@@ -84,6 +84,7 @@ qml_sources = [
   'app/qml/components/player/MixDotFill.qml',
   'app/qml/components/player/SkipNonMusicButton.qml',
   'app/qml/components/player/PlayerSideControls.qml',
+  'app/qml/components/player/MiniPlayerWindow.qml',
   'app/qml/components/player/MusicVideoTheater.qml',
   'app/qml/components/player/TheaterBottomBar.qml',
   'app/qml/components/player/TheaterButton.qml',

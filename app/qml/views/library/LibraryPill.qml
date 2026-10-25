@@ -37,8 +37,8 @@ Button {
 
     background: Rectangle {
         radius: height / 2
-        color: root.checked ? "#f1f0ec" : root.hovered ? "#20ffffff" : "#08ffffff"
-        border.color: root.activeFocus ? OrchardAppearance.accentStrong : "#18ffffff"
+        color: root.checked ? "#2a7af6" : root.hovered ? "#35353a" : "#28282c"
+        border.color: root.activeFocus ? OrchardAppearance.accentStrong : "transparent"
         opacity: root.enabled ? 1 : 0.5
         Behavior on color { ColorAnimation { duration: Motion.normal } }
     }
@@ -55,7 +55,7 @@ Button {
                 width: 14
                 height: 14
                 name: root.iconName
-                color: root.checked ? "#171b17" : "#d2d1cc"
+                color: root.checked ? "#ffffff" : "#c2c2c6"
 
                 // Finishes the turn it is on, so the icon never freezes crooked.
                 RotationAnimator on rotation {
@@ -70,17 +70,18 @@ Button {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.text
-                color: root.checked ? "#171b17" : "#d2d1cc"
-                font.family: "Inter"
+                color: root.checked ? "#ffffff" : "#c2c2c6"
+                font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                 font.pixelSize: 13
+                font.weight: root.checked ? Font.DemiBold : Font.Normal
                 Behavior on color { ColorAnimation { duration: Motion.normal } }
             }
             Text {
                 visible: root.detail !== ""
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.detail
-                color: root.checked ? "#5b635a" : "#8d968e"
-                font.family: "Inter"
+                color: root.checked ? "#d0e0ff" : "#8d968e"
+                font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                 font.pixelSize: 12
                 font.features: { "tnum": 1 }
             }

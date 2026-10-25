@@ -23,6 +23,7 @@ import QtQuick.Controls
 ListView {
     id: root
     clip: true
+    reuseItems: true
     boundsBehavior: Flickable.StopAtBounds
     // Room to scroll the last row out from under the floating player.
     readonly property real playerInset: Window.window && Window.window.playerInset !== undefined ? Window.window.playerInset : 0

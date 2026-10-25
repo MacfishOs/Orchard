@@ -74,7 +74,7 @@ Item {
         anchors.bottom: parent.bottom
         anchors.leftMargin: 8
         anchors.rightMargin: 8
-        cacheBuffer: 400
+        cacheBuffer: 150
         model: root.tracks
 
         delegate: CollectionTrackRow {

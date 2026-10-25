@@ -64,9 +64,9 @@ Item {
     }
 
     component Caption: Text {
-        color: "#f2f0eb"; font.family: "Inter"; font.pixelSize: 12; elide: Text.ElideRight
+        color: "#f2f0eb"; font.family: "SF Pro Text, SF Pro, Inter, sans-serif"; font.pixelSize: 12; elide: Text.ElideRight
     }
-    component Panel: Rectangle { radius: 13; color: "#10ffffff"; border.color: "#14ffffff" }
+    component Panel: Rectangle { radius: 12; color: "#28282c"; border.color: "#18ffffff" }
     component Options: Button {
         id: options
         property var media: ({})
@@ -99,13 +99,14 @@ Item {
                 onClicked: root.filterRequested(modelData.value)
                 background: Rectangle {
                     radius: 16
-                    color: root.filter === tab.modelData.value ? "#f1f0ec" : tab.hovered ? "#20ffffff" : "#08ffffff"
-                    border.color: tab.activeFocus ? OrchardAppearance.accentStrong : "#18ffffff"
+                    color: root.filter === tab.modelData.value ? "#2a7af6" : tab.hovered ? "#323236" : "#242427"
+                    border.color: tab.activeFocus ? OrchardAppearance.accentStrong : "transparent"
                     Behavior on color { ColorAnimation { duration: Motion.normal } }
                 }
                 contentItem: Caption {
                     id: tabText; text: tab.modelData.label
-                    color: root.filter === tab.modelData.value ? "#171b17" : "#d2d1cc"
+                    color: root.filter === tab.modelData.value ? "#ffffff" : "#c2c2c6"
+                    font.weight: root.filter === tab.modelData.value ? Font.DemiBold : Font.Normal
                     Behavior on color { ColorAnimation { duration: Motion.normal } }
                     horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
                 }

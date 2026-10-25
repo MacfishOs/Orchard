@@ -92,7 +92,7 @@ Item {
     readonly property bool isArtist: root.media.type === "artist"
     readonly property bool isPlaylist: presentation === "playlist"
     readonly property bool insetArtwork: !plain && (isArtist || isPlaylist || root.media.type === "album")
-    readonly property real cardRadius: songlist ? 6 : 12
+    readonly property real cardRadius: songlist ? 4 : 8
     readonly property real artworkInset: 8
     // Cards without hover fill or lift, used by the Home layout.
     property bool plain: false
@@ -144,7 +144,7 @@ Item {
         RoundedArtwork {
             anchors.fill: parent
             source: root.media.thumbnail || ""
-            radius: root.isArtist ? width / 2 : (root.songlist || root.insetArtwork) ? Math.max(0, root.cardRadius - root.artworkInset) : root.plain ? 8 : 10
+            radius: root.isArtist ? width / 2 : (root.songlist || root.insetArtwork) ? Math.max(0, root.cardRadius - root.artworkInset) : root.plain ? 6 : 8
         }
 
         Timer {
@@ -206,7 +206,6 @@ Item {
                 anchors.centerIn: parent
                 text: root.media.duration || ""
                 color: "#f4f3ed"
-                font.family: "Inter"
                 font.pixelSize: 10
                 font.weight: Font.DemiBold
             }
@@ -232,7 +231,7 @@ Item {
                 width: Math.min(implicitWidth, parent.width - (explicitBadge.visible ? 20 : 0))
                 text: root.media.title || qsTr("Untitled")
                 color: root.nowPlaying ? OrchardAppearance.accentStrong : "#f2f0eb"
-                font.family: "Inter"
+                font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                 font.pixelSize: 13
                 font.weight: root.plain ? Font.Medium : Font.DemiBold
                 elide: Text.ElideRight
@@ -248,7 +247,7 @@ Item {
             width: parent.width
             text: root.caption || (root.isArtist && !root.plain ? qsTr("Artist") : (root.media.artists || []).join(", ") || root.media.artist || root.media.subtitle || root.media.type || "")
             color: "#a4a9ad"
-            font.family: "Inter"
+            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
             font.pixelSize: root.plain ? 12 : 11
             elide: Text.ElideRight
         }

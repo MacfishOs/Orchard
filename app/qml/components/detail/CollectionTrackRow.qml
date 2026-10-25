@@ -180,9 +180,9 @@ ItemDelegate {
                                     - (downloadedIcon.visible ? downloadedIcon.width + 6 : 0))
                     text: root.track.title || qsTr("Untitled track")
                     color: root.current ? root.accentSoftColor : "#f1f2ee"
-                    font.family: "Inter"
+                    font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                     font.pixelSize: 14
-                    font.weight: Font.Medium
+                    font.weight: Font.DemiBold
                     elide: Text.ElideRight
                 }
                 ExplicitBadge {
@@ -213,7 +213,7 @@ ItemDelegate {
                 width: Math.min(implicitWidth, parent.width)
                 text: root.artistLabel
                 color: artistMouse.containsMouse ? "white" : "#9ba19a"
-                font.family: "Inter"
+                font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                 font.pixelSize: 12
                 font.underline: artistMouse.containsMouse
                 elide: Text.ElideRight

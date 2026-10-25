@@ -170,6 +170,7 @@
     <file alias="app/qml/components/settings/ShortcutsSection.ui.qml">../app/qml/components/settings/ShortcutsSection.ui.qml</file>
     <file alias="app/qml/components/settings/SpotifyForm.ui.qml">../app/qml/components/settings/SpotifyForm.ui.qml</file>
     <file alias="app/qml/components/player/PlayerBar.qml">../app/qml/components/player/PlayerBar.qml</file>
+    <file alias="app/qml/components/player/MiniPlayerWindow.qml">../app/qml/components/player/MiniPlayerWindow.qml</file>
     <file alias="app/qml/components/player/ConnectButton.qml">../app/qml/components/player/ConnectButton.qml</file>
     <file alias="app/qml/components/player/ConnectPopup.qml">../app/qml/components/player/ConnectPopup.qml</file>
     <file alias="app/qml/components/player/LikeButton.qml">../app/qml/components/player/LikeButton.qml</file>

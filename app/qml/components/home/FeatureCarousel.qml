@@ -83,7 +83,7 @@ Item {
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         model: root.features
-        cacheBuffer: 600
+        cacheBuffer: 200
 
         WheelGlide {
             id: railAnimation
@@ -178,7 +178,7 @@ Item {
                 radius: root.radius
                 topLeftRadius: 0
                 topRightRadius: 0
-                color: card.footerColor
+                color: "#28282c"
 
                 Behavior on color {
                     ColorAnimation { duration: Motion.normal }
@@ -196,8 +196,9 @@ Item {
                         width: parent.width
                         text: card.modelData.eyebrow || ""
                         color: "#a6ffffff"
-                        font.family: "Inter"
+                        font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                         font.pixelSize: 11
+                        font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
 
@@ -205,9 +206,9 @@ Item {
                         width: parent.width
                         text: card.media.title || qsTr("Untitled")
                         color: "#f5f3ee"
-                        font.family: "Inter"
+                        font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                         font.pixelSize: 13
-                        font.weight: Font.DemiBold
+                        font.weight: Font.Bold
                         elide: Text.ElideRight
                     }
 
@@ -215,7 +216,7 @@ Item {
                         width: parent.width
                         text: root.subtitleFor(card.media)
                         color: "#b8ffffff"
-                        font.family: "Inter"
+                        font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                         font.pixelSize: 12
                         elide: Text.ElideRight
                     }

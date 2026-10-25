@@ -41,11 +41,11 @@ Item {
     readonly property string downloadState: downloadInfo.total > 0 && downloadInfo.downloaded >= downloadInfo.total ? "done"
         : downloadInfo.pending > 0 ? "busy" : downloadInfo.downloaded > 0 ? "partial" : "none"
 
-    readonly property color accentColor: rgb(artworkPalette.accent, [127, 190, 144])
-    readonly property color accentSoftColor: rgb(artworkPalette.accentSoft, [150, 202, 164])
-    readonly property color deepColor: rgb(artworkPalette.deep, [15, 21, 18])
-    readonly property color inkColor: rgb(artworkPalette.ink, [8, 12, 10])
-    readonly property color onAccentColor: rgb(artworkPalette.onAccent, [9, 16, 11])
+    readonly property color accentColor: "#2a7af6"
+    readonly property color accentSoftColor: "#2a7af6"
+    readonly property color deepColor: "#1c1c1f"
+    readonly property color inkColor: "#1c1c1f"
+    readonly property color textOnAccentColor: "#ffffff"
 
     // Rows reveal on the first non-empty load. Removals, sorts and pages keep the list put.
     property bool hadTracks: false
@@ -175,14 +175,7 @@ Item {
         return Boolean(text) && text !== "Playlist" && !text.startsWith("Playlist •") && !text.startsWith("Playlist  •");
     }
 
-    Rectangle {
-        anchors.fill: parent
-        visible: !root.sharedBackground
-        gradient: Gradient {
-            GradientStop { position: 0; color: root.deepColor }
-            GradientStop { position: 1; color: root.inkColor }
-        }
-    }
+    // Background uses unified Cutefish OS window background
 
     // Wide: pinned left panel. Compact: stacked in the list header (see heroSlot).
     DetailFlickable {

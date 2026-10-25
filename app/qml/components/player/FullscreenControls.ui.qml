@@ -181,17 +181,15 @@ ColumnLayout {
             Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width
-                // The bar swells while mixing, same as hovering but with conviction.
-                height: controls.mixing ? 10 : progress.hovered || progress.pressed ? 9 : 5
+                height: progress.hovered || progress.pressed ? 5 : 3
                 radius: height / 2
-                color: Qt.rgba(controls.primaryText.r, controls.primaryText.g, controls.primaryText.b, 0.18 + 0.1 * controls.mixGlow)
-                Behavior on height { NumberAnimation { duration: 420; easing.type: Easing.OutBack; easing.overshoot: 2.4 } }
+                color: Qt.rgba(255, 255, 255, 0.22)
+                Behavior on height { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
                 MixDotFill {
                     anchors.fill: parent
                     fraction: Math.min(1, progress.pressed ? progress.shown / progress.to : controls.shownFraction)
-                    baseColor: controls.mixing || progress.hovered || progress.pressed ? "#ffffff"
-                         : Qt.rgba(controls.primaryText.r, controls.primaryText.g, controls.primaryText.b, 0.82)
+                    baseColor: "#ffffff"
                     colorFade: 400
                     dotColor: controls.mixAccentColor
                     amount: controls.mixGlow
@@ -226,10 +224,10 @@ ColumnLayout {
         Text {
             text: controls.positionText
             opacity: controls.timeSwap
-            color: controls.mutedText
-            font.family: "Inter"
+            color: "#d0d0d5"
+            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
             font.pixelSize: 11
-            font.weight: Font.Medium
+            font.weight: Font.DemiBold
             font.features: { "tnum": 1 }
         }
 
@@ -266,7 +264,7 @@ ColumnLayout {
                     text: modelData
                     color: controls.primaryText
                     opacity: 0.45 + 0.55 * Math.max(0, 1 - Math.abs(index - mixLabel.sweep) / 2)
-                    font.family: "Inter"
+                    font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                     font.pixelSize: 11
                     font.weight: Font.DemiBold
                     font.letterSpacing: 0.4
@@ -281,9 +279,10 @@ ColumnLayout {
             text: controls.qualityText
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
-            color: controls.mutedText
-            font.family: "Inter"
-            font.pixelSize: 10
+            color: "#ffffff"
+            opacity: 0.85
+            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
+            font.pixelSize: 11
             font.weight: Font.DemiBold
             font.letterSpacing: 0.6
         }
@@ -302,7 +301,7 @@ ColumnLayout {
                 visible: controls.mixDurationText.length > 0
                 text: "(" + controls.mixDurationText + ")"
                 color: Qt.rgba(controls.mutedText.r, controls.mutedText.g, controls.mutedText.b, 0.7 + 0.3 * controls.mixGlow)
-                font.family: "Inter"
+                font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                 font.pixelSize: 11
                 font.weight: Font.Medium
                 font.features: { "tnum": 1 }
@@ -315,10 +314,10 @@ ColumnLayout {
         Text {
             text: controls.remainingText
             opacity: controls.timeSwap
-            color: controls.mutedText
-            font.family: "Inter"
+            color: "#d0d0d5"
+            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
             font.pixelSize: 11
-            font.weight: Font.Medium
+            font.weight: Font.DemiBold
             font.features: { "tnum": 1 }
         }
     }
@@ -454,19 +453,19 @@ ColumnLayout {
 
         FullscreenIconButton {
             id: lyricsButton
-            accentColor: controls.accentColor
-            primaryText: controls.primaryText
-            secondaryText: controls.secondaryText
-            glyph: "mic-vocal"
+            accentColor: "#2a7af6"
+            primaryText: "#ffffff"
+            secondaryText: "#c3c6bf"
+            glyph: "message-circle"
             active: controls.pane === "lyrics"
             ToolTip.text: active ? qsTr("Hide lyrics") : qsTr("Show lyrics")
         }
 
         FullscreenIconButton {
             id: queueButton
-            accentColor: controls.accentColor
-            primaryText: controls.primaryText
-            secondaryText: controls.secondaryText
+            accentColor: "#2a7af6"
+            primaryText: "#ffffff"
+            secondaryText: "#c3c6bf"
             glyph: "list-music"
             active: controls.pane === "queue"
             ToolTip.text: active ? qsTr("Hide queue") : qsTr("Queue")

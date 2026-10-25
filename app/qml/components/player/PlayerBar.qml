@@ -33,6 +33,7 @@ Item {
 
     signal queueRequested()
     signal expandRequested()
+    signal miniPlayerRequested()
     signal albumRequested(var album)
     signal artistRequested(var artist)
     signal playlistRequested(var playlist)
@@ -179,8 +180,8 @@ Item {
         onAccentTargetChanged: fade.restart()
         onOnAccentTargetChanged: fade.restart()
         onInkTargetChanged: fade.restart()
-        // Feeds the "match the album art" accent; transparent tells settings to fall back.
-        onAccentChanged: OrchardAppearance.artworkAccent = artworkPalette.ready ? accent : "transparent"
+        // Standard Cutefish accent theme
+        onAccentChanged: {}
         Component.onCompleted: {
             accent = accentTarget;
             onAccent = onAccentTarget;
@@ -212,8 +213,7 @@ Item {
         onWheel: function(wheel) { wheel.accepted = true; }
     }
 
-    // The glass draws its own shadow analytically, so it follows width animations for free.
-    // A shadow that doesn't follow you is just a stain.
+    // Apple Music macOS style floating glass player pill
     Glass {
         id: glass
 
@@ -221,30 +221,38 @@ Item {
         backdrop: root.backdrop
         radius: root.cornerRadius
         live: root.backdropLive
-        shadowOpacity: 0.14
-        shadowSpread: 16
-        shadowOffsetY: 8
-        edgeHighlight: 0
+        shadowOpacity: 0.35
+        shadowSpread: 20
+        shadowOffsetY: 10
+        edgeHighlight: 0.20
+        blurRadius: 36
     }
 
-    // Ink wash keeps white text legible over bright covers.
+    // Clean neutral frosted translucent surface overlay (no artwork color tinting)
     Rectangle {
         anchors.fill: parent
         radius: root.cornerRadius
-        color: root.tint(root.inkColor, 0.52)
+        color: Qt.rgba(0.14, 0.14, 0.16, 0.65)
     }
 
-    // Accent wash over the ink, heaviest behind the artwork. Low enough alpha that white text still reads.
-    // Tracks theme.accent, so it rides the same 600ms fade as everything else. Mood lighting, basically.
+    // Thin Apple-style specular edge border
     Rectangle {
         anchors.fill: parent
         radius: root.cornerRadius
-        gradient: Gradient {
-            orientation: Gradient.Horizontal
-            GradientStop { position: 0.0; color: root.tint(root.accentColor, 0.26) }
-            GradientStop { position: 0.45; color: root.tint(root.accentColor, 0.14) }
-            GradientStop { position: 1.0; color: root.tint(root.accentColor, 0.08) }
-        }
+        color: "transparent"
+        border.width: 1
+        border.color: Qt.rgba(255, 255, 255, 0.12)
+    }
+
+    // Top specular highlight
+    Rectangle {
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: root.cornerRadius
+        anchors.rightMargin: root.cornerRadius
+        height: 1
+        color: Qt.rgba(255, 255, 255, 0.16)
     }
 
     // Edge glow swells to the handoff and settles, in the incoming palette after the midpoint.
@@ -259,190 +267,230 @@ Item {
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: root.canopy ? 8 : 10
-        anchors.rightMargin: root.canopy ? 10 : 16
-        spacing: root.canopy ? 10 : root.compact ? 12 : 18
+        anchors.leftMargin: root.canopy ? 16 : 24
+        anchors.rightMargin: root.canopy ? 16 : 24
+        spacing: 16
 
-        // Glade: concentric with the pill (64px tall, 10px inset, 44px circle). Canopy: 36px rounded square.
+        // Left: Transport controls (Shuffle, Prev, Play, Next, Repeat)
+        PlayerTransportControls {
+            bar: root
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+        }
+
+        // Center: macOS style LCD Display / Floating Track Capsule
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.maximumWidth: 520
+            Layout.alignment: Qt.AlignCenter
+            Layout.topMargin: 7
+            Layout.bottomMargin: 7
+            color: Qt.rgba(0, 0, 0, 0.28)
+            border.color: Qt.rgba(255, 255, 255, 0.12)
+            border.width: 1
+            radius: 10
+            clip: true
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 4
+                spacing: 8
+
+                // Artwork inside the LCD
+                Item {
+                    id: artworkSlot
+                    readonly property real artRadius: 6
+                    Layout.preferredWidth: parent.height - 8
+                    Layout.preferredHeight: Layout.preferredWidth
+                    activeFocusOnTab: true
+                    Accessible.role: Accessible.Button
+                    Accessible.name: qsTr("Open now playing")
+                    Keys.onReturnPressed: root.expandRequested()
+                    Keys.onSpacePressed: root.expandRequested()
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: artworkSlot.artRadius
+                        color: "#22ffffff"
+                        border.color: parent.activeFocus ? root.accentColor : "transparent"
+                    }
+
+                    TransitionArtwork {
+                        anchors.fill: parent
+                        source: OrchardPlayback.track.thumbnail || ""
+                        incomingSource: OrchardPlayback.transitionTrack.thumbnail || ""
+                        transitioning: OrchardPlayback.crossfadeActive
+                        progress: OrchardPlayback.crossfadeProgress
+                        radius: artworkSlot.artRadius
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        ToolTip.visible: containsMouse
+                        ToolTip.delay: 600
+                        ToolTip.text: qsTr("Open now playing")
+                        onClicked: function(mouse) {
+                            if (mouse.button === Qt.RightButton) mediaMenu.popup(parent, mouse.x, mouse.y);
+                            else if (OrchardPlayback.track.id) root.expandRequested();
+                        }
+                    }
+                }
+
+                // Track Info & Progress Stacked
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 0
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+
+                        MixSwapText {
+                            id: titleText
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: 220
+                            Layout.alignment: Qt.AlignVCenter
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                cursorShape: mediaMenu.albumId ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                onClicked: function(mouse) {
+                                    if (mouse.button === Qt.RightButton) mediaMenu.popup(parent, mouse.x, mouse.y);
+                                    else mediaMenu.viewAlbum();
+                                }
+                            }
+                            activeFocusOnTab: Boolean(mediaMenu.albumId)
+                            Accessible.role: Accessible.Link
+                            Accessible.name: text
+                            font.underline: activeFocus
+                            Keys.onReturnPressed: mediaMenu.viewAlbum()
+                            Keys.onSpacePressed: mediaMenu.viewAlbum()
+                            text: OrchardPlayback.track.title || qsTr("Not Playing")
+                            incomingText: OrchardPlayback.transitionTrack.title || ""
+                            transitioning: OrchardPlayback.crossfadeActive
+                            progress: OrchardPlayback.crossfadeProgress
+                            color: root.primaryText
+                            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
+                            font.pixelSize: 12
+                            font.weight: Font.DemiBold
+                            horizontalAlignment: Text.AlignLeft
+                        }
+
+                        ExplicitBadge {
+                            id: explicitBadge
+                            visible: Boolean(OrchardPlayback.track.explicit)
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        SlopBadge {
+                            id: slopBadge
+                            trackId: OrchardPlayback.track.id || ""
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Text {
+                            text: "•"
+                            color: Qt.rgba(255, 255, 255, 0.35)
+                            font.pixelSize: 10
+                            Layout.alignment: Qt.AlignVCenter
+                            visible: Boolean(OrchardPlayback.track.title) && Boolean(trackStatus.text.length)
+                        }
+
+                        MixSwapText {
+                            id: trackStatus
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                            function artistOf(track) {
+                                const joined = (track.artists || []).join(", ");
+                                return joined || track.artist || "";
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                cursorShape: mediaMenu.artistIds.length ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                onClicked: function(mouse) {
+                                    if (mouse.button === Qt.RightButton) mediaMenu.popup(parent, mouse.x, mouse.y);
+                                    else mediaMenu.viewArtist(parent, mouse.x, mouse.y);
+                                }
+                            }
+                            activeFocusOnTab: mediaMenu.artistIds.length > 0
+                            Accessible.role: Accessible.Link
+                            Accessible.name: text
+                            font.underline: activeFocus
+                            Keys.onReturnPressed: mediaMenu.viewArtist(trackStatus, 0, trackStatus.height)
+                            Keys.onSpacePressed: mediaMenu.viewArtist(trackStatus, 0, trackStatus.height)
+                            text: artistOf(OrchardPlayback.track)
+                            incomingText: artistOf(OrchardPlayback.transitionTrack)
+                            transitioning: OrchardPlayback.crossfadeActive
+                            progress: OrchardPlayback.crossfadeProgress
+                            color: root.secondaryText
+                            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
+                            font.pixelSize: 11
+                            font.weight: Font.Normal
+                            horizontalAlignment: Text.AlignLeft
+                        }
+
+                        Rectangle {
+                            id: bitratePill
+                            visible: bitrateLabel.text.length > 0
+                            Layout.alignment: Qt.AlignVCenter
+                            Accessible.role: Accessible.StaticText
+                            Accessible.name: bitrateLabel.text
+                            width: bitrateLabel.implicitWidth + 8
+                            height: 14
+                            radius: 4
+                            color: Qt.rgba(255, 255, 255, 0.12)
+                            border.color: Qt.rgba(255, 255, 255, 0.15)
+                            border.width: 1
+
+                            Text {
+                                id: bitrateLabel
+                                anchors.centerIn: parent
+                                text: OrchardConnect.controlling ? qsTr("On %1").arg(OrchardConnect.peer.name)
+                                      : root.qobuzLabel(OrchardPlayback.track)
+                                      || root.localLabel(OrchardPlayback.track)
+                                      || root.streamLabel(OrchardPlayback.track)
+                                color: "#ffffff"
+                                font.pixelSize: 8
+                                font.weight: Font.DemiBold
+                            }
+                        }
+                    }
+
+                    PlayerProgressRow {
+                        bar: root
+                        Layout.fillWidth: true
+                        Layout.topMargin: -4
+                    }
+                }
+            }
+        }
+
         Item {
-            id: artworkSlot
-            readonly property real artRadius: root.canopy ? 6 : width / 2
-            Layout.preferredWidth: root.canopy ? 36 : 44
-            Layout.preferredHeight: Layout.preferredWidth
-            activeFocusOnTab: true
-            Accessible.role: Accessible.Button
-            Accessible.name: qsTr("Open now playing")
-            Keys.onReturnPressed: root.expandRequested()
-            Keys.onSpacePressed: root.expandRequested()
-
-            Rectangle {
-                anchors.fill: parent
-                radius: artworkSlot.artRadius
-                color: "#22ffffff"
-                border.color: parent.activeFocus ? root.accentColor : "transparent"
-            }
-
-            TransitionArtwork {
-                anchors.fill: parent
-                source: OrchardPlayback.track.thumbnail || ""
-                incomingSource: OrchardPlayback.transitionTrack.thumbnail || ""
-                transitioning: OrchardPlayback.crossfadeActive
-                progress: OrchardPlayback.crossfadeProgress
-                radius: artworkSlot.artRadius
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                cursorShape: Qt.PointingHandCursor
-                hoverEnabled: true
-                ToolTip.visible: containsMouse
-                ToolTip.delay: 600
-                ToolTip.text: qsTr("Open now playing")
-                onClicked: function(mouse) {
-                    if (mouse.button === Qt.RightButton) mediaMenu.popup(parent, mouse.x, mouse.y);
-                    else if (OrchardPlayback.track.id) root.expandRequested();
-                }
-            }
+            Layout.fillWidth: true
         }
 
-        ColumnLayout {
-            visible: root.showTrackInfo
-            Layout.preferredWidth: root.compact ? 120 : Math.min(200, root.width * 0.18)
-            Layout.minimumWidth: 90
-            Layout.alignment: Qt.AlignVCenter
-            spacing: 2
+        // Right side: Volume and side controls
+        RowLayout {
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+            spacing: 8
 
-            Row {
-                Layout.fillWidth: true
-                spacing: 6
-
-                MixSwapText {
-                    id: titleText
-                    maxWidth: parent.width - (explicitBadge.visible ? 20 : 0)
-                              - (slopBadge.visible ? slopBadge.width + 6 : 0)
-                    MouseArea {
-                        anchors.fill: parent
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        cursorShape: mediaMenu.albumId ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: function(mouse) {
-                            if (mouse.button === Qt.RightButton) mediaMenu.popup(parent, mouse.x, mouse.y);
-                            else mediaMenu.viewAlbum();
-                        }
-                    }
-                    activeFocusOnTab: Boolean(mediaMenu.albumId)
-                    Accessible.role: Accessible.Link
-                    Accessible.name: text
-                    font.underline: activeFocus
-                    Keys.onReturnPressed: mediaMenu.viewAlbum()
-                    Keys.onSpacePressed: mediaMenu.viewAlbum()
-                    text: OrchardPlayback.track.title || qsTr("Nothing playing")
-                    incomingText: OrchardPlayback.transitionTrack.title || ""
-                    transitioning: OrchardPlayback.crossfadeActive
-                    progress: OrchardPlayback.crossfadeProgress
-                    color: root.primaryText
-                    font.family: "Inter"
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
-                }
-
-                ExplicitBadge {
-                    id: explicitBadge
-                    visible: Boolean(OrchardPlayback.track.explicit)
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                SlopBadge {
-                    id: slopBadge
-                    trackId: OrchardPlayback.track.id || ""
-                    anchors.verticalCenter: parent.verticalCenter
-                }
+            LikeButton {
+                visible: !root.compact
+                iconColor: root.controlColor
+                likedColor: root.accentColor
             }
 
-            Row {
-                Layout.fillWidth: true
-                spacing: 6
-
-                MixSwapText {
-                    id: trackStatus
-
-                    function artistOf(track) {
-                        const joined = (track.artists || []).join(", ");
-                        return joined || track.artist || "";
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        cursorShape: mediaMenu.artistIds.length ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: function(mouse) {
-                            if (mouse.button === Qt.RightButton) mediaMenu.popup(parent, mouse.x, mouse.y);
-                            else mediaMenu.viewArtist(parent, mouse.x, mouse.y);
-                        }
-                    }
-                    activeFocusOnTab: mediaMenu.artistIds.length > 0
-                    Accessible.role: Accessible.Link
-                    Accessible.name: text
-                    font.underline: activeFocus
-                    Keys.onReturnPressed: mediaMenu.viewArtist(trackStatus, 0, trackStatus.height)
-                    Keys.onSpacePressed: mediaMenu.viewArtist(trackStatus, 0, trackStatus.height)
-                    maxWidth: parent.width - (bitratePill.visible ? bitratePill.width + 6 : 0)
-                    text: artistOf(OrchardPlayback.track)
-                    incomingText: artistOf(OrchardPlayback.transitionTrack)
-                    transitioning: OrchardPlayback.crossfadeActive
-                    progress: OrchardPlayback.crossfadeProgress
-                    color: root.secondaryText
-                    font.family: "Inter"
-                    font.pixelSize: 11
-                }
-
-                // Proof to your ears that this stream is indeed high fidelity, not two tin cans and a string.
-                Rectangle {
-                    id: bitratePill
-                    // Qobuz songs always say so; kbps waits for the bitrate setting.
-                    visible: bitrateLabel.text.length > 0
-                    anchors.verticalCenter: parent.verticalCenter
-                    Accessible.role: Accessible.StaticText
-                    Accessible.name: bitrateLabel.text
-                    width: bitrateLabel.implicitWidth + 8
-                    height: 14
-                    radius: 7
-                    color: root.tint(root.accentColor, 0.16)
-
-                    Text {
-                        id: bitrateLabel
-                        anchors.centerIn: parent
-                        // While controlling, the pill names the target; its stream details live there.
-                        text: OrchardConnect.controlling ? qsTr("On %1").arg(OrchardConnect.peer.name)
-                              : root.qobuzLabel(OrchardPlayback.track)
-                              || root.localLabel(OrchardPlayback.track)
-                              || root.streamLabel(OrchardPlayback.track)
-                        color: root.accentColor
-                        font.family: "Inter"
-                        font.pixelSize: 8
-                        font.weight: Font.DemiBold
-                    }
-                }
+            SkipNonMusicButton {
+                compact: true
+                textColor: root.controlColor
             }
+
+            PlayerSideControls { bar: root; onMiniPlayerRequested: root.miniPlayerRequested() }
         }
-
-        LikeButton {
-            Layout.alignment: Qt.AlignVCenter
-            visible: !root.compact
-            iconColor: root.controlColor
-            likedColor: root.accentColor
-        }
-
-        PlayerTransportControls { bar: root }
-
-        SkipNonMusicButton {
-            Layout.alignment: Qt.AlignVCenter
-            compact: true
-            textColor: root.controlColor
-        }
-
-        PlayerProgressRow { bar: root; visible: root.showProgress }
-
-        PlayerSideControls { bar: root }
     }
 }

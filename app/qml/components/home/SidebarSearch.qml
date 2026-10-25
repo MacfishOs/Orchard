@@ -42,10 +42,10 @@ Rectangle {
 
     function clearSearch() { search.clear(); }
 
-    height: 34
-    radius: 8
+    height: 30
+    radius: 6
     color: search.activeFocus ? "#1affffff" : "#10ffffff"
-    border.color: search.activeFocus || spotlightButton.activeFocus ? OrchardAppearance.accent : "#24ffffff"
+    border.color: search.activeFocus || spotlightButton.activeFocus ? OrchardAppearance.accent : "transparent"
     Behavior on color { ColorAnimation { duration: Motion.fast } }
     Behavior on border.color { ColorAnimation { duration: Motion.fast } }
 
@@ -65,11 +65,10 @@ Rectangle {
         visible: !root.compact
         leftPadding: 31
         rightPadding: clearButton.visible ? 29 : 10
-        placeholderText: qsTr("Search…")
+        placeholderText: qsTr("Search")
         placeholderTextColor: "#929ba1"
         color: "#f1eee7"
-        font.family: "Inter"
-        font.pixelSize: 11
+        font.pixelSize: 12
         selectByMouse: true
         Accessible.name: root.searchLabel
         onTextChanged: root.searchChanged(text)

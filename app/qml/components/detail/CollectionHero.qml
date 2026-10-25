@@ -57,7 +57,7 @@ Item {
     property color accentInkColor: "#09100b"
     property color inkColor: "#080c0a"
 
-    readonly property int coverRadius: 6
+    readonly property int coverRadius: 12
     readonly property real coverSize: compact ? Math.min(width, 240) : width
 
     signal bylineClicked(Item anchor, real x, real y)
@@ -170,7 +170,7 @@ Item {
             Text {
                 text: [root.kind, root.year].filter(Boolean).join("  ·  ")
                 color: "#9aa09a"
-                font.family: "Inter"
+                font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                 font.pixelSize: 12
             }
             ExplicitBadge {
@@ -189,7 +189,7 @@ Item {
             width: parent.width
             text: root.title
             color: "#f6f4ef"
-            font.family: "Inter"
+            font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
             font.pixelSize: root.title.length > 40 ? 22 : 28
             font.weight: Font.Bold
             font.letterSpacing: -0.5
@@ -205,8 +205,8 @@ Item {
             visible: text.length > 0
             text: root.byline
             color: bylineMouse.containsMouse ? "white" : "#f6f4ef"
-            font.family: "Inter"
-            font.pixelSize: 14
+            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
+            font.pixelSize: 15
             font.weight: Font.DemiBold
             font.underline: bylineMouse.containsMouse
             elide: Text.ElideRight
@@ -245,7 +245,7 @@ Item {
                 scale: down ? 0.97 : 1
                 Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                 background: Rectangle {
-                    radius: 6
+                    radius: 8
                     color: playButton.hovered ? "white" : "#f1efea"
                     border.color: playButton.activeFocus ? root.accentSoftColor : "transparent"
                     border.width: 2
@@ -273,12 +273,44 @@ Item {
                     }
                 }
             }
-            GhostButton {
-                glyph: "shuffle"
+            Button {
+                id: shuffleButton
+                width: shuffleRow.implicitWidth + 36
+                height: 40
                 enabled: root.actionsEnabled
+                opacity: enabled ? 1 : 0.4
                 Accessible.name: qsTr("Shuffle")
                 ToolTip.text: qsTr("Shuffle")
                 onClicked: root.shuffleClicked()
+                scale: down ? 0.97 : 1
+                Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                background: Rectangle {
+                    radius: 8
+                    color: shuffleButton.hovered ? "#35353a" : "#28282c"
+                    border.color: shuffleButton.activeFocus ? root.accentSoftColor : "#18ffffff"
+                }
+                contentItem: Item {
+                    Row {
+                        id: shuffleRow
+                        anchors.centerIn: parent
+                        spacing: 8
+                        LucideIcon {
+                            width: 16
+                            height: 16
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: "shuffle"
+                            color: "#f1efea"
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: qsTr("Shuffle")
+                            color: "#f1efea"
+                            font.family: "Inter"
+                            font.pixelSize: 13
+                            font.weight: Font.DemiBold
+                        }
+                    }
+                }
             }
             GhostButton {
                 id: downloadButton

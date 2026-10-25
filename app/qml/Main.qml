@@ -40,6 +40,24 @@ Window {
             mainWindow.showMaximized();
     }
 
+    function toggleMiniPlayer() {
+        if (miniPlayerWindow.visible) {
+            miniPlayerWindow.returnToMain();
+        } else {
+            miniPlayerWindow.openPlayer();
+        }
+    }
+
+    Shortcut {
+        sequence: "Ctrl+Shift+M"
+        onActivated: mainWindow.toggleMiniPlayer()
+    }
+
+    Shortcut {
+        sequence: "Ctrl+Alt+M"
+        onActivated: mainWindow.toggleMiniPlayer()
+    }
+
     visible: true
     width: Math.min(OrchardWindowState.initialWidth, OrchardWindowState.availableWidth)
     height: Math.min(OrchardWindowState.initialHeight, OrchardWindowState.availableHeight)
@@ -50,7 +68,7 @@ Window {
         if (OrchardWindowState.initialMaximized)
             mainWindow.showMaximized();
     }
-    color: "#0d0f12"
+    color: "#1c1c1f"
     flags: nativeWindowFrame ? Qt.Window : Qt.Window | Qt.FramelessWindowHint
     onClosing: close => {
         // Closing to the tray keeps the music going; the tray menu holds the real exit.
@@ -62,33 +80,7 @@ Window {
         Qt.quit();
     }
 
-    ShaderEffect {
-        id: meshBackground
-        anchors.fill: parent
-        z: -100
-        visible: !(homeShell.visible && homeShell.item && homeShell.item.immersiveReady)
-
-        property real time: 0.0
-        property vector2d extent: Qt.vector2d(width, height)
-
-        // One frame per second while idle.
-        Timer {
-            running: meshBackground.visible && OrchardWindowState.idle && mainWindow.visible
-            interval: 1000
-            repeat: true
-            onTriggered: meshBackground.time = (meshBackground.time + 1.0) % 1000.0
-        }
-
-        NumberAnimation on time {
-            running: meshBackground.visible && !OrchardWindowState.idle && mainWindow.visible
-            loops: Animation.Infinite
-            from: 0.0
-            to: 1000.0
-            duration: 1000000
-        }
-
-        fragmentShader: "qrc:/shaders/mesh.frag.qsb"
-    }
+    // Background shader removed to minimize RAM and CPU overhead
 
     Item {
         id: titleBar
@@ -123,11 +115,13 @@ Window {
     WindowControls {
         id: windowControls
 
-        anchors.right: parent.right
+        anchors.left: parent.left
+        anchors.leftMargin: 16
         anchors.top: parent.top
+        anchors.topMargin: 16
         targetWindow: mainWindow
         z: 10
-        visible: (!mainWindow.nativeWindowFrame || mainWindow.visibility === Window.FullScreen) && reveal > 0.01
+        visible: (!mainWindow.nativeWindowFrame || mainWindow.visibility === Window.FullScreen)
         autoHide: mainWindow.visibility === Window.FullScreen && homeShell.item !== null && homeShell.item.fullscreenOpen
     }
 
@@ -209,5 +203,10 @@ Window {
         targetWindow: mainWindow
         enabled: !mainWindow.nativeWindowFrame
         z: 100
+    }
+
+    MiniPlayerWindow {
+        id: miniPlayerWindow
+        parentWindow: mainWindow
     }
 }

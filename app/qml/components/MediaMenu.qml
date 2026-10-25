@@ -25,8 +25,8 @@ Menu {
     id: root
     Component.onCompleted: configurePopup(root)
     width: 210
-    padding: 5
-    background: Rectangle { color: Qt.lighter(OrchardAppearance.popupColor, 1.25); radius: 8; border.color: "#24ffffff" }
+    padding: 6
+    background: Rectangle { color: "#28282c"; radius: 10; border.color: "#20ffffff" }
     // Grow from the click point so the menu reads as coming from the cursor.
     transformOrigin: Popup.TopLeft
     enter: Transition {
@@ -38,16 +38,16 @@ Menu {
     }
     component Entry: MenuItem {
         id: entry
-        implicitHeight: 36
+        implicitHeight: 34
         background: Rectangle {
             radius: 6
-            color: entry.highlighted ? "#1fffffff" : "#00ffffff"
+            color: entry.highlighted ? "#2a7af6" : "#00ffffff"
             Behavior on color { ColorAnimation { duration: Motion.fast } }
         }
         contentItem: Text {
             text: entry.text
-            color: entry.enabled ? "#f2f0eb" : "#7c857f"
-            font.family: "Inter"
+            color: entry.enabled ? "#ffffff" : "#7c857f"
+            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
             font.pixelSize: 13
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight

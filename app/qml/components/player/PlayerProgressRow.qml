@@ -50,9 +50,10 @@ Item {
         x: 0
         y: stacked ? parent.height - height : (parent.height - height) / 2
         text: bar.timeLabel(progress.pressed ? progress.value : OrchardPlayback.displayPosition)
-        color: bar.secondaryText
-        font.family: "Inter"
+        color: "#c3c6bf"
+        font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
         font.pixelSize: stacked ? 9 : 10
+        font.weight: Font.DemiBold
         horizontalAlignment: stacked ? Text.AlignLeft : Text.AlignRight
         width: stacked ? elapsedMetrics.width : 30
     }
@@ -85,9 +86,9 @@ Item {
             Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width
-                height: OrchardPlayback.crossfadeActive ? 6 : progress.hovered || progress.pressed ? 5 : 3
+                height: OrchardPlayback.crossfadeActive ? 5 : progress.hovered || progress.pressed ? 5 : 3
                 radius: height / 2
-                color: bar.trackColor
+                color: Qt.rgba(255, 255, 255, 0.18)
 
                 Behavior on height {
                     NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
@@ -96,7 +97,7 @@ Item {
                 MixDotFill {
                     anchors.fill: parent
                     fraction: progress.visualPosition
-                    baseColor: bar.accentColor
+                    baseColor: "#ffffff"
                     dotColor: bar.mixAccentColor
                     amount: row.mixAmount
                     maxBand: 160
@@ -108,16 +109,12 @@ Item {
         handle: Rectangle {
             x: progress.leftPadding + progress.visualPosition * (progress.availableWidth - width)
             y: progress.topPadding + progress.availableHeight / 2 - height / 2
-            width: OrchardPlayback.crossfadeActive ? 14 : 11
-            height: width
-            radius: width / 2
-            scale: OrchardPlayback.crossfadeActive ? 1 : progress.pressed ? 1.15 : progress.hovered ? 1 : 0
+            width: 10
+            height: 10
+            radius: 5
+            scale: progress.pressed || progress.hovered ? 1 : 0
             opacity: scale > 0 ? 1 : 0
-            color: OrchardPlayback.crossfadeActive ? "#ffffff" : bar.accentColor
-
-            Behavior on width {
-                NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
-            }
+            color: "#ffffff"
 
             Behavior on scale {
                 NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
@@ -137,17 +134,35 @@ Item {
         }
     }
 
+    property bool showRemaining: true
+
     Text {
         id: total
 
         visible: stacked || !bar.compact
         x: parent.width - width
         y: stacked ? parent.height - height : (parent.height - height) / 2
-        text: OrchardPlayback.displayDuration > 0 ? bar.timeLabel(OrchardPlayback.displayDuration) : "-:--"
-        color: bar.secondaryText
-        font.family: "Inter"
+        text: {
+            if (OrchardPlayback.displayDuration <= 0)
+                return "-:--";
+            if (!row.showRemaining)
+                return bar.timeLabel(OrchardPlayback.displayDuration);
+            const current = progress.pressed ? progress.value : OrchardPlayback.displayPosition;
+            const remaining = Math.max(0, OrchardPlayback.displayDuration - current);
+            return "-" + bar.timeLabel(remaining);
+        }
+        color: "#c3c6bf"
+        font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
         font.pixelSize: stacked ? 9 : 10
+        font.weight: Font.DemiBold
         horizontalAlignment: stacked ? Text.AlignRight : Text.AlignLeft
-        width: stacked ? totalMetrics.width : 30
+        width: stacked ? totalMetrics.width : 34
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            onClicked: row.showRemaining = !row.showRemaining
+        }
     }
 }

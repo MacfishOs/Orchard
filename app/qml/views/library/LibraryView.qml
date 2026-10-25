@@ -245,7 +245,7 @@ Item {
         anchors.bottom: parent.bottom
         visible: root.filter === "all"
         spacing: 24
-        cacheBuffer: 400
+        cacheBuffer: 150
         model: root.shelfSections
         ScrollBar.vertical.width: 5
 
@@ -341,13 +341,14 @@ Item {
         anchors.bottom: parent.bottom
         visible: root.filter !== "all" && !root.isSongs(root.filter)
         clip: true
+        reuseItems: true
         boundsBehavior: Flickable.StopAtBounds
         readonly property string presentation: root.isPlaylists(root.filter) ? "playlist" : "album"
         readonly property int cardWidth: presentation === "playlist" ? 178 : 158
         cellWidth: width / Math.max(1, Math.floor(width / (cardWidth + 14)))
         cellHeight: (presentation === "playlist" ? 242 : 210) + 14
         model: visible ? root.selectedSection.items : []
-        cacheBuffer: 300
+        cacheBuffer: 100
         bottomMargin: shelves.playerInset
         ScrollBar.vertical: ScrollBar { width: 5; bottomPadding: shelves.playerInset }
 

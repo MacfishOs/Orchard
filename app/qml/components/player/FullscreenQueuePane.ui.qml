@@ -121,6 +121,7 @@ ColumnLayout {
         clip: true
         spacing: 4
         model: pane.queueItems
+        reuseItems: true
         boundsBehavior: Flickable.StopAtBounds
 
         ScrollBar.vertical: ScrollBar {

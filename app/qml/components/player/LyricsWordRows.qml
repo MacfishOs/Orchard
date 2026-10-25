@@ -91,7 +91,7 @@ Column {
             id: base
             text: word.text
             color: word.lit && word.progress >= 1 ? wordRows.doneColor : word.baseColor
-            font.family: "Inter"
+            font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
             font.pixelSize: word.pixelSize
             font.weight: word.weight
             font.letterSpacing: -0.4

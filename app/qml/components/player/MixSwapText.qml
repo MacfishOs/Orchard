@@ -29,6 +29,7 @@ Item {
     property real maxWidth: 1000
     property color color: "white"
     property font font
+    property int horizontalAlignment: Text.AlignLeft
     readonly property real handoff: Math.max(0, Math.min(1, (progress - 0.28) / 0.5))
     readonly property real eased: handoff * handoff * (3 - 2 * handoff)
     // Rest position of the incoming label equals the normal one, so the mix end has no jump.
@@ -51,6 +52,7 @@ Item {
         maximumLineCount: 1
         opacity: root.swapping ? 1 - root.eased : 1
         y: root.swapping ? -root.lift * root.eased : 0
+        horizontalAlignment: root.horizontalAlignment
     }
     Text {
         id: incoming
@@ -63,5 +65,6 @@ Item {
         maximumLineCount: 1
         opacity: root.eased
         y: root.lift * (1 - root.eased)
+        horizontalAlignment: root.horizontalAlignment
     }
 }

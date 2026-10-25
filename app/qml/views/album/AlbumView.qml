@@ -37,11 +37,11 @@ Item {
     readonly property var downloadInfo: OrchardDownloads.revision >= 0 ? OrchardDownloads.collectionState(tracks) : ({})
     readonly property string downloadState: downloadInfo.total > 0 && downloadInfo.downloaded >= downloadInfo.total ? "done"
         : downloadInfo.pending > 0 ? "busy" : downloadInfo.downloaded > 0 ? "partial" : "none"
-    readonly property color accentColor: rgb(artworkPalette.accent, [127, 190, 144])
-    readonly property color accentSoftColor: rgb(artworkPalette.accentSoft, [150, 202, 164])
-    readonly property color deepColor: rgb(artworkPalette.deep, [15, 21, 18])
-    readonly property color inkColor: rgb(artworkPalette.ink, [8, 12, 10])
-    readonly property color onAccentColor: rgb(artworkPalette.onAccent, [9, 16, 11])
+    readonly property color accentColor: "#2a7af6"
+    readonly property color accentSoftColor: "#2a7af6"
+    readonly property color deepColor: "#1c1c1f"
+    readonly property color inkColor: "#1c1c1f"
+    readonly property color textOnAccentColor: "#ffffff"
     readonly property bool compact: width < 760
     readonly property int pageInset: width < 600 ? 14 : 24
     readonly property int sideWidth: 300
@@ -66,9 +66,9 @@ Item {
     signal albumRequested(var album)
     signal artistRequested(var artist)
     signal playlistRequested(var playlist)
-    signal backRequested()
-    signal playRequested()
-    signal shuffleRequested()
+    signal backRequested
+    signal playRequested
+    signal shuffleRequested
     signal trackRequested(var track, int index)
 
     function rgb(value, fallback) {
@@ -123,24 +123,7 @@ Item {
         }
     }
 
-    Rectangle {
-        anchors.fill: parent
-        visible: !root.sharedBackground
-
-        gradient: Gradient {
-            GradientStop {
-                position: 0
-                color: root.deepColor
-            }
-
-            GradientStop {
-                position: 1
-                color: root.inkColor
-            }
-
-        }
-
-    }
+    // Background uses unified Cutefish OS window background
 
     // Wide: pinned left panel. Compact: stacked above the tracks (see heroSlot).
     DetailFlickable {
@@ -229,7 +212,7 @@ Item {
                 || (!OrchardAlbum.loading && !OrchardNetwork.offline && root.downloadState !== "busy")
             accentColor: root.accentColor
             accentSoftColor: root.accentSoftColor
-            accentInkColor: root.onAccentColor
+            accentInkColor: root.textOnAccentColor
             inkColor: root.inkColor
             onBylineClicked: function(anchor, x, y) {
                 albumArtistMenu.viewArtist(anchor, x, y);
@@ -372,7 +355,7 @@ Item {
         playing: root.collectionPlaying
         actionsEnabled: root.tracks.length > 0
         accentColor: root.accentColor
-        accentInkColor: root.onAccentColor
+        accentInkColor: root.textOnAccentColor
         inkColor: root.inkColor
         onPlayClicked: root.playOrToggle()
         onBackToTopClicked: scroll.contentY = 0

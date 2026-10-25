@@ -52,8 +52,8 @@ Button {
     }
 
     contentItem: Item {
-        scale: roundButton.down ? 0.84 : roundButton.hovered ? 1.08 : 1
-        Behavior on scale { NumberAnimation { duration: 260; easing.type: Easing.OutBack; easing.overshoot: 2.6 } }
+        scale: roundButton.down ? 0.92 : roundButton.hovered ? 1.05 : 1
+        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
         LucideIcon {
             anchors.centerIn: parent

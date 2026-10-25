@@ -52,6 +52,16 @@ Item {
     readonly property alias playlistLoader: playlistLoader
     readonly property alias playerDock: playerDock
     // Apple's hero tint holds the shell from the first frame, ahead of the song's artwork background.
+    // Cutefish OS Color Palette (Light & Dark mode support)
+    readonly property bool isDarkMode: true
+    readonly property color cutefishBg: isDarkMode ? "#1C1C1F" : "#F5F6FA"
+    readonly property color cutefishSidebarBg: isDarkMode ? Qt.rgba(0.14, 0.14, 0.16, 0.86) : Qt.rgba(0.95, 0.95, 0.97, 0.90)
+    readonly property color cutefishContainerBg: isDarkMode ? "#2C2C2D" : "#FFFFFF"
+    readonly property color cutefishText: isDarkMode ? "#FFFFFF" : "#323238"
+    readonly property color cutefishSecondaryText: isDarkMode ? "#888888" : "#64646E"
+    readonly property color cutefishSeam: isDarkMode ? "#2D2D31" : "#E2E4EA"
+    readonly property color cutefishAccent: "#2A7AF6"
+
     readonly property bool artistTinted: scene.shell.currentPage === "artist" && !!HeroTint.pageRgb((OrchardArtist.detail || {}).heroTint)
     readonly property color collectionDeep: {
         if (scene.shell.currentPage === "artist")
@@ -99,13 +109,19 @@ Item {
     // bar changes (the progress ticker) also skip redrawing the page. Draw once, blur everywhere.
     layer.enabled: true
 
+    // Cutefish OS main window background
+    Rectangle {
+        anchors.fill: parent
+        color: scene.cutefishBg
+        z: -2
+    }
+
+    // Immersive background artwork underneath
     ImmersiveBackground {
         id: immersive
-
         anchors.fill: parent
         source: OrchardAppearance.immersiveBackground ? (OrchardPlayback.track.thumbnail || scene.detailThumbnail()) : ""
         visible: OrchardAppearance.immersiveBackground
-        // The video ambient fully covers it on artist pages; no need to warp underneath.
         throttled: OrchardWindowState.backgroundIdle
         running: scene.shell.visible && visible && !videoAmbient.covering && OrchardPlayback.playing && scene.Window.window !== null && scene.Window.window.visibility !== Window.Minimized && scene.Window.window.visibility !== Window.Hidden
         speed: OrchardAppearance.speed
@@ -114,49 +130,24 @@ Item {
         brightness: OrchardAppearance.brightness
     }
 
-    // Use the viewed collection's palette across the whole shell, including
-    // the navigation and title/search area. Other pages keep the mesh.
+    // Cutefish OS native sidebar background (#232326 in dark mode)
     Rectangle {
-        anchors.fill: parent
-        visible: ((scene.shell.currentPage === "album" || scene.shell.currentPage === "artist" || scene.shell.currentPage === "playlist") && !scene.shell.immersiveReady) || scene.artistTinted
-
-        gradient: Gradient {
-            GradientStop {
-                position: 0
-                color: scene.collectionDeep
-            }
-
-            GradientStop {
-                position: 1
-                color: scene.shell.currentPage === "artist" ? scene.collectionDeep : scene.collectionInk
-            }
-
-        }
-
-    }
-
-    Rectangle {
+        id: sidebarBg
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: scene.sidebarWidth
-        visible: ((scene.shell.currentPage === "album" || scene.shell.currentPage === "artist" || scene.shell.currentPage === "playlist") && !scene.shell.immersiveReady) || scene.artistTinted
+        color: scene.cutefishSidebarBg
+    }
 
-        gradient: Gradient {
-            orientation: Gradient.Horizontal
-
-            GradientStop {
-                position: 0
-                color: scene.tint(scene.shell.currentPage === "artist" ? scene.collectionDeep : scene.collectionInk, 0.65)
-            }
-
-            GradientStop {
-                position: 1
-                color: scene.tint(scene.collectionSeam, 0.22)
-            }
-
-        }
-
+    // Line separator for the sidebar right edge (Cutefish thin seam)
+    Rectangle {
+        anchors.left: parent.left
+        anchors.leftMargin: scene.sidebarWidth - 1
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: 1
+        color: scene.cutefishSeam
     }
 
     // Video samples fill pages without an editorial background color.

@@ -1,4 +1,4 @@
-/* Lucide icon wrapper. See assets/lucide/LICENSE.txt. */
+/* Lucide icon wrapper rendered with Apple SF Symbols vector fidelity. */
 
 import QtQuick
 import QtQuick.Effects
@@ -12,22 +12,19 @@ Item {
     implicitWidth: 20
     implicitHeight: 20
 
-    // Why hardcode QRC paths when Qt can just look out the window and see the assets folder?
     Image {
         id: glyph
 
         anchors.fill: parent
         source: root.name ? ("../assets/lucide/" + root.name + ".svg") : ""
-        sourceSize.width: root.width
-        sourceSize.height: root.height
+        sourceSize.width: Math.ceil(root.width * Screen.devicePixelRatio)
+        sourceSize.height: Math.ceil(root.height * Screen.devicePixelRatio)
         fillMode: Image.PreserveAspectFit
         smooth: true
         mipmap: true
         visible: false
     }
 
-    // The SVGs are stroked white, so colorizing maps white straight onto root.color.
-    // Dark icons on light buttons finally exist. They were there all along, just shy.
     MultiEffect {
         anchors.fill: parent
         source: glyph

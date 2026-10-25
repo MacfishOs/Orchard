@@ -57,18 +57,11 @@ Item {
         width: mainColumn.width
         height: 42
         radius: 9
-        color: "#18ffffff"
+        color: "#38383c"
         opacity: root.navIndex >= 0 ? 1 : 0
 
         // Accent bar on the active entry, Windows style.
-        Rectangle {
-            x: 0
-            anchors.verticalCenter: parent.verticalCenter
-            width: 3
-            height: 18
-            radius: 1.5
-            color: OrchardAppearance.accent
-        }
+        // Removed for macOS style highlight
 
         Binding on shownIndex {
             value: root.navIndex
@@ -89,10 +82,13 @@ Item {
         id: mainColumn
 
         anchors.top: parent.top
+        anchors.topMargin: 36
         anchors.left: parent.left
+        anchors.leftMargin: root.compact ? 12 : 18
         anchors.right: parent.right
+        anchors.rightMargin: root.compact ? 12 : 18
         anchors.bottom: parent.bottom
-        anchors.margins: root.compact ? 12 : 18
+        anchors.bottomMargin: root.compact ? 12 : 18
         spacing: 8
 
         Row {
@@ -113,8 +109,8 @@ Item {
                 visible: opacity > 0
                 text: "Orchard"
                 color: "#f1eee7"
-                font.family: "Inter"
-                font.pixelSize: 25
+                font.pixelSize: 24
+                font.weight: Font.DemiBold
             }
 
         }
@@ -182,13 +178,12 @@ Item {
                         opacity: root.labelOpacity
                         visible: opacity > 0
                         text: nav.modelData.title
-                        color: root.currentPage === nav.modelData.key ? "#f5f3ee" : "#a6adb2"
+                        color: root.currentPage === nav.modelData.key ? "#f5f3ee" : "#d3d8da"
 
                         Behavior on color {
                             ColorAnimation { duration: Motion.normal }
                         }
-                        font.family: "Inter"
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                     }
 
                 }
@@ -202,9 +197,8 @@ Item {
             bottomPadding: 10
             visible: !root.compact
             text: qsTr("PLAYLISTS")
-            font.family: "Inter"
-            font.pixelSize: 10
-            font.letterSpacing: 1.8
+            font.pixelSize: 11
+            font.weight: Font.DemiBold
             color: "#919b9f"
         }
 
@@ -247,8 +241,7 @@ Item {
                     visible: opacity > 0
                     text: qsTr("New Playlist")
                     color: "#d3d8da"
-                    font.family: "Inter"
-                    font.pixelSize: 12
+                    font.pixelSize: 13
                     font.weight: Font.Medium
                 }
             }
@@ -318,9 +311,8 @@ Item {
                         opacity: root.labelOpacity
                         visible: opacity > 0
                         text: shortcut.modelData.title || ""
-                        color: "#adb4b8"
-                        font.family: "Inter"
-                        font.pixelSize: 11
+                        color: "#d3d8da"
+                        font.pixelSize: 13
                         elide: Text.ElideRight
                     }
 

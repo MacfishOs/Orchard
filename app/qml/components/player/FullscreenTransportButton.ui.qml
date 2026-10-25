@@ -64,53 +64,49 @@ Button {
 
     background: Rectangle {
         radius: width / 2
-        border.color: transport.activeFocus ? transport.primaryText : "transparent"
-        color: transport.main ? (transport.hovered ? Qt.lighter(transport.primaryText, 1.05) : transport.primaryText)
-             : transport.modeActive ? Qt.rgba(transport.accentColor.r, transport.accentColor.g, transport.accentColor.b, transport.hovered ? 0.3 : 0.2)
-             : transport.hovered && transport.enabled ? "#1cffffff" : "transparent"
+        border.color: transport.activeFocus ? "#ffffff" : "transparent"
+        color: transport.main ? (transport.down ? "#e5e5ea" : "#ffffff")
+             : transport.modeActive ? "#2a7af6"
+             : transport.hovered && transport.enabled ? "#20ffffff" : "transparent"
         opacity: transport.enabled ? 1 : 0.4
-        scale: transport.down ? 0.88 : transport.main && transport.hovered ? 1.05 : 1
-        Behavior on color { ColorAnimation { duration: 140 } }
-        Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutBack; easing.overshoot: 2.4 } }
+        scale: transport.down ? 0.92 : transport.main && transport.hovered ? 1.04 : 1
+        Behavior on color { ColorAnimation { duration: 100 } }
+        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
     }
 
     contentItem: Item {
         transform: Translate { x: transport.nudge }
-        scale: transport.down ? 0.86 : 1
-        Behavior on scale { NumberAnimation { duration: 260; easing.type: Easing.OutBack; easing.overshoot: 2.4 } }
+        scale: transport.down ? 0.92 : 1
+        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
-        // Play and pause trade places with a quarter turn instead of a hard cut.
+        // Play and pause trade places cleanly
         LucideIcon {
             readonly property bool shown: !(transport.main && transport.altShown)
             anchors.centerIn: parent
-            width: transport.main ? 28 : transport.mode ? 18 : 24
+            width: transport.main ? 26 : transport.mode ? 18 : 22
             height: width
             name: transport.glyph
-            color: transport.main ? Qt.darker(transport.inkColor, 1.2)
+            color: transport.main ? "#1c1c1f"
                  : !transport.enabled ? "#6b6f68"
-                 : transport.modeActive ? transport.accentColor : transport.primaryText
+                 : transport.modeActive ? "#ffffff" : "#ffffff"
             opacity: shown ? 1 : 0
-            scale: shown ? 1 : 0.4
-            rotation: shown ? 0 : 90
-            Behavior on opacity { NumberAnimation { duration: 200 } }
-            Behavior on scale { NumberAnimation { duration: 340; easing.type: Easing.OutBack; easing.overshoot: 2 } }
-            Behavior on rotation { NumberAnimation { duration: 340; easing.type: Easing.OutCubic } }
+            scale: shown ? 1 : 0.8
+            Behavior on opacity { NumberAnimation { duration: 120 } }
+            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
         }
 
         LucideIcon {
             readonly property bool shown: transport.altShown
             anchors.centerIn: parent
             visible: transport.main
-            width: 28
+            width: 26
             height: width
             name: transport.altGlyph
-            color: Qt.darker(transport.inkColor, 1.2)
+            color: "#1c1c1f"
             opacity: shown ? 1 : 0
-            scale: shown ? 1 : 0.4
-            rotation: shown ? 0 : -90
-            Behavior on opacity { NumberAnimation { duration: 200 } }
-            Behavior on scale { NumberAnimation { duration: 340; easing.type: Easing.OutBack; easing.overshoot: 2 } }
-            Behavior on rotation { NumberAnimation { duration: 340; easing.type: Easing.OutCubic } }
+            scale: shown ? 1 : 0.8
+            Behavior on opacity { NumberAnimation { duration: 120 } }
+            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
         }
     }
 }

@@ -3,9 +3,9 @@
 
 function transport(width) {
     var compact = width < 340;
-    var sizes = compact ? [32, 36, 52, 36, 32] : [40, 52, 68, 52, 40];
+    var sizes = compact ? [28, 36, 52, 36, 28] : [32, 40, 56, 40, 32];
     var total = sizes.reduce(function(sum, size) { return sum + size; }, 0);
-    return { sizes: sizes, spacing: Math.min(compact ? 10 : 18, Math.max(0, (width - total) / 4)) };
+    return { sizes: sizes, spacing: Math.min(compact ? 12 : 20, Math.max(0, (width - total) / 4)) };
 }
 
 // focus (0..1) narrows the player column so an idle lyrics pane can take the room.

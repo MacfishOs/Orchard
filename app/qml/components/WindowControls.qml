@@ -23,10 +23,9 @@ Row {
     id: root
 
     required property Window targetWindow
-    // Fade out after the pointer goes idle; wake() brings them back.
     property bool autoHide: false
     property bool awake: true
-    readonly property bool hovered: minArea.containsMouse || maxArea.containsMouse || closeArea.containsMouse
+    readonly property bool hovered: closeArea.containsMouse || minArea.containsMouse || maxArea.containsMouse
     readonly property real shown: !autoHide || awake || hovered ? 1 : 0
 
     function wake() {
@@ -34,18 +33,10 @@ Row {
         idleTimer.restart();
     }
 
-    spacing: 0
-    height: 38
-    opacity: reveal
-    // Invisible buttons shouldn't still close the app. Ghosts don't get a close button.
-    visible: reveal > 0.01
-    transform: Translate { y: -10 * (1 - root.reveal) }
-    onAutoHideChanged: wake()
-
-    property real reveal: shown
-    Behavior on reveal {
-        NumberAnimation { duration: 420; easing.type: Easing.OutCubic }
-    }
+    spacing: 8
+    height: 28
+    opacity: shown
+    visible: shown > 0.01
 
     Timer {
         id: idleTimer
@@ -53,110 +44,113 @@ Row {
         onTriggered: root.awake = false
     }
 
-    // Minimize Button
+    // Close Button (macOS Red)
     Rectangle {
-        width: 44
-        height: parent.height
-        color: minArea.containsPress ? "#25282e" : (minArea.containsMouse ? "#1e2126" : "transparent")
+        id: closeBtn
+        width: 14
+        height: 14
+        radius: 7
+        color: closeArea.containsPress ? "#bf4038" : "#ff5f56"
+        border.color: Qt.rgba(0, 0, 0, 0.20)
+        border.width: 1
+        anchors.verticalCenter: parent.verticalCenter
 
-        Item {
+        Rectangle {
             anchors.centerIn: parent
-            width: 11
-            height: 1
-
-            Rectangle {
-                anchors.fill: parent
-                color: minArea.containsMouse ? "#ffffff" : "#9ba1ad"
-            }
+            width: 8
+            height: 1.5
+            radius: 0.75
+            color: "#4a0002"
+            rotation: 45
+            visible: closeArea.containsMouse || closeArea.containsPress
         }
-
-        MouseArea {
-            id: minArea
-
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                if (root.targetWindow)
-                    root.targetWindow.showMinimized();
-            }
-        }
-    }
-
-    // Maximize / Restore Button
-    Rectangle {
-        width: 44
-        height: parent.height
-        color: maxArea.containsPress ? "#25282e" : (maxArea.containsMouse ? "#1e2126" : "transparent")
-
-        Item {
+        Rectangle {
             anchors.centerIn: parent
-            width: 10
-            height: 10
-
-            Rectangle {
-                anchors.fill: parent
-                color: "transparent"
-                border.color: maxArea.containsMouse ? "#ffffff" : "#9ba1ad"
-                border.width: 1
-            }
-        }
-
-        MouseArea {
-            id: maxArea
-
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                if (!root.targetWindow)
-                    return;
-
-                if (root.targetWindow.visibility === Window.Maximized)
-                    root.targetWindow.showNormal();
-                else
-                    root.targetWindow.showMaximized();
-            }
-        }
-    }
-
-    // Close Button
-    Rectangle {
-        width: 44
-        height: parent.height
-        color: closeArea.containsPress ? "#dc2626" : (closeArea.containsMouse ? "#e81123" : "transparent")
-
-        Item {
-            anchors.centerIn: parent
-            width: 10
-            height: 10
-
-            Rectangle {
-                width: 12
-                height: 1.2
-                color: closeArea.containsMouse ? "#ffffff" : "#9ba1ad"
-                anchors.centerIn: parent
-                rotation: 45
-            }
-
-            Rectangle {
-                width: 12
-                height: 1.2
-                color: closeArea.containsMouse ? "#ffffff" : "#9ba1ad"
-                anchors.centerIn: parent
-                rotation: -45
-            }
+            width: 8
+            height: 1.5
+            radius: 0.75
+            color: "#4a0002"
+            rotation: -45
+            visible: closeArea.containsMouse || closeArea.containsPress
         }
 
         MouseArea {
             id: closeArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: if (root.targetWindow) root.targetWindow.close()
+        }
+    }
 
+    // Minimize Button (macOS Yellow)
+    Rectangle {
+        id: minBtn
+        width: 14
+        height: 14
+        radius: 7
+        color: minArea.containsPress ? "#d9a11e" : "#ffbd2e"
+        border.color: Qt.rgba(0, 0, 0, 0.20)
+        border.width: 1
+        anchors.verticalCenter: parent.verticalCenter
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 8
+            height: 1.5
+            radius: 0.75
+            color: "#5b3d00"
+            visible: minArea.containsMouse || minArea.containsPress
+        }
+
+        MouseArea {
+            id: minArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: if (root.targetWindow) root.targetWindow.showMinimized()
+        }
+    }
+
+    // Maximize Button (macOS Green)
+    Rectangle {
+        id: maxBtn
+        width: 14
+        height: 14
+        radius: 7
+        color: maxArea.containsPress ? "#1fa12b" : "#27c93f"
+        border.color: Qt.rgba(0, 0, 0, 0.20)
+        border.width: 1
+        anchors.verticalCenter: parent.verticalCenter
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 7
+            height: 1.5
+            radius: 0.75
+            color: "#003206"
+            visible: maxArea.containsMouse || maxArea.containsPress
+        }
+        Rectangle {
+            anchors.centerIn: parent
+            width: 1.5
+            height: 7
+            radius: 0.75
+            color: "#003206"
+            visible: maxArea.containsMouse || maxArea.containsPress
+        }
+
+        MouseArea {
+            id: maxArea
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: {
-                if (root.targetWindow)
-                    root.targetWindow.close();
+                if (!root.targetWindow) return;
+                if (root.targetWindow.visibility === Window.Maximized)
+                    root.targetWindow.showNormal();
+                else
+                    root.targetWindow.showMaximized();
             }
         }
     }

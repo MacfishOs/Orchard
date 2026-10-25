@@ -23,12 +23,13 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// Orchard Connect, volume and the queue button.
+// Orchard Connect, volume, queue and miniplayer button.
 RowLayout {
     id: sideControls
 
     // The player bar this lives in; it owns the colours and helpers.
     required property Item bar
+    signal miniPlayerRequested()
 
     Layout.alignment: Qt.AlignVCenter
     spacing: 4
@@ -162,7 +163,7 @@ RowLayout {
                     width: volume.visualPosition * parent.width
                     height: parent.height
                     radius: parent.radius
-                    color: bar.accentColor
+                    color: "#ffffff"
                 }
             }
         }
@@ -174,7 +175,7 @@ RowLayout {
             height: 9
             radius: width / 2
             scale: volume.pressed ? 1.15 : volume.hovered ? 1 : 0.8
-            color: bar.accentColor
+            color: "#ffffff"
 
             Behavior on scale {
                 NumberAnimation { duration: 90; easing.type: Easing.OutCubic }
@@ -210,6 +211,38 @@ RowLayout {
             color: bar.queueOpen ? bar.accentColor : bar.controlColor
             implicitWidth: 17
             implicitHeight: 17
+        }
+    }
+
+    Button {
+        id: miniPlayerBtn
+
+        implicitWidth: bar.controlSize
+        implicitHeight: bar.controlSize
+        hoverEnabled: true
+        focusPolicy: Qt.TabFocus
+        Accessible.name: qsTr("MiniPlayer")
+        ToolTip.visible: hovered
+        ToolTip.delay: 500
+        ToolTip.text: qsTr("MiniPlayer (Ctrl+Shift+M)")
+        onClicked: {
+            sideControls.miniPlayerRequested();
+            bar.miniPlayerRequested();
+        }
+
+        background: Rectangle {
+            radius: width / 2
+            color: miniPlayerBtn.hovered ? "#1fffffff" : "transparent"
+            border.color: miniPlayerBtn.activeFocus ? bar.primaryText : "transparent"
+
+            Behavior on color { ColorAnimation { duration: 90 } }
+        }
+
+        contentItem: LucideIcon {
+            name: "app-window"
+            color: bar.controlColor
+            implicitWidth: 16
+            implicitHeight: 16
         }
     }
 }

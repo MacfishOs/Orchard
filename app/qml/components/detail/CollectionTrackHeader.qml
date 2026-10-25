@@ -85,8 +85,8 @@ Item {
                 visible: label.text !== ""
                 text: label.text
                 color: label.tone
-                font.family: "Inter"
-                font.pixelSize: 10
+                font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
+                font.pixelSize: 11
                 font.weight: Font.DemiBold
                 font.letterSpacing: 1.2
             }
