@@ -24,6 +24,7 @@ public:
 
 public slots:
     void updateBlur();
+    void cleanup();
 
 signals:
     void activeChanged();

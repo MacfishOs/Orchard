@@ -5,6 +5,7 @@
 
 #include "cutefish_window_blur.h"
 
+#include <QCoreApplication>
 #include <QGuiApplication>
 #include <QTimer>
 #include <cstring>
@@ -44,6 +45,9 @@ static const struct wl_registry_listener s_registryListener = {
 CutefishWindowBlur::CutefishWindowBlur(QObject *parent)
     : QObject(parent)
 {
+    if (auto *app = QCoreApplication::instance()) {
+        connect(app, &QCoreApplication::aboutToQuit, this, &CutefishWindowBlur::cleanup);
+    }
 #if defined(Q_OS_LINUX)
     const QString platform = QGuiApplication::platformName();
     if (platform.startsWith(QLatin1String("wayland"), Qt::CaseInsensitive)) {
@@ -59,6 +63,18 @@ CutefishWindowBlur::CutefishWindowBlur(QObject *parent)
 CutefishWindowBlur::~CutefishWindowBlur()
 {
 #if defined(Q_OS_LINUX)
+    if (QCoreApplication::instance()) {
+        cleanup();
+    } else {
+        m_surfaceBlur = nullptr;
+        m_registry = nullptr;
+    }
+#endif
+}
+
+void CutefishWindowBlur::cleanup()
+{
+#if defined(Q_OS_LINUX)
     if (m_surfaceBlur) {
         cutefish_surface_blur_v1_destroy(m_surfaceBlur);
         m_surfaceBlur = nullptr;
@@ -67,6 +83,7 @@ CutefishWindowBlur::~CutefishWindowBlur()
         wl_registry_destroy(m_registry);
         m_registry = nullptr;
     }
+    m_active = false;
 #endif
 }
 
