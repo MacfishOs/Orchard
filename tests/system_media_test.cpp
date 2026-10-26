@@ -19,8 +19,10 @@
 
 #include "system_media_bridge.h"
 
+#include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QDBusVariant>
 #include <QKeyEvent>
 #include <QWindow>
 #include <QtTest>
@@ -110,6 +112,49 @@ private slots:
       QCOMPARE(commands.size(), 1);
       QCOMPARE(commands.first().first().toString(), QString("next"));
     }
+  }
+
+  void artworkResolution() {
+    QCOMPARE(highResArtworkUrl("https://i.ytimg.com/vi/abc/default.jpg"),
+             QByteArray("https://i.ytimg.com/vi/abc/hqdefault.jpg"));
+    QCOMPARE(highResArtworkUrl("https://i.ytimg.com/vi/abc/mqdefault.jpg"),
+             QByteArray("https://i.ytimg.com/vi/abc/hqdefault.jpg"));
+    QCOMPARE(highResArtworkUrl("https://i.ytimg.com/vi/abc/hqdefault.jpg"),
+             QByteArray("https://i.ytimg.com/vi/abc/hqdefault.jpg"));
+    QCOMPARE(highResArtworkUrl("https://i.ytimg.com/vi/abc/maxresdefault.jpg"),
+             QByteArray("https://i.ytimg.com/vi/abc/maxresdefault.jpg"));
+    QCOMPARE(highResArtworkUrl("https://lh3.googleusercontent.com/abc=w120-h120"),
+             QByteArray("https://lh3.googleusercontent.com/abc=w1200-h1200"));
+  }
+
+  void publishArtworkFromMap() {
+    SystemMediaBridge bridge;
+    QVERIFY2(bridge.attached(), qPrintable(bridge.lastError()));
+    QVERIFY(bridge.publish({
+        {"track", QVariantMap{
+            {"id", "map-thumb-track"},
+            {"title", "Track With Map Thumb"},
+            {"heroThumbnail", QVariantMap{{"url", "https://i.ytimg.com/vi/test1234/default.jpg"}}},
+        }},
+        {"isPlaying", true}}));
+
+    auto message = QDBusMessage::createMethodCall(
+        QStringLiteral("org.mpris.MediaPlayer2.Orchard"),
+        QStringLiteral("/org/mpris/MediaPlayer2"),
+        QStringLiteral("org.freedesktop.DBus.Properties"), QStringLiteral("Get"));
+    message.setArguments({QStringLiteral("org.mpris.MediaPlayer2.Player"), QStringLiteral("Metadata")});
+    const auto reply = QDBusConnection::sessionBus().call(message, QDBus::Block, 3000);
+    QVERIFY2(reply.type() != QDBusMessage::ErrorMessage, qPrintable(reply.errorMessage()));
+    const auto dbusVar = reply.arguments().first().value<QDBusVariant>().variant();
+    QVariantMap metadata;
+    if (dbusVar.canConvert<QDBusArgument>()) {
+        const auto arg = dbusVar.value<QDBusArgument>();
+        arg >> metadata;
+    } else {
+        metadata = dbusVar.toMap();
+    }
+    QCOMPARE(metadata.value(QStringLiteral("mpris:artUrl")).toString(),
+             QStringLiteral("https://i.ytimg.com/vi/test1234/hqdefault.jpg"));
   }
 
   void systemCommands() {

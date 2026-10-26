@@ -49,8 +49,8 @@ QByteArray highResArtworkUrl(const QByteArray &url)
     }
 
     if (str.contains(QLatin1String("ytimg.com"), Qt::CaseInsensitive)) {
-        static const QRegularExpression ytPattern(QStringLiteral("/(default|mqdefault|hqdefault|sddefault)\\.jpg"), QRegularExpression::CaseInsensitiveOption);
-        str.replace(ytPattern, QStringLiteral("/maxresdefault.jpg"));
+        static const QRegularExpression ytPattern(QStringLiteral("/(default|mqdefault)\\.jpg"), QRegularExpression::CaseInsensitiveOption);
+        str.replace(ytPattern, QStringLiteral("/hqdefault.jpg"));
         return str.toUtf8();
     }
 
@@ -63,7 +63,16 @@ QByteArray bytes(const QVariantMap &values, const char *key)
 {
     const QVariant val = values.value(QString::fromLatin1(key));
     if (val.userType() == QMetaType::QVariantMap) {
-        return val.toMap().value(QStringLiteral("title")).toString().toUtf8();
+        const QVariantMap map = val.toMap();
+        if (map.contains(QStringLiteral("url"))) {
+            return map.value(QStringLiteral("url")).toString().toUtf8();
+        }
+        if (map.contains(QStringLiteral("src"))) {
+            return map.value(QStringLiteral("src")).toString().toUtf8();
+        }
+        if (map.contains(QStringLiteral("title"))) {
+            return map.value(QStringLiteral("title")).toString().toUtf8();
+        }
     }
     return val.toString().toUtf8();
 }
@@ -193,6 +202,9 @@ bool SystemMediaBridge::publish(const QVariantMap &state)
         artworkUrl = bytes(trackMap, "thumbnail");
     }
     if (artworkUrl.isEmpty()) {
+        artworkUrl = bytes(trackMap, "thumbnailUrl");
+    }
+    if (artworkUrl.isEmpty()) {
         artworkUrl = bytes(trackMap, "artwork");
     }
     if (artworkUrl.isEmpty()) {
@@ -202,13 +214,20 @@ bool SystemMediaBridge::publish(const QVariantMap &state)
         artworkUrl = bytes(trackMap, "coverPath");
     }
     if (artworkUrl.isEmpty()) {
+        artworkUrl = bytes(trackMap, "picture");
+    }
+    if (artworkUrl.isEmpty()) {
         const QVariant thumbs = trackMap.value(QStringLiteral("thumbnails"));
         if (thumbs.canConvert<QVariantList>()) {
             const QVariantList list = thumbs.toList();
             if (!list.isEmpty()) {
                 const QVariant last = list.last();
                 if (last.userType() == QMetaType::QVariantMap) {
-                    artworkUrl = last.toMap().value(QStringLiteral("url")).toString().toUtf8();
+                    const QVariantMap thumbMap = last.toMap();
+                    artworkUrl = thumbMap.value(QStringLiteral("url")).toString().toUtf8();
+                    if (artworkUrl.isEmpty()) {
+                        artworkUrl = thumbMap.value(QStringLiteral("src")).toString().toUtf8();
+                    }
                 }
             }
         }
