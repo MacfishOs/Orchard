@@ -18,6 +18,7 @@
  */
 
 import QtQuick
+import QtQuick.Controls
 
 Row {
     id: root
@@ -35,7 +36,7 @@ Row {
 
     spacing: 8
     height: 28
-    opacity: shown
+    opacity: 1.0
     visible: shown > 0.01
 
     Timer {
@@ -50,8 +51,8 @@ Row {
         width: 14
         height: 14
         radius: 7
-        color: closeArea.containsPress ? "#bf4038" : "#ff5f56"
-        border.color: Qt.rgba(0, 0, 0, 0.20)
+        color: closeArea.containsPress ? "#e0443e" : "#ff5f56"
+        border.color: Qt.rgba(0, 0, 0, 0.25)
         border.width: 1
         anchors.verticalCenter: parent.verticalCenter
 
@@ -89,8 +90,8 @@ Row {
         width: 14
         height: 14
         radius: 7
-        color: minArea.containsPress ? "#d9a11e" : "#ffbd2e"
-        border.color: Qt.rgba(0, 0, 0, 0.20)
+        color: minArea.containsPress ? "#dea123" : "#ffbd2e"
+        border.color: Qt.rgba(0, 0, 0, 0.25)
         border.width: 1
         anchors.verticalCenter: parent.verticalCenter
 
@@ -118,8 +119,8 @@ Row {
         width: 14
         height: 14
         radius: 7
-        color: maxArea.containsPress ? "#1fa12b" : "#27c93f"
-        border.color: Qt.rgba(0, 0, 0, 0.20)
+        color: maxArea.containsPress ? "#1aab29" : "#27c93f"
+        border.color: Qt.rgba(0, 0, 0, 0.25)
         border.width: 1
         anchors.verticalCenter: parent.verticalCenter
 
@@ -145,7 +146,46 @@ Row {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: {
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: function(mouse) {
+                if (!root.targetWindow) return;
+                if (mouse.button === Qt.RightButton) {
+                    tileMenu.popup(maxBtn, 0, maxBtn.height + 4);
+                } else {
+                    if (root.targetWindow.visibility === Window.Maximized)
+                        root.targetWindow.showNormal();
+                    else
+                        root.targetWindow.showMaximized();
+                }
+            }
+        }
+    }
+
+    Menu {
+        id: tileMenu
+        width: 160
+        padding: 5
+        background: Rectangle { color: "#28282c"; radius: 8; border.color: "#20ffffff" }
+
+        component Entry: MenuItem {
+            id: entry
+            implicitHeight: 32
+            background: Rectangle {
+                radius: 6
+                color: entry.highlighted ? "#2a7af6" : "transparent"
+            }
+            contentItem: Text {
+                text: entry.text
+                color: "#ffffff"
+                font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
+                font.pixelSize: 12
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
+
+        Entry {
+            text: root.targetWindow && root.targetWindow.visibility === Window.Maximized ? qsTr("Restore Window") : qsTr("Fill Screen")
+            onTriggered: {
                 if (!root.targetWindow) return;
                 if (root.targetWindow.visibility === Window.Maximized)
                     root.targetWindow.showNormal();

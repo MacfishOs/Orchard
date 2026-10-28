@@ -36,7 +36,7 @@ Item {
         id: mainColumn
 
         anchors.top: parent.top
-        anchors.topMargin: 30
+        anchors.topMargin: 48
         anchors.left: parent.left
         anchors.leftMargin: root.compact ? 12 : 16
         anchors.right: parent.right
@@ -44,32 +44,6 @@ Item {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 16
         spacing: 6
-
-        // Apple Music Style Logo & Title Header
-        Row {
-            height: 48
-            spacing: 10
-
-            Image {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 26
-                height: 26
-                source: "../../assets/orchard-logo.png"
-                fillMode: Image.PreserveAspectFit
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                opacity: root.labelOpacity
-                visible: opacity > 0
-                text: qsTr("Music")
-                color: "#f5f3ee"
-                font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
-                font.pixelSize: 20
-                font.weight: Font.Bold
-                font.letterSpacing: -0.4
-            }
-        }
 
         // Search Bar
         SidebarSearch {
@@ -82,9 +56,9 @@ Item {
             onSpotlightRequested: root.spotlightRequested()
         }
 
-        Item { width: 1; height: 4 }
+        Item { width: 1; height: 6 }
 
-        // Top Navigation (Listen Now / Browse / Radio)
+        // Top Navigation (Listen Now / Browse / Search)
         Repeater {
             model: [
                 { key: "home", title: qsTr("Listen Now"), icon: "play", filter: "" },
@@ -100,7 +74,7 @@ Item {
                                             || (modelData.key === "search" && root.currentPage === "search")
 
                 width: parent.width
-                height: 34
+                height: 32
                 onClicked: {
                     if (modelData.key === "search") {
                         root.focusSearch();
@@ -112,21 +86,21 @@ Item {
 
                 background: Rectangle {
                     radius: 8
-                    color: topNav.active ? "#36363b" : topNav.hovered ? "#14ffffff" : "transparent"
-                    border.color: topNav.activeFocus ? OrchardAppearance.accent : "transparent"
+                    color: topNav.active ? "#2a7af6" : topNav.hovered ? "#18ffffff" : "transparent"
+                    border.color: topNav.activeFocus ? "#ffffff" : "transparent"
                     Behavior on color { ColorAnimation { duration: Motion.fast } }
                 }
 
                 contentItem: Row {
-                    spacing: 11
-                    leftPadding: root.compact ? (parent.width - 17) / 2 : 8
+                    spacing: 10
+                    leftPadding: root.compact ? (parent.width - 16) / 2 : 8
 
                     LucideIcon {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 17
-                        height: 17
+                        width: 16
+                        height: 16
                         name: topNav.modelData.icon
-                        color: topNav.active ? OrchardAppearance.accent : "#c1c7ca"
+                        color: topNav.active ? "#ffffff" : "#c1c7ca"
                         Behavior on color { ColorAnimation { duration: Motion.normal } }
                     }
 
@@ -173,7 +147,7 @@ Item {
                 readonly property bool active: root.currentPage === "library" && root.currentLibraryFilter === modelData.filter
 
                 width: parent.width
-                height: 34
+                height: 32
                 onClicked: {
                     root.currentLibraryFilter = modelData.filter;
                     root.pageRequested("library", modelData.filter);
@@ -183,21 +157,21 @@ Item {
 
                 background: Rectangle {
                     radius: 8
-                    color: libNav.active ? "#36363b" : libNav.hovered ? "#14ffffff" : "transparent"
-                    border.color: libNav.activeFocus ? OrchardAppearance.accent : "transparent"
+                    color: libNav.active ? "#2a7af6" : libNav.hovered ? "#18ffffff" : "transparent"
+                    border.color: libNav.activeFocus ? "#ffffff" : "transparent"
                     Behavior on color { ColorAnimation { duration: Motion.fast } }
                 }
 
                 contentItem: Row {
-                    spacing: 11
-                    leftPadding: root.compact ? (parent.width - 17) / 2 : 8
+                    spacing: 10
+                    leftPadding: root.compact ? (parent.width - 16) / 2 : 8
 
                     LucideIcon {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 17
-                        height: 17
+                        width: 16
+                        height: 16
                         name: libNav.modelData.icon
-                        color: libNav.active ? OrchardAppearance.accent : "#c1c7ca"
+                        color: libNav.active ? "#ffffff" : "#c1c7ca"
                         Behavior on color { ColorAnimation { duration: Motion.normal } }
                     }
 

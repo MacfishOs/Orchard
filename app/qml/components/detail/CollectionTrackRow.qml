@@ -78,14 +78,14 @@ ItemDelegate {
     }
 
     background: Rectangle {
-        radius: 10
-        color: root.searchMatch ? root.tint(root.accentColor, 0.3)
-             : root.current ? root.tint(root.accentColor, 0.14)
-             : root.hovered || trackMenu.visible ? "#10ffffff" : "transparent"
+        radius: 8
+        color: root.searchMatch ? "#302a7af6"
+             : root.current ? "#222a3a"
+             : root.hovered || trackMenu.visible ? "#14ffffff" : "transparent"
         border.width: root.searchMatch ? 2 : 1
-        border.color: root.searchMatch ? root.accentColor
-                    : root.activeFocus ? root.accentSoftColor
-                    : root.current ? root.tint(root.accentSoftColor, 0.14) : "transparent"
+        border.color: root.searchMatch ? "#2a7af6"
+                    : root.activeFocus ? "#ffffff"
+                    : root.current ? "#302a7af6" : "transparent"
         Behavior on color { ColorAnimation { duration: 110 } }
     }
 

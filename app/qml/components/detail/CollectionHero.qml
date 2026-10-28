@@ -236,78 +236,77 @@ Item {
 
             Button {
                 id: playButton
-                width: playRow.implicitWidth + 36
-                height: 40
+                width: playRow.implicitWidth + 32
+                height: 36
                 enabled: root.actionsEnabled
                 opacity: enabled ? 1 : 0.4
                 Accessible.name: root.playing ? qsTr("Pause") : qsTr("Play %1").arg(root.kind.toLowerCase())
                 onClicked: root.playClicked()
-                scale: down ? 0.97 : 1
-                Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                scale: down ? 0.96 : 1
+                Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
                 background: Rectangle {
-                    radius: 20
-                    color: playButton.hovered ? "#ffffff" : "#f1efea"
-                    border.color: playButton.activeFocus ? root.accentSoftColor : "transparent"
-                    border.width: 2
+                    radius: 18
+                    color: playButton.down ? "#e5e5ea" : playButton.hovered ? "#ffffff" : "#ffffff"
+                    border.color: playButton.activeFocus ? "#ffffff" : "transparent"
                 }
                 contentItem: Item {
                     Row {
                         id: playRow
                         anchors.centerIn: parent
-                        spacing: 8
+                        spacing: 7
                         LucideIcon {
-                            width: 16
-                            height: 16
+                            width: 15
+                            height: 15
                             anchors.verticalCenter: parent.verticalCenter
                             name: root.playing ? "pause" : "play"
-                            color: "#121212"
+                            color: "#17171c"
                         }
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: root.playing ? qsTr("Pause") : qsTr("Play")
-                            color: "#121212"
-                            font.family: "Inter"
+                            color: "#17171c"
+                            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                             font.pixelSize: 13
-                            font.weight: Font.DemiBold
+                            font.weight: Font.Bold
                         }
                     }
                 }
             }
             Button {
                 id: shuffleButton
-                width: shuffleRow.implicitWidth + 36
-                height: 40
+                width: shuffleRow.implicitWidth + 32
+                height: 36
                 enabled: root.actionsEnabled
                 opacity: enabled ? 1 : 0.4
                 Accessible.name: qsTr("Shuffle")
                 ToolTip.text: qsTr("Shuffle")
                 onClicked: root.shuffleClicked()
-                scale: down ? 0.97 : 1
-                Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                scale: down ? 0.96 : 1
+                Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
                 background: Rectangle {
-                    radius: 20
-                    color: shuffleButton.hovered ? "#38383e" : "#28282d"
-                    border.color: shuffleButton.activeFocus ? root.accentSoftColor : "#18ffffff"
+                    radius: 18
+                    color: shuffleButton.down ? "#35ffffff" : shuffleButton.hovered ? "#28ffffff" : "#18ffffff"
+                    border.color: shuffleButton.activeFocus ? "#ffffff" : "transparent"
                 }
                 contentItem: Item {
                     Row {
                         id: shuffleRow
                         anchors.centerIn: parent
-                        spacing: 8
+                        spacing: 7
                         LucideIcon {
-                            width: 16
-                            height: 16
+                            width: 15
+                            height: 15
                             anchors.verticalCenter: parent.verticalCenter
                             name: "shuffle"
-                            color: "#f1efea"
+                            color: "#ffffff"
                         }
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: qsTr("Shuffle")
-                            color: "#f1efea"
-                            font.family: "Inter"
+                            color: "#ffffff"
+                            font.family: "SF Pro Text, SF Pro, Inter, sans-serif"
                             font.pixelSize: 13
-                            font.weight: Font.DemiBold
+                            font.weight: Font.SemiBold
                         }
                     }
                 }

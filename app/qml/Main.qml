@@ -125,6 +125,35 @@ Window {
         autoHide: mainWindow.visibility === Window.FullScreen && homeShell.item !== null && homeShell.item.fullscreenOpen
     }
 
+    // Apple Music Style Header: Logo & Title placed directly next to Window Controls
+    Row {
+        id: appHeader
+        anchors.left: windowControls.right
+        anchors.leftMargin: 16
+        anchors.verticalCenter: windowControls.verticalCenter
+        spacing: 8
+        z: 10
+        visible: windowControls.visible
+
+        Image {
+            anchors.verticalCenter: parent.verticalCenter
+            width: 20
+            height: 20
+            source: "assets/orchard-logo.png"
+            fillMode: Image.PreserveAspectFit
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: qsTr("Music")
+            color: "#ffffff"
+            font.family: "SF Pro Display, SF Pro, Inter, sans-serif"
+            font.pixelSize: 18
+            font.weight: Font.Bold
+            font.letterSpacing: -0.3
+        }
+    }
+
     Item {
         id: contentArea
 
